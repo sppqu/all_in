@@ -1,0 +1,43 @@
+/* Custom CSS untuk menghapus ikon lingkaran pada submenu sidebar */
+
+/* Hapus bullet points/ikon lingkaran pada submenu */
+.sidebar-nav .nav-group-items {
+    list-style: none !important;
+}
+
+.sidebar-nav .nav-group-items .nav-item {
+    list-style: none !important;
+}
+
+.sidebar-nav .nav-group-items .nav-link {
+    list-style: none !important;
+}
+
+/* Pastikan tidak ada pseudo-elements yang menampilkan ikon */
+.sidebar-nav .nav-group-items .nav-item::before,
+.sidebar-nav .nav-group-items .nav-item::after,
+.sidebar-nav .nav-group-items .nav-link::before,
+.sidebar-nav .nav-group-items .nav-link::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Hapus margin dan padding yang tidak diperlukan */
+.sidebar-nav .nav-group-items .nav-item {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Pastikan submenu items tidak memiliki background atau border yang menampilkan ikon */
+.sidebar-nav .nav-group-items .nav-link {
+    background: none !important;
+    border: none !important;
+    position: relative;
+}
+
+/* Hapus semua pseudo-elements yang mungkin ditambahkan oleh browser atau CSS lain */
+.sidebar-nav .nav-group-items *::before,
+.sidebar-nav .nav-group-items *::after {
+    display: none !important;
+    content: none !important;
+}

@@ -1,0 +1,35 @@
+# Anti-Cache Headers untuk Student Portal
+# Salin isi file ini ke .htaccess Anda jika masalah cache masih terjadi
+
+<IfModule mod_headers.c>
+    # Disable caching for student dashboard
+    <FilesMatch "\.(html|htm|php)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0, post-check=0, pre-check=0, private"
+        Header set Pragma "no-cache"
+        Header set Expires "Mon, 01 Jan 1990 00:00:00 GMT"
+        Header unset ETag
+        Header set X-Content-Type-Options "nosniff"
+        Header set X-Frame-Options "SAMEORIGIN"
+        Header set X-XSS-Protection "1; mode=block"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Disable caching for dynamic content
+    ExpiresByType text/html "access plus 0 seconds"
+    ExpiresByType application/json "access plus 0 seconds"
+    
+    # Cache static assets (CSS, JS, Images)
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule>
+
+# Disable ETags
+FileETag None
+
