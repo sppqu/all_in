@@ -156,14 +156,22 @@ class SPMBController extends Controller
             'phone' => $phone,
             'user_id' => $registration->id,
             'name' => $registration->name,
-            'status' => $registration->status
+            'status' => $registration->status,
+            'status_pendaftaran' => $registration->status_pendaftaran,
+            'step' => $registration->step
         ]);
 
-        // Store in session
+        // Store in session - ALLOW ALL STATUS (pending, active, etc)
         Session::put('spmb_registration_id', $registration->id);
         Session::put('spmb_name', $registration->name);
         Session::put('spmb_phone', $registration->phone);
         Session::put('spmb_status', $registration->status);
+        Session::put('spmb_status_pendaftaran', $registration->status_pendaftaran);
+
+        \Log::info('Session stored, redirecting to dashboard', [
+            'session_id' => $registration->id,
+            'redirect_to' => 'spmb.dashboard'
+        ]);
 
         return redirect()->route('spmb.dashboard');
     }
