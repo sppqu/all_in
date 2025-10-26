@@ -59,21 +59,22 @@ class SubscriptionTripayService
     {
         try {
             $merchantRef = 'SUB-' . $data['user_id'] . '-' . time();
+            $amount = (int) $data['amount']; // Cast to integer FIRST
             
-            // Generate signature
-            $signature = $this->generateSignature($merchantRef, $data['amount']);
+            // Generate signature with integer amount
+            $signature = $this->generateSignature($merchantRef, $amount);
             
             $payload = [
                 'method' => $data['method'], // QRIS, BRIVA, BCAVA, etc
                 'merchant_ref' => $merchantRef,
-                'amount' => (int) $data['amount'],
+                'amount' => $amount,
                 'customer_name' => $data['customer_name'],
                 'customer_email' => $data['customer_email'],
                 'customer_phone' => $data['customer_phone'] ?? '08123456789',
                 'order_items' => [
                     [
                         'name' => $data['plan_name'],
-                        'price' => (int) $data['amount'],
+                        'price' => $amount,
                         'quantity' => 1,
                     ]
                 ],
@@ -109,7 +110,7 @@ class SubscriptionTripayService
                     'checkout_url' => $responseData['data']['checkout_url'] ?? null,
                     'qr_url' => $responseData['data']['qr_url'] ?? null,
                     'payment_method' => $data['method'],
-                    'amount' => $data['amount'],
+                    'amount' => $amount,
                     'expired_time' => $responseData['data']['expired_time'] ?? null,
                     'data' => $responseData['data'] ?? null
                 ];
@@ -245,11 +246,19 @@ class SubscriptionTripayService
      */
     private function generateSignature($merchantRef, $amount)
     {
-        return hash_hmac(
-            'sha256',
-            $this->merchantCode . $merchantRef . $amount,
-            $this->privateKey
-        );
+        $signatureString = $this->merchantCode . $merchantRef . $amount;
+        $signature = hash_hmac('sha256', $signatureString, $this->privateKey);
+        
+        Log::info('Generate Tripay Signature', [
+            'merchant_code' => $this->merchantCode,
+            'merchant_ref' => $merchantRef,
+            'amount' => $amount,
+            'signature_string' => $signatureString,
+            'private_key_length' => strlen($this->privateKey),
+            'signature' => $signature
+        ]);
+        
+        return $signature;
     }
 
     /**
