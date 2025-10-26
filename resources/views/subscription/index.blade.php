@@ -172,7 +172,7 @@
                                                     <div>
                                                         <strong>{{ $subscription->plan_name }}</strong>
                                                         <br>
-                                                        <span class="badge bg-info text-dark">
+                                                        <span class="badge bg-info text-white">
                                                             <i class="fas fa-sync-alt me-1"></i>
                                                             Bulanan
                                                         </span>
