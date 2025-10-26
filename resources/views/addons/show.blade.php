@@ -139,9 +139,31 @@
                     @if($userAddon)
                         <div class="text-center">
                             <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">Sudah Dimiliki</h5>
-                            <p class="text-muted">Anda sudah memiliki add-on ini dan dapat menggunakannya.</p>
-                                                         <a href="{{ route('manage.addons.index') }}" class="btn btn-secondary">
+                            <h5 class="mt-3">Add-on Aktif</h5>
+                            @if(auth()->user()->role === 'superadmin')
+                                <p class="text-muted">Anda sudah memiliki add-on ini dan dapat menggunakannya.</p>
+                            @else
+                                <p class="text-muted">Add-on ini sudah dibeli oleh superadmin. Anda dapat menggunakannya.</p>
+                            @endif
+                            <a href="{{ route('manage.addons.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Kembali ke Add-ons
+                            </a>
+                        </div>
+                    @elseif(!$canPurchase)
+                        <div class="text-center">
+                            <i class="fas fa-info-circle text-info" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">Hanya Superadmin</h5>
+                            <p class="text-muted">Hanya superadmin yang dapat membeli add-on. Setelah superadmin membeli, add-on akan otomatis tersedia untuk semua user.</p>
+                            <div class="alert alert-info text-start mt-3">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Info:</strong>
+                                <ul class="mb-0 mt-2 small">
+                                    <li>Superadmin membeli addon sekali</li>
+                                    <li>Semua user (admin, operator, dll) otomatis bisa menggunakan</li>
+                                    <li>Tidak perlu beli per user</li>
+                                </ul>
+                            </div>
+                            <a href="{{ route('manage.addons.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Add-ons
                             </a>
                         </div>

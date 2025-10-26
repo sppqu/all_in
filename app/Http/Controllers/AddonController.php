@@ -44,23 +44,43 @@ class AddonController extends Controller
         $addon = Addon::where('slug', $slug)->active()->firstOrFail();
         $user = auth()->user();
         
-        // Check if user already has this addon
-        $userAddon = UserAddon::where('user_id', $user->id)
-            ->where('addon_id', $addon->id)
-            ->where('status', 'active')
-            ->first();
+        // Check addon ownership
+        // Non-superadmin inherit addons from superadmin
+        if ($user->role === 'superadmin') {
+            // Superadmin: check their own addons
+            $userAddon = UserAddon::where('user_id', $user->id)
+                ->where('addon_id', $addon->id)
+                ->where('status', 'active')
+                ->first();
+        } else {
+            // Non-superadmin: check superadmin's addons
+            $superadminId = getSuperadminId();
+            $userAddon = $superadminId ? UserAddon::where('user_id', $superadminId)
+                ->where('addon_id', $addon->id)
+                ->where('status', 'active')
+                ->first() : null;
+        }
 
-        return view('addons.show', compact('addon', 'userAddon'));
+        // Only superadmin can purchase
+        $canPurchase = ($user->role === 'superadmin');
+
+        return view('addons.show', compact('addon', 'userAddon', 'canPurchase'));
     }
 
     public function purchase(Request $request, $slug)
     {
+        $user = auth()->user();
+
+        // Only superadmin can purchase addons
+        if ($user->role !== 'superadmin') {
+            return back()->with('error', 'Hanya superadmin yang dapat membeli add-on. User lain akan otomatis mendapatkan akses dari add-on yang dibeli superadmin.');
+        }
+
         $request->validate([
             'payment_method' => 'required|string'
         ]);
 
         $addon = Addon::where('slug', $slug)->active()->firstOrFail();
-        $user = auth()->user();
 
         // Check if user already has this addon
         $existingAddon = UserAddon::where('user_id', $user->id)
