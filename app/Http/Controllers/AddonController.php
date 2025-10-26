@@ -248,6 +248,149 @@ class AddonController extends Controller
         Log::info("User addon status updated: {$userAddonId} -> {$status}");
     }
 
+    /**
+     * Manually activate addon for a user (admin only)
+     */
+    public function manualActivate($userId, $slug)
+    {
+        try {
+            // Find addon by slug
+            $addon = Addon::where('slug', $slug)->first();
+            
+            if (!$addon) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Addon tidak ditemukan'
+                ], 404);
+            }
+            
+            // Check if user exists
+            $user = \DB::table('users')->find($userId);
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'User tidak ditemukan'
+                ], 404);
+            }
+            
+            // Check if already active
+            $existingAddon = UserAddon::where('user_id', $userId)
+                ->where('addon_id', $addon->id)
+                ->where('status', 'active')
+                ->first();
+            
+            if ($existingAddon) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Addon sudah aktif untuk user ini'
+                ]);
+            }
+            
+            // Find existing pending/inactive addon or create new
+            $userAddon = UserAddon::where('user_id', $userId)
+                ->where('addon_id', $addon->id)
+                ->first();
+            
+            if ($userAddon) {
+                // Update existing
+                $userAddon->update([
+                    'status' => 'active',
+                    'purchased_at' => now(),
+                    'amount_paid' => 0, // Manual activation - no payment
+                    'payment_method' => 'manual',
+                    'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
+                    'updated_at' => now()
+                ]);
+            } else {
+                // Create new
+                UserAddon::create([
+                    'user_id' => $userId,
+                    'addon_id' => $addon->id,
+                    'status' => 'active',
+                    'purchased_at' => now(),
+                    'amount_paid' => 0,
+                    'payment_method' => 'manual',
+                    'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+            
+            Log::info("Addon manually activated", [
+                'user_id' => $userId,
+                'addon_slug' => $slug,
+                'addon_id' => $addon->id
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Addon {$addon->name} berhasil diaktifkan untuk User ID: {$userId}"
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Manual addon activation error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Manually deactivate addon for a user (admin only)
+     */
+    public function manualDeactivate($userId, $slug)
+    {
+        try {
+            // Find addon by slug
+            $addon = Addon::where('slug', $slug)->first();
+            
+            if (!$addon) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Addon tidak ditemukan'
+                ], 404);
+            }
+            
+            // Find user addon
+            $userAddon = UserAddon::where('user_id', $userId)
+                ->where('addon_id', $addon->id)
+                ->where('status', 'active')
+                ->first();
+            
+            if (!$userAddon) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Addon tidak aktif untuk user ini'
+                ]);
+            }
+            
+            // Deactivate
+            $userAddon->update([
+                'status' => 'inactive',
+                'updated_at' => now()
+            ]);
+            
+            Log::info("Addon manually deactivated", [
+                'user_id' => $userId,
+                'addon_slug' => $slug,
+                'addon_id' => $addon->id
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Addon {$addon->name} berhasil dinonaktifkan untuk User ID: {$userId}"
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Manual addon deactivation error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function checkUserAddon($slug)
     {
         $user = auth()->user();

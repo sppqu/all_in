@@ -141,6 +141,10 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::get('/addons/{slug}/check', [App\Http\Controllers\AddonController::class, 'checkUserAddon'])->name('addons.check')->middleware('auth');
     Route::post('/addons/refresh-status', [App\Http\Controllers\AddonController::class, 'refreshAddonStatus'])->name('addons.refresh-status')->middleware('auth');
     
+    // Manual Addon Activation/Deactivation (Admin only)
+    Route::get('/activate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualActivate'])->name('addon.manual.activate');
+    Route::get('/deactivate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualDeactivate'])->name('addon.manual.deactivate');
+    
     // Manage Periods
     Route::resource('periods', PeriodController::class)->middleware('auth');
     
