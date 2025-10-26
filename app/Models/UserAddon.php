@@ -17,7 +17,8 @@ class UserAddon extends Model
         'expires_at',
         'amount_paid',
         'payment_method',
-        'transaction_id'
+        'transaction_id',
+        'payment_reference'
     ];
 
     protected $casts = [
