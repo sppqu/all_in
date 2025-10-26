@@ -72,62 +72,81 @@ class AddonController extends Controller
             return back()->with('error', 'Anda sudah memiliki add-on ini.');
         }
 
+        // Delete old pending addon purchases untuk user + addon ini (cleanup duplikat)
+        DB::table('user_addons')
+            ->where('user_id', $user->id)
+            ->where('addon_id', $addon->id)
+            ->where('status', 'pending')
+            ->whereNull('payment_reference')
+            ->delete();
+
         // Create user addon record
-        $userAddonId = UserAddon::insertGetId([
+        $userAddonId = DB::table('user_addons')->insertGetId([
             'user_id' => $user->id,
             'addon_id' => $addon->id,
             'status' => 'pending',
-            'purchased_at' => now(),
+            'purchased_at' => null, // Will be filled when paid
             'amount_paid' => $addon->price,
             'payment_method' => $request->payment_method,
             'created_at' => now(),
             'updated_at' => now()
         ]);
 
-        // Prepare Midtrans parameters
-        $params = [
-            'transaction_details' => [
-                'order_id' => 'ADDON-' . $userAddonId . '-' . time(),
-                'gross_amount' => $addon->price
-            ],
-            'customer_details' => [
-                'first_name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone ?? ''
-            ],
-            'item_details' => [
-                [
-                    'id' => $addon->slug,
-                    'price' => $addon->price,
-                    'quantity' => 1,
-                    'name' => $addon->name . ' - SPPQU Add-on'
-                ]
-            ],
-            'enabled_payments' => [
-                'credit_card', 'bca_va', 'bni_va', 'bri_va', 'mandiri_clickpay',
-                'gopay', 'indomaret', 'danamon_online', 'akulaku'
-            ],
-            'callbacks' => [
-                'finish' => url('/addons/callback'),
-                'error' => url('/addons/callback'),
-                'pending' => url('/addons/callback')
-            ]
-        ];
-
         try {
-            $snapToken = \Midtrans\Snap::getSnapToken($params);
+            // Use Tripay payment gateway
+            $tripay = new \App\Services\SubscriptionTripayService();
+            $merchantRef = 'ADDON-' . $user->id . '-' . $addon->id . '-' . time();
             
-            // Update user addon with snap token
-            UserAddon::where('id', $userAddonId)->update([
-                'transaction_id' => $params['transaction_details']['order_id'],
-                'updated_at' => now()
+            $result = $tripay->createSubscriptionPayment([
+                'user_id' => $user->id,
+                'method' => $request->payment_method, // QRIS, BRIVA, BCAVA, dll
+                'amount' => $addon->price,
+                'plan_name' => 'SPPQU Addon - ' . $addon->name,
+                'customer_name' => $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $user->phone ?? '08123456789',
+                'return_url' => route('manage.addons.index'),
+                'callback_url' => url('/api/manage/tripay/callback')
             ]);
 
-            return view('addons.payment', compact('snapToken', 'addon', 'userAddonId'));
+            if (!$result['success']) {
+                // Delete user addon if payment creation failed
+                DB::table('user_addons')->where('id', $userAddonId)->delete();
+                
+                return back()->with('error', 'Gagal membuat transaksi pembayaran: ' . ($result['message'] ?? 'Unknown error'));
+            }
+            
+            // Update user addon with transaction info
+            DB::table('user_addons')
+                ->where('id', $userAddonId)
+                ->update([
+                    'transaction_id' => $result['merchant_ref'],
+                    'payment_reference' => $result['reference'] ?? null,
+                    'updated_at' => now()
+                ]);
+
+            Log::info('Addon payment created via Tripay', [
+                'user_id' => $user->id,
+                'addon_id' => $addon->id,
+                'user_addon_id' => $userAddonId,
+                'merchant_ref' => $result['merchant_ref'],
+                'reference' => $result['reference']
+            ]);
+
+            // Return Tripay payment page
+            return view('addons.payment-tripay', compact('result', 'userAddonId', 'addon'));
 
         } catch (\Exception $e) {
-            Log::error('Midtrans Error: ' . $e->getMessage());
-            return back()->with('error', 'Terjadi kesalahan saat memproses pembayaran');
+            // Delete user addon if error occurred
+            DB::table('user_addons')->where('id', $userAddonId)->delete();
+            
+            Log::error('Tripay Payment Error for Addon: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'addon_slug' => $slug,
+                'payment_method' => $request->payment_method
+            ]);
+            
+            return back()->with('error', 'Terjadi kesalahan saat memproses pembayaran: ' . $e->getMessage());
         }
     }
 
@@ -436,5 +455,129 @@ class AddonController extends Controller
             'addon_name' => $addon->name,
             'status' => $userAddon ? $userAddon->status : 'not_owned'
         ]);
+    }
+
+    /**
+     * Check addon payment status from Tripay API
+     */
+    public function checkPaymentStatus(Request $request)
+    {
+        try {
+            $reference = $request->input('reference');
+            $addonId = $request->input('addon_id');
+            
+            if (!$reference || !$addonId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reference ID and Addon ID are required'
+                ], 400);
+            }
+
+            Log::info('Checking addon payment status from Tripay', [
+                'reference' => $reference,
+                'addon_id' => $addonId
+            ]);
+
+            // Get transaction detail from Tripay API
+            $tripay = new \App\Services\SubscriptionTripayService();
+            $transaction = $tripay->getTransactionDetail($reference);
+
+            if (!$transaction || !isset($transaction['data'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found'
+                ], 404);
+            }
+
+            $data = $transaction['data'];
+            $status = $data['status'] ?? 'UNPAID'; // UNPAID, PAID, EXPIRED, FAILED
+            $merchantRef = $data['merchant_ref'] ?? null;
+
+            Log::info('Tripay addon transaction status', [
+                'reference' => $reference,
+                'merchant_ref' => $merchantRef,
+                'status' => $status
+            ]);
+
+            // If status is PAID, update user_addon in database
+            if ($status === 'PAID' && $merchantRef) {
+                $userAddon = DB::table('user_addons')
+                    ->where('transaction_id', $merchantRef)
+                    ->orWhere('payment_reference', $reference)
+                    ->first();
+
+                if ($userAddon) {
+                    // Check if already active
+                    if ($userAddon->status === 'active') {
+                        return response()->json([
+                            'success' => true,
+                            'status' => 'paid',
+                            'message' => 'Addon already active',
+                            'user_addon' => $userAddon
+                        ]);
+                    }
+
+                    // Get addon info
+                    $addon = DB::table('addons')->where('id', $addonId)->first();
+
+                    // Update to active
+                    DB::table('user_addons')
+                        ->where('id', $userAddon->id)
+                        ->update([
+                            'status' => 'active',
+                            'purchased_at' => now(),
+                            'payment_reference' => $reference,
+                            'expires_at' => $addon && $addon->type === 'one_time' ? null : now()->addDays(30),
+                            'updated_at' => now()
+                        ]);
+
+                    Log::info('Addon activated from check status', [
+                        'user_addon_id' => $userAddon->id,
+                        'reference' => $reference
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'status' => 'paid',
+                        'message' => 'Pembayaran berhasil! Addon telah aktif.',
+                        'redirect_url' => route('manage.addons.index')
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'status' => strtolower($status),
+                'message' => $this->getStatusMessage($status),
+                'data' => [
+                    'status' => $status,
+                    'reference' => $reference,
+                    'merchant_ref' => $merchantRef
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Check addon payment status error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking payment status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user-friendly status message
+     */
+    private function getStatusMessage($status)
+    {
+        $messages = [
+            'UNPAID' => 'Menunggu pembayaran',
+            'PAID' => 'Pembayaran berhasil',
+            'EXPIRED' => 'Pembayaran kadaluarsa',
+            'FAILED' => 'Pembayaran gagal'
+        ];
+
+        return $messages[$status] ?? 'Status tidak diketahui';
     }
 }
