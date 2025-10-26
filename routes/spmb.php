@@ -47,9 +47,13 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::post('/step/4', [App\Http\Controllers\SPMBController::class, 'processStep4'])->name('step4.post');
     Route::post('/step/5', [App\Http\Controllers\SPMBController::class, 'processStep5'])->name('step5.post');
     Route::post('/step/5/transfer', [App\Http\Controllers\SPMBController::class, 'processStep5Transfer'])->name('step5.transfer');
-    Route::get('/payment/{id}', [App\Http\Controllers\SPMBController::class, 'showPayment'])->name('payment');
+    
+    // Specific routes MUST come before parameterized routes
     Route::get('/payment/success', [App\Http\Controllers\SPMBController::class, 'paymentSuccess'])->name('payment.success');
     Route::post('/payment/callback', [App\Http\Controllers\SPMBController::class, 'paymentCallback'])->name('payment.callback');
+    
+    // Parameterized route comes last
+    Route::get('/payment/{id}', [App\Http\Controllers\SPMBController::class, 'showPayment'])->name('payment');
     Route::post('/logout', [App\Http\Controllers\SPMBController::class, 'logout'])->name('logout');
     Route::get('/debug', function() {
         return view('spmb.debug');
