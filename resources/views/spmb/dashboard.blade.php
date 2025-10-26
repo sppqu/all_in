@@ -564,34 +564,44 @@
                         $paymentStatus = $registrationPayment ? $registrationPayment->status : null;
                     @endphp
                     
-                    @if($registration->step == 2)
+                    @if($paymentStatus === 'paid')
+                        {{-- Payment completed --}}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Lunas
+                        </span>
+                    @elseif($paymentStatus === 'pending')
+                        {{-- Payment pending (QRIS or Manual Transfer) --}}
+                        <div class="alert alert-warning mb-2">
+                            <i class="fas fa-clock me-1"></i>
+                            <strong>Menunggu Pembayaran</strong>
+                            <p class="mb-1 mt-1" style="font-size: 0.8rem;">Selesaikan pembayaran QRIS Anda</p>
+                            <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-qrcode me-1"></i>Lanjutkan
+                            </a>
+                        </div>
+                    @elseif($paymentStatus === 'failed')
+                        {{-- Payment failed --}}
+                        <div class="alert alert-danger mb-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>Pembayaran Ditolak</strong>
+                            <p class="mb-1 mt-1" style="font-size: 0.8rem;">Upload ulang bukti pembayaran.</p>
+                            <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-danger btn-sm">
+                                <i class="fas fa-upload me-1"></i>Upload Ulang
+                            </a>
+                        </div>
+                    @elseif($registration->step == 2)
+                        {{-- Current step, no payment yet --}}
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-qrcode me-1"></i>Bayar QRIS
                             </a>
                             <span class="badge bg-danger align-self-center">Wajib</span>
                         </div>
-                    @elseif($registration->step > 2)
-                        @if($paymentStatus === 'failed')
-                            <div class="alert alert-danger mb-2">
-                                <i class="fas fa-exclamation-triangle me-1"></i>
-                                <strong>Ditolak!</strong>
-                                <p class="mb-1 mt-1" style="font-size: 0.8rem;">Upload ulang bukti pembayaran.</p>
-                                <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-upload me-1"></i>Upload Ulang
-                                </a>
-                            </div>
-                        @elseif($paymentStatus === 'pending')
-                            <div class="alert alert-warning mb-0">
-                                <i class="fas fa-clock me-1"></i>
-                                <strong>Pending</strong>
-                                <p class="mb-0 mt-1" style="font-size: 0.8rem;">Menunggu verifikasi admin</p>
-                            </div>
-                        @else
-                            <span class="badge bg-success">
-                                <i class="fas fa-check me-1"></i>Lunas
-                            </span>
-                        @endif
+                    @else
+                        {{-- Step > 2 but no payment record - show as completed but with note --}}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-minus me-1"></i>Terlewati
+                        </span>
                     @endif
                 </div>
             </div>

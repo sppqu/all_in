@@ -167,11 +167,11 @@
 
                         <div class="d-flex justify-content-between gap-2">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
+                                <i class="fas fa-arrow-left me-1"></i>ke Dashboard
                             </a>
                             @if($payment->payment_url)
                             <a href="{{ $payment->payment_url }}" target="_blank" class="btn btn-primary">
-                                <i class="fas fa-external-link-alt me-1"></i>Buka Halaman Pembayaran
+                                <i class="fas fa-external-link-alt me-1"></i>Bayar
                             </a>
                             @endif
                         </div>
