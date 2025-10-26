@@ -121,13 +121,20 @@ class TripayCallbackController extends Controller
 
         Log::info('Extracted User ID', ['user_id' => $userId]);
 
-        // Find subscription by transaction_id (merchant_ref)
+        // Find subscription by transaction_id (merchant_ref) OR payment_reference
+        // Prioritize payment_reference jika ada
         $subscription = DB::table('subscriptions')
-            ->where('transaction_id', $merchantRef)
+            ->where('user_id', $userId)
+            ->where(function($query) use ($merchantRef, $reference) {
+                $query->where('transaction_id', $merchantRef)
+                      ->orWhere('payment_reference', $reference);
+            })
+            ->orderByRaw("CASE WHEN payment_reference = ? THEN 1 ELSE 2 END", [$reference])
             ->first();
 
         Log::info('Subscription Query Result', [
             'found' => $subscription ? 'YES' : 'NO',
+            'subscription_id' => $subscription->id ?? null,
             'subscription' => $subscription
         ]);
 

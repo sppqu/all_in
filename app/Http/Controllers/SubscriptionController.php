@@ -27,10 +27,24 @@ class SubscriptionController extends BaseController
 
     public function index()
     {
-        // Ambil semua subscription dari admin/superadmin
+        $user = auth()->user();
+
+        // Cleanup: Delete old pending subscriptions tanpa payment_reference (duplikat)
+        DB::table('subscriptions')
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereNull('payment_reference')
+            ->where('created_at', '<', now()->subHours(24)) // Older than 24 hours
+            ->delete();
+
+        // Ambil semua subscription dari admin/superadmin (exclude pending yang tidak ada payment_reference)
         $subscriptions = \App\Models\Subscription::with(['invoice', 'user'])
             ->join('users', 'subscriptions.user_id', '=', 'users.id')
             ->whereIn('users.role', ['admin', 'superadmin'])
+            ->where(function($query) {
+                $query->where('subscriptions.status', '!=', 'pending')
+                      ->orWhereNotNull('subscriptions.payment_reference');
+            })
             ->select('subscriptions.*')
             ->orderBy('subscriptions.created_at', 'desc')
             ->get();
@@ -156,6 +170,20 @@ class SubscriptionController extends BaseController
 
         $plan = $plans[$request->plan_id];
         $user = auth()->user();
+
+        // Delete old pending subscriptions untuk user ini (cleanup duplikat)
+        DB::table('subscriptions')
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereNull('payment_reference') // Belum pernah dapat payment reference
+            ->delete();
+
+        Log::info('Creating new subscription', [
+            'user_id' => $user->id,
+            'plan_id' => $request->plan_id,
+            'plan_name' => $plan['name'],
+            'amount' => $plan['price']
+        ]);
 
         // Create subscription record
         $subscriptionId = DB::table('subscriptions')->insertGetId([
