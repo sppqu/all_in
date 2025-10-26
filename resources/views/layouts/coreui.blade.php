@@ -531,7 +531,7 @@
                 @endif
                 
                 <!-- Pembayaran Menu -->
-                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('canAccessPremium') && canAccessPremium('menu.pembayaran'))
+                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('menuCan') && menuCan('menu.pembayaran'))
                 <li class="nav-item">
                     <x-subscription-guard>
                         <a class="nav-link nav-group-toggle" href="#pembayaranSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="pembayaranSubmenu">
@@ -551,12 +551,6 @@
                             </a>
                         </li>
                     </ul>
-                </li>
-                @elseif(function_exists('menuCan') && menuCan('menu.pembayaran'))
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('manage.pembayaran.index') }}">
-                        <i class="fa fa-money-bill me-2"></i> Pembayaran
-                    </a>
                 </li>
                 @endif
                 
@@ -585,7 +579,7 @@
 
                 
                 <!-- Akuntansi Menu -->
-                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('canAccessPremium') && canAccessPremium('menu.akuntansi'))
+                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('menuCan') && menuCan('menu.akuntansi'))
                 <li class="nav-item">
                     <a class="nav-link nav-group-toggle" href="#akuntansiSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="akuntansiSubmenu">
                         <i class="fa fa-calculator me-2"></i> Keuangan
@@ -624,16 +618,10 @@
                         </li>
                     </ul>
                 </li>
-                @elseif(function_exists('menuCan') && menuCan('menu.akuntansi'))
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('manage.akuntansi.index') }}">
-                        <i class="fa fa-calculator me-2"></i> Keuangan
-                    </a>
-                </li>
                 @endif
                 
                 <!-- Laporan Menu -->
-                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('canAccessPremium') && canAccessPremium('menu.laporan'))
+                @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('menuCan') && menuCan('menu.laporan'))
                 <li class="nav-item">
                     <a class="nav-link nav-group-toggle" href="#laporanSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="laporanSubmenu">
                         <i class="fa fa-file-alt me-2"></i> Laporan Pembayaran
@@ -680,12 +668,6 @@
                             </a>
                         </li>
                     </ul>
-                </li>
-                @elseif(menuCan('menu.laporan'))
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('manage.laporan.index') }}">
-                        <i class="fa fa-file-alt me-2"></i> Laporan Pembayaran
-                    </a>
                 </li>
                 @endif
                 
@@ -745,20 +727,14 @@
                         </a>
                     </li>
                 @endif
-                @if(function_exists('canAccessPremium') && canAccessPremium('menu.kirim_tagihan'))
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('manage.bulk-whatsapp.index') }}">
-                            <i class="fa fa-paper-plane me-2"></i> Kirim Tagihan
-                        </a>
-                    </li>
-                @elseif(menuCan('menu.kirim_tagihan'))
+                @if(function_exists('menuCan') && menuCan('menu.kirim_tagihan'))
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('manage.bulk-whatsapp.index') }}">
                             <i class="fa fa-paper-plane me-2"></i> Kirim Tagihan
                         </a>
                     </li>
                 @endif
-                @if(function_exists('canAccessPremium') && canAccessPremium('menu.users'))
+                @if(function_exists('menuCan') && menuCan('menu.users'))
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('manage.users.index') }}">
                             <i class="fa fa-user-cog me-2"></i> Pengguna
@@ -769,27 +745,10 @@
                             <i class="fa fa-shield-alt me-2"></i> Hak Akses Menu
                         </a>
                     </li>
-                @elseif(menuCan('menu.users'))
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('manage.users.index') }}">
-                            <i class="fa fa-user-cog me-2"></i> Pengguna
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('manage.permissions.index') }}">
-                            <i class="fa fa-shield-alt me-2"></i> Hak Akses Menu
-                        </a>
-                    </li>
                 @endif
-                @if(function_exists('canAccessPremium') && canAccessPremium('menu.general_setting'))
+                @if(function_exists('menuCan') && menuCan('menu.general_setting'))
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('manage.general.setting') }}">
-                            <i class="fa fa-cogs me-2"></i> General Setting
-                        </a>
-                    </li>
-                @elseif(menuCan('menu.general_setting'))
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('manage.general-setting.index') }}">
                             <i class="fa fa-cogs me-2"></i> General Setting
                         </a>
                     </li>
