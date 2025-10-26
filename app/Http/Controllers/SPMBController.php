@@ -301,6 +301,28 @@ class SPMBController extends Controller
                 ?? $tripayResponse['data']['qr_url'] 
                 ?? null;
 
+            // If QR code not in create response, try to fetch from detail
+            if (!$qrCode) {
+                \Log::info('QR Code not in create response, fetching from detail API');
+                try {
+                    $detailResponse = $this->tripayService->getTransactionDetail($tripayResponse['data']['reference']);
+                    if ($detailResponse && isset($detailResponse['success']) && $detailResponse['success']) {
+                        $qrCode = $detailResponse['data']['qr_code'] 
+                            ?? $detailResponse['data']['qr_string'] 
+                            ?? $detailResponse['data']['qr_url'] 
+                            ?? null;
+                        \Log::info('QR Code fetched from detail API', [
+                            'has_qr' => !empty($qrCode),
+                            'qr_length' => !empty($qrCode) ? strlen($qrCode) : 0
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to fetch QR from detail API', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
             // Save payment record
             $payment = SPMBPayment::create([
                 'registration_id' => $registration->id,

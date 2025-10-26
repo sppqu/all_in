@@ -107,22 +107,44 @@
                         </div>
 
                         @if($payment->qr_code)
-                        <div class="qr-code-container">
+                        <div class="qr-code-container" id="qrCodeContainer">
                             <h6 class="mb-3">
                                 <i class="fas fa-qrcode me-2"></i>
                                 Scan QR Code QRIS
                             </h6>
-                            <img src="{{ $payment->qr_code }}" alt="QR Code QRIS" class="qr-code img-fluid" style="max-width: 300px; height: auto;">
+                            <img src="{{ $payment->qr_code }}" alt="QR Code QRIS" class="qr-code img-fluid" id="qrCodeImage" style="max-width: 300px; height: auto;">
                             <p class="mt-3 mb-0 text-muted">
                                 <i class="fas fa-mobile-alt me-2"></i>
                                 Scan dengan aplikasi e-wallet atau mobile banking
                             </p>
                         </div>
                         @else
-                        <div class="alert alert-warning text-center">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <h6>QR Code Tidak Tersedia</h6>
-                            <p class="mb-2">Silakan gunakan link pembayaran di bawah</p>
+                        <div class="qr-code-container" id="qrCodeContainer">
+                            <div class="text-center" id="qrLoading">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h6>Mengambil QR Code...</h6>
+                                <p class="text-muted mb-0">Mohon tunggu sebentar</p>
+                            </div>
+                            <div class="d-none" id="qrCodeReady">
+                                <h6 class="mb-3 text-center">
+                                    <i class="fas fa-qrcode me-2"></i>
+                                    Scan QR Code QRIS
+                                </h6>
+                                <div class="text-center">
+                                    <img src="" alt="QR Code QRIS" class="qr-code img-fluid" id="qrCodeImage" style="max-width: 300px; height: auto;">
+                                </div>
+                                <p class="mt-3 mb-0 text-muted text-center">
+                                    <i class="fas fa-mobile-alt me-2"></i>
+                                    Scan dengan aplikasi e-wallet atau mobile banking
+                                </p>
+                            </div>
+                            <div class="alert alert-warning text-center d-none" id="qrNotAvailable">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <h6>QR Code Tidak Tersedia</h6>
+                                <p class="mb-2">Silakan gunakan link pembayaran di bawah</p>
+                            </div>
                         </div>
                         @endif
 
@@ -177,6 +199,45 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        @if(!$payment->qr_code)
+        // Fetch QR Code if not available
+        function fetchQRCode() {
+            console.log('Fetching QR Code from Tripay...');
+            
+            fetch('{{ $payment->payment_url }}')
+                .then(response => {
+                    // Try to parse QR from Tripay checkout page
+                    return response.text();
+                })
+                .then(html => {
+                    // Try to extract QR code from HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const qrImage = doc.querySelector('img[alt*="QR"], img[src*="qr"], .qr-code img, #qr-code img');
+                    
+                    if (qrImage && qrImage.src) {
+                        document.getElementById('qrCodeImage').src = qrImage.src;
+                        document.getElementById('qrLoading').classList.add('d-none');
+                        document.getElementById('qrCodeReady').classList.remove('d-none');
+                        console.log('QR Code loaded successfully');
+                    } else {
+                        // QR code not found in HTML
+                        document.getElementById('qrLoading').classList.add('d-none');
+                        document.getElementById('qrNotAvailable').classList.remove('d-none');
+                        console.log('QR Code not found in Tripay page');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching QR Code:', error);
+                    document.getElementById('qrLoading').classList.add('d-none');
+                    document.getElementById('qrNotAvailable').classList.remove('d-none');
+                });
+        }
+
+        // Try to fetch QR code after 2 seconds
+        setTimeout(fetchQRCode, 2000);
+        @endif
+
         // Auto refresh payment status every 30 seconds
         setInterval(function() {
             fetch('{{ route("spmb.payment.callback") }}', {
