@@ -240,23 +240,46 @@ class SPMBController extends Controller
      */
     public function processStep2(Request $request)
     {
+        \Log::info('=== PROCESS STEP 2 START ===');
+        
         $registrationId = Session::get('spmb_registration_id');
+        
+        if (!$registrationId) {
+            \Log::error('No registration ID in session');
+            return redirect()->route('spmb.login')->with('error', 'Sesi Anda telah berakhir. Silakan login kembali.');
+        }
+        
         $registration = SPMBRegistration::findOrFail($registrationId);
 
+        \Log::info('Registration found', [
+            'registration_id' => $registration->id,
+            'current_step' => $registration->step
+        ]);
+
         if ($registration->step != 2) {
+            \Log::warning('Not on step 2', [
+                'current_step' => $registration->step,
+                'expected_step' => 2
+            ]);
             return redirect()->route('spmb.step', ['step' => $registration->step]);
         }
 
         try {
+            \Log::info('Creating Tripay payment...');
+            
             // Create payment for registration fee
             $tripayResponse = $this->tripayService->createRegistrationFeePayment($registration);
 
-            if (!$tripayResponse || !$tripayResponse['success']) {
+            \Log::info('Tripay response received', [
+                'response' => $tripayResponse
+            ]);
+
+            if (!$tripayResponse || !isset($tripayResponse['success']) || !$tripayResponse['success']) {
                 \Log::error('SPMB Payment failed', [
                     'registration_id' => $registration->id,
                     'response' => $tripayResponse
                 ]);
-                return back()->withErrors(['error' => 'Gagal membuat pembayaran. Silakan coba lagi.']);
+                return back()->with('error', 'Gagal membuat pembayaran Tripay. Silakan coba lagi.');
             }
 
             // Save payment record

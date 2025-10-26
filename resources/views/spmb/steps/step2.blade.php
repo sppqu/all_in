@@ -78,6 +78,36 @@
                         <p class="mb-0">Pembayaran wajib untuk melanjutkan pendaftaran</p>
                     </div>
                     <div class="step-body">
+                        {{-- Error Messages --}}
+                        @if($errors->any())
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Error!</strong>
+                                <ul class="mb-0 mt-2">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>
+                                {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
                         <div class="payment-info text-center">
                             <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya QRIS</h6>
                             <div class="amount-display">Rp {{ number_format(\App\Helpers\WaveHelper::getStep2QrisFee(), 0, ',', '.') }}</div>
@@ -133,10 +163,26 @@
     
     <script>
     // Loading state for payment button
-    document.getElementById('qrisPaymentForm')?.addEventListener('submit', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('qrisPaymentForm');
         const btn = document.getElementById('btnPayQris');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
+        
+        console.log('QRIS Payment Form:', form);
+        console.log('QRIS Payment Button:', btn);
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitted!');
+                console.log('Form action:', form.action);
+                
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses Pembayaran...';
+                }
+            });
+        } else {
+            console.error('Form qrisPaymentForm not found!');
+        }
     });
     </script>
 
