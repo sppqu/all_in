@@ -688,13 +688,11 @@
                     </a>
                 </li>
                 @endif
-                @endif
                 
             </ul>
             
             <div class="nav-title">ADD-ONS</div>
             <ul class="nav flex-column">
-                @if(!session('subscription_expired'))
                 <!-- SPMB Menu - HIDE for BK Users & Admin Jurnal (UNLESS Superadmin) -->
                 @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && hasSPMBAddon())
                 <li class="nav-item">
