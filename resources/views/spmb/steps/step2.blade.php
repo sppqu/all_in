@@ -140,22 +140,9 @@
                             </button>
                         @elseif($paymentStatus === 'pending' && $paymentMethod === 'QRIS')
                             {{-- QRIS Pending - Show payment link --}}
-                            <div class="alert alert-info mb-3">
-                                <i class="fas fa-qrcode me-2"></i>
-                                <strong>Pembayaran QRIS Menunggu</strong>
-                                <p class="mb-2 mt-2">Anda memiliki pembayaran QRIS yang belum diselesaikan.</p>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('spmb.payment', $existingPayment->id) }}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-qrcode me-2"></i>Lanjutkan Pembayaran
-                                </a>
-                                <form action="{{ route('spmb.step2.post') }}" method="POST" id="qrisPaymentForm" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="btn btn-outline-secondary btn-lg" id="btnPayQris">
-                                        <i class="fas fa-redo me-2"></i>Buat Pembayaran Baru
-                                    </button>
-                                </form>
-                            </div>
+                            <a href="{{ route('spmb.payment', $existingPayment->id) }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-qrcode me-2"></i>Lanjutkan Pembayaran
+                            </a>
                         @elseif($paymentStatus === 'pending' && $paymentMethod === 'transfer_manual')
                             {{-- Transfer Manual Pending - Waiting verification --}}
                             <div class="alert alert-warning mb-3">
