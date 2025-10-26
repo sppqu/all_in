@@ -579,9 +579,42 @@ class SPMBController extends Controller
     /**
      * Payment success
      */
-    public function paymentSuccess()
+    public function paymentSuccess(Request $request)
     {
-        return view('spmb.payment-success');
+        $registrationId = Session::get('spmb_registration_id');
+        
+        if (!$registrationId) {
+            return redirect()->route('spmb.login');
+        }
+
+        $registration = SPMBRegistration::findOrFail($registrationId);
+        
+        // Get the latest payment for this registration
+        $latestPayment = SPMBPayment::where('registration_id', $registration->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // Check if there's a paid payment
+        if (!$latestPayment || $latestPayment->status !== 'paid') {
+            \Log::warning('Payment success page accessed but no paid payment found', [
+                'registration_id' => $registration->id,
+                'latest_payment_status' => $latestPayment ? $latestPayment->status : 'no_payment',
+                'payment_id' => $latestPayment ? $latestPayment->id : null
+            ]);
+            
+            // Redirect to dashboard with warning
+            return redirect()->route('spmb.dashboard')
+                ->with('warning', 'Pembayaran belum terverifikasi. Mohon tunggu beberapa saat atau selesaikan pembayaran Anda.');
+        }
+        
+        \Log::info('Payment success page accessed with valid paid payment', [
+            'registration_id' => $registration->id,
+            'payment_id' => $latestPayment->id,
+            'payment_type' => $latestPayment->type,
+            'paid_at' => $latestPayment->paid_at
+        ]);
+
+        return view('spmb.payment-success', compact('latestPayment', 'registration'));
     }
 
     /**

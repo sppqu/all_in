@@ -80,6 +80,13 @@
     <div class="container py-4">
         <div class="row justify-content-center">
             <div class="col-md-8">
+                @if(session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>{{ session('warning') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                @endif
+
                 <div class="success-card">
                     <div class="success-header text-center">
                         <i class="fas fa-check-circle fa-4x mb-3"></i>

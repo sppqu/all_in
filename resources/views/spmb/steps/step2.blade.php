@@ -108,12 +108,20 @@
                             </div>
                         @endif
 
+                        @if(session('warning'))
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ session('warning') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
                         <div class="payment-info text-center">
                             <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya QRIS</h6>
                             <div class="amount-display">Rp {{ number_format(\App\Helpers\WaveHelper::getStep2QrisFee(), 0, ',', '.') }}</div>
                             <small class="text-muted d-block mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Default Rp 3.000 + biaya tambahan admin
+                                Default Rp 3.000
                             </small>
                         </div>
                         <div class="d-flex justify-content-between">
