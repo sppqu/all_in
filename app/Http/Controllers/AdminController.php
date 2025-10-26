@@ -415,6 +415,47 @@ class AdminController extends Controller
             ? round((($todayTransactions - $yesterdayTransactions) / $yesterdayTransactions) * 100, 1)
             : ($todayTransactions > 0 ? 100 : 0);
         
+        // Hitung jumlah transaksi bulan ini
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+        $monthPaymentsCount = DB::table('transfer as t')
+            ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->where('t.status', 1)
+            ->whereBetween('t.updated_at', [$startOfMonth, $endOfMonth])
+            ->where(function($q){
+                $q->whereNull('t.bill_type')->orWhere('t.bill_type', '!=', 'tabungan');
+            })
+            ->count();
+        
+        // Hitung pertumbuhan pembayaran bulan ini vs bulan lalu
+        $lastMonthStart = now()->subMonth()->startOfMonth();
+        $lastMonthEnd = now()->subMonth()->endOfMonth();
+        $lastMonthPayments = DB::table('transfer as t')
+            ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->where('t.status', 1)
+            ->whereBetween('t.updated_at', [$lastMonthStart, $lastMonthEnd])
+            ->where(function($q){
+                $q->whereNull('t.bill_type')->orWhere('t.bill_type', '!=', 'tabungan');
+            })
+            ->sum(DB::raw('COALESCE(td.subtotal,0)'));
+        
+        $monthPaymentsGrowth = $lastMonthPayments > 0 
+            ? round((($monthPayments - $lastMonthPayments) / $lastMonthPayments) * 100, 1)
+            : ($monthPayments > 0 ? 100 : 0);
+        
+        // Hitung Total Tunggakan Siswa (siswa dengan tagihan belum lunas)
+        $unpaidBills = DB::table('bebas')
+            ->whereRaw('bebas_total_pay < bebas_bill')
+            ->select(
+                'bebas_month',
+                DB::raw('SUM(bebas_bill - bebas_total_pay) as total_arrears'),
+                DB::raw('COUNT(DISTINCT students_students_id) as unpaid_count')
+            )
+            ->first();
+        
+        $totalArrears = $unpaidBills ? $unpaidBills->total_arrears : 0;
+        $unpaidStudentsCount = $unpaidBills ? $unpaidBills->unpaid_count : 0;
+        
         // Target prosentase pembayaran bulan ini
         $currentMonth = now()->month;
         $currentYear = now()->year;
@@ -587,7 +628,8 @@ class AdminController extends Controller
             'todayPaymentsCount','todayReceiptsCount','todayExpensesCount','todaySavingsCount',
             'periods','selectedPeriodId',
             'totalPaymentsThisYear','studentGrowthPercent','todayTransactions','transactionGrowthPercent',
-            'paymentCompletionPercent','totalArrears','arrearsCount','expiredPercentage',
+            'monthPaymentsCount','monthPaymentsGrowth','totalArrears','unpaidStudentsCount',
+            'paymentCompletionPercent','arrearsCount','expiredPercentage',
             'subscriptionDaysLeft','subscriptionExpiresAt',
             'classLabels','classData','transactionsMonthly','paymentProgressByClass',
             'rankingLabels','rankingData','activityLogs','topPaymentUsers'

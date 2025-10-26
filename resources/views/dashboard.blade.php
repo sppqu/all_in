@@ -79,32 +79,31 @@
 
     <!-- Second Row: Persentase Pembayaran & Cards -->
     <div class="row mb-4">
-        <!-- Transaksi Hari Ini -->
+        <!-- Pembayaran Bulan Ini -->
         <div class="col-md-3 mb-3">
             <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
                         <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-receipt fa-lg"></i>
+                            <i class="fas fa-wallet fa-lg"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Transaksi Hari Ini</h6>
+                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Pembayaran Bulan Ini</h6>
                         </div>
                     </div>
-                    <h2 class="fw-bold mb-2">{{ number_format($todayTransactions ?? 0) }}</h2>
+                    <h2 class="fw-bold mb-2">Rp {{ number_format($monthPayments ?? 0, 0, ',', '.') }}</h2>
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
                             <span class="badge bg-white text-dark me-2" style="font-size: 0.7rem;">
-                                Rp {{ number_format($todayPayments ?? 0, 0, ',', '.') }}
+                                {{ number_format($monthPaymentsCount ?? 0) }} transaksi
                             </span>
-                            <small style="opacity: 0.9; font-size: 0.75rem;">total</small>
                         </div>
                         @php
-                            $transactionGrowth = $transactionGrowthPercent ?? 0;
-                            $isTransactionGrowthPositive = $transactionGrowth >= 0;
+                            $monthGrowth = $monthPaymentsGrowth ?? 0;
+                            $isMonthGrowthPositive = $monthGrowth >= 0;
                         @endphp
-                        <span class="badge" style="background-color: {{ $isTransactionGrowthPositive ? '#10b981' : '#ef4444' }}; font-size: 0.75rem; padding: 0.35rem 0.65rem;">
-                            <i class="fas fa-arrow-{{ $isTransactionGrowthPositive ? 'up' : 'down' }}"></i> {{ abs($transactionGrowth) }}%
+                        <span class="badge" style="background-color: {{ $isMonthGrowthPositive ? '#10b981' : '#ef4444' }}; font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+                            <i class="fas fa-arrow-{{ $isMonthGrowthPositive ? 'up' : 'down' }}"></i> {{ abs($monthGrowth) }}%
                         </span>
                     </div>
                 </div>
@@ -184,6 +183,31 @@
                     @endif
                     <div class="mt-2">
                         <small class="text-muted">Berakhir: {{ $subscriptionExpiresAt ?? '-' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Tunggakan Siswa -->
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                            <i class="fas fa-exclamation-circle fa-lg text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Total Tunggakan Siswa</h6>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-2 text-danger">Rp {{ number_format($totalArrears ?? 0, 0, ',', '.') }}</h2>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-danger text-white me-2" style="font-size: 0.7rem;">
+                                {{ $unpaidStudentsCount ?? 0 }} siswa
+                            </span>
+                            <small class="text-muted" style="font-size: 0.75rem;">belum lunas</small>
+                        </div>
                     </div>
                 </div>
             </div>
