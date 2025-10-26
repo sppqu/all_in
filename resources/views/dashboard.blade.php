@@ -261,12 +261,14 @@
                                     <td><span class="badge bg-danger">{{ $class['unpaid_students'] }}</span></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-2" style="height: 20px; border-radius: 10px;">
-                                                <div class="progress-bar bg-gradient" 
+                                            <div class="progress flex-grow-1 me-2" style="height: 24px; border-radius: 12px; background-color: #e9ecef;">
+                                                <div class="progress-bar" 
                                                      style="width: {{ $class['percentage'] }}%; 
-                                                            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);" 
+                                                            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+                                                            border-radius: 12px;
+                                                            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);" 
                                                      role="progressbar">
-                                                    <span class="small fw-bold">{{ number_format($class['percentage'], 1) }}%</span>
+                                                    <span class="small fw-bold text-white" style="text-shadow: 0 1px 2px rgba(0,0,0,0.2);">{{ number_format($class['percentage'], 1) }}%</span>
                                                 </div>
                                             </div>
                                         </div>
