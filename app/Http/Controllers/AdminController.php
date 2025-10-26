@@ -447,14 +447,13 @@ class AdminController extends Controller
         $unpaidBills = DB::table('bebas')
             ->whereRaw('bebas_total_pay < bebas_bill')
             ->select(
-                'bebas_month',
                 DB::raw('SUM(bebas_bill - bebas_total_pay) as total_arrears'),
                 DB::raw('COUNT(DISTINCT students_students_id) as unpaid_count')
             )
             ->first();
         
-        $totalArrears = $unpaidBills ? $unpaidBills->total_arrears : 0;
-        $unpaidStudentsCount = $unpaidBills ? $unpaidBills->unpaid_count : 0;
+        $totalArrears = $unpaidBills ? (float) $unpaidBills->total_arrears : 0;
+        $unpaidStudentsCount = $unpaidBills ? (int) $unpaidBills->unpaid_count : 0;
         
         // Target prosentase pembayaran bulan ini
         $currentMonth = now()->month;
