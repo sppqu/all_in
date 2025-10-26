@@ -115,22 +115,28 @@ class SubscriptionTripayService
                 ];
             }
 
+            $errorResponse = $response->json();
+            $errorMessage = $errorResponse['message'] ?? $errorResponse['error'] ?? 'Failed to create transaction';
+            
             Log::error('Tripay create subscription transaction failed', [
-                'response' => $response->json(),
-                'status' => $response->status()
+                'response' => $errorResponse,
+                'status' => $response->status(),
+                'error_message' => $errorMessage
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to create transaction',
-                'error' => $response->json()
+                'message' => $errorMessage,
+                'error' => $errorResponse
             ];
 
         } catch (\Exception $e) {
-            Log::error('Tripay create subscription transaction error: ' . $e->getMessage());
+            Log::error('Tripay create subscription transaction error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Exception: ' . $e->getMessage()
             ];
         }
     }
