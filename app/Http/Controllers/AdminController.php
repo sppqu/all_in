@@ -422,10 +422,29 @@ class AdminController extends Controller
             ? round(($paidBillsThisMonth / $totalBillsThisMonth) * 100, 1)
             : 0;
         
-        // Data Expired Berlangganan
+        // Data Countdown Berlangganan (ambil subscription user yang login)
         $currentDate = now();
+        $userId = auth()->id();
         
-        // Total berlangganan aktif dari tabel subscriptions
+        // Ambil subscription aktif terbaru user yang login
+        $activeSubscription = DB::table('subscriptions')
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->whereNotNull('expires_at')
+            ->orderBy('expires_at', 'desc')
+            ->first();
+        
+        if ($activeSubscription) {
+            $expiresAt = \Carbon\Carbon::parse($activeSubscription->expires_at);
+            $subscriptionDaysLeft = $currentDate->diffInDays($expiresAt, false); // false = bisa negatif jika sudah expired
+            $subscriptionDaysLeft = $subscriptionDaysLeft > 0 ? $subscriptionDaysLeft : 0;
+            $subscriptionExpiresAt = $expiresAt->format('d M Y');
+        } else {
+            $subscriptionDaysLeft = 0;
+            $subscriptionExpiresAt = '-';
+        }
+        
+        // Total berlangganan aktif dari tabel subscriptions (untuk statistik)
         $totalActiveSubscriptions = DB::table('subscriptions')
             ->where('status', 'active')
             ->count();
@@ -446,10 +465,12 @@ class AdminController extends Controller
         $arrearsCount = $totalActiveSubscriptions; // Total berlangganan
         
         // Log untuk debug
-        \Log::info('Expired Subscription Stats', [
+        \Log::info('Subscription Stats', [
+            'user_id' => $userId,
+            'days_left' => $subscriptionDaysLeft,
+            'expires_at' => $subscriptionExpiresAt,
             'total_active' => $totalActiveSubscriptions,
-            'expired' => $expiredSubscriptions,
-            'percentage' => $expiredPercentage
+            'expired' => $expiredSubscriptions
         ]);
         
         // Class labels dan data untuk doughnut chart
@@ -553,6 +574,7 @@ class AdminController extends Controller
             'periods','selectedPeriodId',
             'totalPaymentsThisYear','studentGrowthPercent','todayTransactions',
             'paymentCompletionPercent','totalArrears','arrearsCount','expiredPercentage',
+            'subscriptionDaysLeft','subscriptionExpiresAt',
             'classLabels','classData','transactionsMonthly','paymentProgressByClass',
             'rankingLabels','rankingData','activityLogs','topPaymentUsers'
         ));

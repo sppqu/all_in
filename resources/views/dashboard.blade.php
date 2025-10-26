@@ -131,18 +131,18 @@
 
         <!-- Persentase Lunas -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-bullseye fa-lg"></i>
+                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-bullseye fa-lg text-white"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Target Prosentase Pembayaran Bulan Ini</h6>
+                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Target Prosentase Pembayaran Bulan Ini</h6>
                         </div>
                     </div>
-                    <h2 class="fw-bold mb-2">{{ number_format($paymentCompletionPercent ?? 0, 1) }}%</h2>
-                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: rgba(255, 255, 255, 0.3);">
+                    <h2 class="fw-bold mb-2 text-dark">{{ number_format($paymentCompletionPercent ?? 0, 1) }}%</h2>
+                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
                         <div class="progress-bar" role="progressbar" 
                              style="width: {{ $paymentCompletionPercent ?? 0 }}%; 
                                     background: linear-gradient(90deg, #10b981 0%, #059669 100%);
@@ -153,28 +153,55 @@
             </div>
         </div>
 
-        <!-- Expired Berlangganan -->
+        <!-- Countdown Berlangganan -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-clock fa-lg"></i>
+                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <i class="fas fa-clock fa-lg text-white"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Expired Berlangganan</h6>
+                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Sisa Waktu Berlangganan</h6>
                         </div>
                     </div>
-                    <h2 class="fw-bold mb-2">{{ number_format($expiredPercentage ?? 0, 1) }}%</h2>
-                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: rgba(255, 255, 255, 0.3);">
-                        <div class="progress-bar" role="progressbar" 
-                             style="width: {{ $expiredPercentage ?? 0 }}%; 
-                                    background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
-                                    border-radius: 10px;
-                                    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);"></div>
-                    </div>
+                    @if(isset($subscriptionDaysLeft) && $subscriptionDaysLeft > 0)
+                        @if($subscriptionDaysLeft >= 30)
+                            <h2 class="fw-bold mb-2" style="color: #10b981;">{{ floor($subscriptionDaysLeft / 30) }} Bulan</h2>
+                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: 100%; 
+                                            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+                                            border-radius: 10px;
+                                            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);"></div>
+                            </div>
+                        @elseif($subscriptionDaysLeft >= 7)
+                            <h2 class="fw-bold mb-2" style="color: #f59e0b;">{{ $subscriptionDaysLeft }} Hari</h2>
+                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ ($subscriptionDaysLeft / 30) * 100 }}%; 
+                                            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+                                            border-radius: 10px;
+                                            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);"></div>
+                            </div>
+                        @else
+                            <h2 class="fw-bold mb-2" style="color: #dc2626;">{{ $subscriptionDaysLeft }} Hari</h2>
+                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ ($subscriptionDaysLeft / 30) * 100 }}%; 
+                                            background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+                                            border-radius: 10px;
+                                            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);"></div>
+                            </div>
+                        @endif
+                    @else
+                        <h2 class="fw-bold mb-2 text-danger">Expired</h2>
+                        <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%;"></div>
+                        </div>
+                    @endif
                     <div class="mt-2">
-                        <small style="opacity: 0.9;">{{ $totalArrears ?? 0 }} dari {{ $arrearsCount ?? 0 }} berlangganan</small>
+                        <small class="text-muted">Berakhir: {{ $subscriptionExpiresAt ?? '-' }}</small>
                     </div>
                 </div>
             </div>
