@@ -237,6 +237,11 @@
             color: #008060;
         }
 
+        .dropdown-item.bg-danger:hover {
+            background: #dc3545 !important;
+            opacity: 0.9;
+        }
+
         @media (max-width: 768px) {
             .stepper-container {
                 flex-wrap: wrap;
@@ -300,7 +305,7 @@
                         <li>
                             <form method="POST" action="{{ route('spmb.logout') }}" class="d-inline w-100">
                                 @csrf
-                                <button type="submit" class="dropdown-item text-danger">
+                                <button type="submit" class="dropdown-item text-white bg-danger" style="font-weight: 600;">
                                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                                 </button>
                             </form>
