@@ -203,7 +203,7 @@ class SubscriptionController extends BaseController
                 'customer_email' => $user->email,
                 'customer_phone' => $user->phone ?? '08123456789',
                 'return_url' => route('manage.subscription.index'),
-                'callback_url' => route('manage.tripay.callback')
+                'callback_url' => url('/api/manage/tripay/callback')
             ]);
 
             if (!$result['success']) {

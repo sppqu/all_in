@@ -3,10 +3,17 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CallbackController;
+use App\Http\Controllers\TripayCallbackController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
-// API routes tanpa middleware apapun
+// ============================================================================
+// TRIPAY SUBSCRIPTION CALLBACK - NO CSRF, NO AUTH
+// ============================================================================
+Route::any('/manage/tripay/callback', [TripayCallbackController::class, 'handle'])
+    ->name('api.tripay.callback');
+
+// Legacy Tripay routes
 Route::post('/tripay/callback', [CallbackController::class, 'tripayCallback']);
 Route::post('/payment/callback', [CallbackController::class, 'tripayCallback']);
 Route::post('/callback', [CallbackController::class, 'tripayCallback']);
