@@ -51,11 +51,9 @@ use App\Services\TripayService;
 use Illuminate\Http\Request;
 
 // ============================================================================
-// TRIPAY CALLBACK - MUST BE OUTSIDE manage GROUP (NO CSRF, NO AUTH)
+// TRIPAY CALLBACK - MOVED TO routes/api.php
+// URL: /api/manage/tripay/callback
 // ============================================================================
-Route::any('manage/tripay/callback', [App\Http\Controllers\TripayCallbackController::class, 'handle'])
-    ->name('manage.tripay.callback')
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class, 'auth', 'check.subscription']);
 
 // ============================================================================
 // MANUAL ADDON ACTIVATION (FOR ADMIN) - OUTSIDE manage GROUP
