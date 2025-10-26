@@ -65,13 +65,15 @@
         .total-section {
             float: right;
             width: 300px;
+            font-size: 14px;
         }
         .total-row {
-            padding: 5px 0;
+            padding: 8px 0;
+            font-size: 14px;
         }
         .total-row.grand-total {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 18px;
             border-top: 2px solid #6f42c1;
             padding-top: 10px;
         }
@@ -225,22 +227,6 @@
             @endif
         </div>
     @endif
-
-    <div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px;">
-        <h4 style="margin: 0 0 10px 0;">ℹ️ Add-on Features:</h4>
-        @if($addon->features)
-            @php
-                $features = is_string($addon->features) ? json_decode($addon->features, true) : $addon->features;
-            @endphp
-            <ul style="margin: 5px 0; padding-left: 20px;">
-                @foreach($features as $feature)
-                    <li style="margin: 5px 0;">{{ $feature }}</li>
-                @endforeach
-            </ul>
-        @else
-            <p style="margin: 5px 0; color: #666;">Semua fitur {{ $addon->name }} tersedia.</p>
-        @endif
-    </div>
 
     <div class="footer">
         <p>Thank you for purchasing SPPQU Premium Add-on!</p>

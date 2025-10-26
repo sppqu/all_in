@@ -65,13 +65,15 @@
         .total-section {
             float: right;
             width: 300px;
+            font-size: 14px;
         }
         .total-row {
-            padding: 5px 0;
+            padding: 8px 0;
+            font-size: 14px;
         }
         .total-row.grand-total {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 18px;
             border-top: 2px solid #007bff;
             padding-top: 10px;
         }
