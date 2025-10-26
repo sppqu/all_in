@@ -161,6 +161,23 @@ class TripayCallbackController extends Controller
                     'activated_at' => now(),
                     'expires_at' => now()->addDays($durationDays)
                 ]);
+
+                // Update invoice status to paid
+                $invoiceUpdated = DB::table('subscription_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->update([
+                        'payment_status' => 'paid',
+                        'paid_at' => now(),
+                        'payment_reference' => $reference,
+                        'updated_at' => now()
+                    ]);
+
+                Log::info('Invoice Updated to PAID', [
+                    'subscription_id' => $subscription->id,
+                    'invoice_rows_affected' => $invoiceUpdated,
+                    'paid_at' => now()
+                ]);
+
             } else {
                 Log::warning('Subscription not found for merchant_ref', [
                     'merchant_ref' => $merchantRef,
@@ -170,6 +187,7 @@ class TripayCallbackController extends Controller
 
         } elseif ($status === 'EXPIRED' || $status === 'FAILED') {
             if ($subscription) {
+                // Update subscription to cancelled
                 $updated = DB::table('subscriptions')
                     ->where('id', $subscription->id)
                     ->update([
@@ -178,10 +196,20 @@ class TripayCallbackController extends Controller
                         'updated_at' => now()
                     ]);
 
+                // Update invoice to failed
+                $invoiceUpdated = DB::table('subscription_invoices')
+                    ->where('subscription_id', $subscription->id)
+                    ->update([
+                        'payment_status' => 'failed',
+                        'payment_reference' => $reference,
+                        'updated_at' => now()
+                    ]);
+
                 Log::info('Subscription marked as failed/expired', [
                     'subscription_id' => $subscription->id,
                     'status' => $status,
-                    'rows_affected' => $updated
+                    'rows_affected' => $updated,
+                    'invoice_rows_affected' => $invoiceUpdated
                 ]);
             }
         }

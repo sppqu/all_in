@@ -135,6 +135,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::get('/subscription/payment/{subscription_id}', [App\Http\Controllers\SubscriptionController::class, 'payment'])->name('subscription.payment')->middleware('auth');
     Route::post('/subscription/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancelSubscription'])->name('subscription.cancel')->middleware('auth');
     Route::get('/subscription/check-status', [App\Http\Controllers\SubscriptionController::class, 'checkSubscriptionStatus'])->name('subscription.check-status')->middleware('auth');
+    Route::post('/subscription/check-payment', [App\Http\Controllers\SubscriptionController::class, 'checkPaymentStatus'])->name('subscription.check-payment')->middleware('auth');
     Route::get('/subscription/notifications', [App\Http\Controllers\SubscriptionController::class, 'getSubscriptionNotifications'])->name('subscription.notifications')->middleware('auth');
     Route::get('/subscription/premium-features', [App\Http\Controllers\SubscriptionController::class, 'premiumFeatures'])->name('subscription.premium-features')->middleware('auth');
     Route::get('/subscription/invoice/{invoice_id}/download', [App\Http\Controllers\SubscriptionController::class, 'downloadInvoice'])->name('subscription.download-invoice')->middleware('auth');

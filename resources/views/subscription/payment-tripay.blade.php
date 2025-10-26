@@ -146,9 +146,9 @@
                         </a>
                         @endif
                         
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.location.reload()">
+                        <button type="button" class="btn btn-outline-secondary" id="btnRefreshStatus" onclick="checkPaymentStatusManual()">
                             <i class="fas fa-sync-alt me-2"></i>
-                            Refresh Status Pembayaran
+                            <span id="statusBtnText">Refresh Status Pembayaran</span>
                         </button>
                         
                         <a href="{{ route('manage.subscription.index') }}" class="btn btn-outline-secondary">
@@ -190,14 +190,34 @@ function copyToClipboard(elementId) {
 let refreshInterval;
 let refreshCount = 0;
 const maxRefresh = 30; // Max 30 refresh (5 menit)
+const referenceId = '{{ $result['reference'] ?? $result['merchant_ref'] }}';
 
 function checkPaymentStatus() {
-    fetch('{{ route('manage.subscription.check-status') }}')
+    console.log('Auto-checking payment status...', referenceId);
+    
+    fetch('{{ route('manage.subscription.check-payment') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            reference: referenceId
+        })
+    })
         .then(response => response.json())
         .then(data => {
-            if (data.has_active_subscription) {
+            console.log('Payment status:', data);
+            
+            if (data.success && data.status === 'paid') {
                 clearInterval(refreshInterval);
+                // Show success message
+                alert('✅ ' + data.message);
+                // Redirect to subscription page
                 window.location.href = '{{ route('manage.subscription.index') }}?status=success';
+            } else if (data.status === 'expired' || data.status === 'failed') {
+                clearInterval(refreshInterval);
+                alert('❌ Pembayaran ' + data.status + ': ' + data.message);
             } else {
                 refreshCount++;
                 if (refreshCount >= maxRefresh) {
@@ -211,8 +231,53 @@ function checkPaymentStatus() {
         });
 }
 
+// Manual check payment status (when user clicks button)
+function checkPaymentStatusManual() {
+    const btn = document.getElementById('btnRefreshStatus');
+    const btnText = document.getElementById('statusBtnText');
+    
+    // Disable button
+    btn.disabled = true;
+    btnText.textContent = 'Mengecek status...';
+    
+    fetch('{{ route('manage.subscription.check-payment') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            reference: referenceId
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Manual check result:', data);
+            
+            if (data.success && data.status === 'paid') {
+                alert('✅ ' + data.message);
+                window.location.href = '{{ route('manage.subscription.index') }}?status=success';
+            } else if (data.status === 'expired' || data.status === 'failed') {
+                alert('❌ Pembayaran ' + data.status + ': ' + data.message);
+                btn.disabled = false;
+                btnText.textContent = 'Refresh Status Pembayaran';
+            } else {
+                alert('ℹ️ Status: ' + data.message);
+                btn.disabled = false;
+                btnText.textContent = 'Refresh Status Pembayaran';
+            }
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+            alert('❌ Gagal mengecek status pembayaran. Silakan coba lagi.');
+            btn.disabled = false;
+            btnText.textContent = 'Refresh Status Pembayaran';
+        });
+}
+
 // Start auto refresh after 10 seconds
 setTimeout(() => {
+    console.log('Starting auto-refresh payment status...');
     refreshInterval = setInterval(checkPaymentStatus, 10000);
 }, 10000);
 </script>

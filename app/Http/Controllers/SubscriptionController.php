@@ -628,4 +628,131 @@ class SubscriptionController extends BaseController
 
         return view('subscription.premium-features');
     }
+
+    /**
+     * Check payment status from Tripay API (not just database)
+     */
+    public function checkPaymentStatus(Request $request)
+    {
+        try {
+            $reference = $request->input('reference');
+            
+            if (!$reference) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reference ID is required'
+                ], 400);
+            }
+
+            Log::info('Checking payment status from Tripay', ['reference' => $reference]);
+
+            // Get transaction detail from Tripay API
+            $tripay = new \App\Services\SubscriptionTripayService();
+            $transaction = $tripay->getTransactionDetail($reference);
+
+            if (!$transaction || !isset($transaction['data'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found'
+                ], 404);
+            }
+
+            $data = $transaction['data'];
+            $status = $data['status'] ?? 'UNPAID'; // UNPAID, PAID, EXPIRED, FAILED
+            $merchantRef = $data['merchant_ref'] ?? null;
+
+            Log::info('Tripay transaction status', [
+                'reference' => $reference,
+                'merchant_ref' => $merchantRef,
+                'status' => $status
+            ]);
+
+            // If status is PAID, update subscription in database
+            if ($status === 'PAID' && $merchantRef) {
+                $subscription = DB::table('subscriptions')
+                    ->where('transaction_id', $merchantRef)
+                    ->orWhere('payment_reference', $reference)
+                    ->first();
+
+                if ($subscription) {
+                    // Check if already active
+                    if ($subscription->status === 'active') {
+                        return response()->json([
+                            'success' => true,
+                            'status' => 'paid',
+                            'message' => 'Subscription already active',
+                            'subscription' => $subscription
+                        ]);
+                    }
+
+                    // Update subscription to active
+                    DB::table('subscriptions')
+                        ->where('id', $subscription->id)
+                        ->update([
+                            'status' => 'active',
+                            'activated_at' => now(),
+                            'expires_at' => now()->addDays($subscription->duration_days ?? 365),
+                            'payment_reference' => $reference,
+                            'updated_at' => now()
+                        ]);
+
+                    // Update invoice to paid
+                    DB::table('subscription_invoices')
+                        ->where('subscription_id', $subscription->id)
+                        ->update([
+                            'payment_status' => 'paid',
+                            'paid_at' => now(),
+                            'payment_reference' => $reference,
+                            'updated_at' => now()
+                        ]);
+
+                    Log::info('Subscription activated from check status', [
+                        'subscription_id' => $subscription->id,
+                        'reference' => $reference
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'status' => 'paid',
+                        'message' => 'Pembayaran berhasil! Subscription telah aktif.',
+                        'redirect_url' => route('manage.subscription.index')
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'status' => strtolower($status),
+                'message' => $this->getStatusMessage($status),
+                'data' => [
+                    'status' => $status,
+                    'reference' => $reference,
+                    'merchant_ref' => $merchantRef
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Check payment status error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking payment status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user-friendly status message
+     */
+    private function getStatusMessage($status)
+    {
+        $messages = [
+            'UNPAID' => 'Menunggu pembayaran',
+            'PAID' => 'Pembayaran berhasil',
+            'EXPIRED' => 'Pembayaran kadaluarsa',
+            'FAILED' => 'Pembayaran gagal'
+        ];
+
+        return $messages[$status] ?? 'Status tidak diketahui';
+    }
 }
