@@ -275,7 +275,13 @@ class SPMBController extends Controller
 
             \Log::info('SPMB Payment created successfully', [
                 'payment_id' => $payment->id,
-                'registration_id' => $registration->id
+                'registration_id' => $registration->id,
+                'amount' => $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'has_qr_code' => !empty($payment->qr_code) ? 'YES' : 'NO',
+                'qr_code_length' => !empty($payment->qr_code) ? strlen($payment->qr_code) : 0,
+                'payment_url' => $payment->payment_url,
+                'tripay_reference' => $payment->tripay_reference
             ]);
 
             return redirect()->route('spmb.payment', ['id' => $payment->id]);

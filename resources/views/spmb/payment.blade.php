@@ -100,14 +100,29 @@
                     <div class="payment-body">
                         <div class="text-center mb-4">
                             <h5 class="mb-3">Total Pembayaran</h5>
-                            <div class="amount-display">{{ $payment->getAmountFormattedAttribute() }}</div>
+                            <div class="amount-display">Rp {{ number_format($payment->amount, 0, ',', '.') }}</div>
+                            <small class="text-muted d-block mt-2">
+                                {{ $payment->getTypeName() }}
+                            </small>
                         </div>
 
                         @if($payment->qr_code)
                         <div class="qr-code-container">
-                            <h6 class="mb-3">Scan QR Code untuk Pembayaran</h6>
-                            <img src="{{ $payment->qr_code }}" alt="QR Code" class="qr-code img-fluid">
-                            <p class="mt-3 mb-0 text-muted">Scan dengan aplikasi e-wallet atau mobile banking</p>
+                            <h6 class="mb-3">
+                                <i class="fas fa-qrcode me-2"></i>
+                                Scan QR Code QRIS
+                            </h6>
+                            <img src="{{ $payment->qr_code }}" alt="QR Code QRIS" class="qr-code img-fluid" style="max-width: 300px; height: auto;">
+                            <p class="mt-3 mb-0 text-muted">
+                                <i class="fas fa-mobile-alt me-2"></i>
+                                Scan dengan aplikasi e-wallet atau mobile banking
+                            </p>
+                        </div>
+                        @else
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                            <h6>QR Code Tidak Tersedia</h6>
+                            <p class="mb-2">Silakan gunakan link pembayaran di bawah</p>
                         </div>
                         @endif
 
@@ -162,7 +177,7 @@
                             </ul>
                         </div>
 
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between gap-2">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
                             </a>
@@ -172,6 +187,21 @@
                             </a>
                             @endif
                         </div>
+                        
+                        {{-- Debug Info (hapus setelah testing) --}}
+                        @if(config('app.debug'))
+                        <div class="alert alert-secondary mt-4">
+                            <small>
+                                <strong>Debug Info:</strong><br>
+                                Payment ID: {{ $payment->id }}<br>
+                                Reference: {{ $payment->tripay_reference }}<br>
+                                QR Code: {{ $payment->qr_code ? 'Available (' . strlen($payment->qr_code) . ' chars)' : 'NOT AVAILABLE' }}<br>
+                                Payment URL: {{ $payment->payment_url ?? 'N/A' }}<br>
+                                Amount: {{ $payment->amount }}<br>
+                                Status: {{ $payment->status }}
+                            </small>
+                        </div>
+                        @endif
 
                         <div class="text-center mt-4">
                             <small class="text-muted">
