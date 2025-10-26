@@ -146,6 +146,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::post('/addons/{slug}/purchase', [App\Http\Controllers\AddonController::class, 'purchase'])->name('addons.purchase')->middleware('auth');
     Route::match(['get', 'post'], '/addons/callback', [App\Http\Controllers\AddonController::class, 'callback'])->name('addons.callback');
     Route::post('/addons/check-payment', [App\Http\Controllers\AddonController::class, 'checkPaymentStatus'])->name('addons.check-payment')->middleware('auth');
+    Route::get('/addons/invoice/{userAddonId}/download', [App\Http\Controllers\AddonController::class, 'downloadInvoice'])->name('addons.download-invoice')->middleware('auth');
     Route::get('/addons/{slug}/check', [App\Http\Controllers\AddonController::class, 'checkUserAddon'])->name('addons.check')->middleware('auth');
     Route::post('/addons/refresh-status', [App\Http\Controllers\AddonController::class, 'refreshAddonStatus'])->name('addons.refresh-status')->middleware('auth');
     

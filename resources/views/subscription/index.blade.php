@@ -318,9 +318,16 @@
                                                     <small class="text-muted">{{ \Carbon\Carbon::parse($addon->created_at)->format('H:i') }}</small>
                                                 </td>
                                                 <td>
-                                                    <a href="{{ route('manage.addons.show', $addon->addon_slug) }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
+                                                    @if($addon->status == 'active')
+                                                        <a href="{{ route('manage.addons.download-invoice', $addon->id) }}" class="btn btn-sm btn-outline-success" title="Unduh Invoice" target="_blank">
+                                                            <i class="fas fa-download me-1"></i>
+                                                            Invoice
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted small" title="Invoice tidak tersedia">
+                                                            -
+                                                        </span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                             @endforeach

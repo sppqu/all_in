@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Addon;
 use App\Models\UserAddon;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AddonController extends Controller
 {
@@ -599,5 +600,56 @@ class AddonController extends Controller
         ];
 
         return $messages[$status] ?? 'Status tidak diketahui';
+    }
+
+    /**
+     * Download invoice untuk addon
+     */
+    public function downloadInvoice($userAddonId)
+    {
+        $userAddon = UserAddon::with(['user', 'addon'])->findOrFail($userAddonId);
+        
+        // Check if user owns this addon or is superadmin
+        $user = auth()->user();
+        if ($user->role !== 'superadmin' && $userAddon->user_id !== $user->id) {
+            abort(403, 'Anda tidak memiliki akses ke invoice ini');
+        }
+
+        // Only allow download for active addons
+        if ($userAddon->status !== 'active') {
+            return back()->with('error', 'Invoice hanya tersedia untuk add-on yang sudah aktif');
+        }
+
+        // Get school profile
+        $schoolProfile = DB::table('school_profiles')->first();
+
+        $data = [
+            'userAddon' => $userAddon,
+            'user' => $userAddon->user,
+            'addon' => $userAddon->addon,
+            'company' => [
+                'name' => 'SPPQU',
+                'address' => 'Jl. Bledak Anggur IV, Pedurungan, Semarang',
+                'phone' => '+62 82188497818',
+                'email' => 'info@sppqu.com'
+            ],
+            'school' => $schoolProfile ? [
+                'name' => $schoolProfile->nama_sekolah ?? 'Nama Sekolah',
+                'address' => $schoolProfile->alamat ?? 'Alamat Sekolah',
+                'phone' => $schoolProfile->no_telp ?? 'No. Telepon'
+            ] : [
+                'name' => 'Nama Sekolah',
+                'address' => 'Alamat Sekolah',
+                'phone' => 'No. Telepon'
+            ],
+            'invoiceNumber' => 'INV-ADDON-' . str_pad($userAddonId, 6, '0', STR_PAD_LEFT),
+            'invoiceDate' => $userAddon->purchased_at ? Carbon::parse($userAddon->purchased_at)->format('d M Y') : Carbon::parse($userAddon->created_at)->format('d M Y')
+        ];
+
+        $pdf = Pdf::loadView('addons.invoice-pdf', $data);
+        
+        $filename = "Invoice-Addon-{$userAddon->addon->slug}-" . date('Y-m-d') . ".pdf";
+        
+        return $pdf->download($filename);
     }
 }
