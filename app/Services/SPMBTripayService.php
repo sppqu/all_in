@@ -56,7 +56,7 @@ class SPMBTripayService
             'customer_phone' => $registration->phone,
             'order_items' => [
                 [
-                    'name' => 'Biaya QRIS Step-2 Pendaftaran (Default Rp 3.000 + Biaya Admin)',
+                    'name' => 'Biaya QRIS Step-2 Pendaftaran (Default Rp 3.000 )',
                     'price' => $amount,
                     'quantity' => 1
                 ]

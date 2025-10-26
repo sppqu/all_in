@@ -117,9 +117,12 @@
                                 <i class="fas fa-eye me-1"></i>Lihat Status
                             </button>
                         @else
-                            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                <i class="fas fa-qrcode me-2"></i>Bayar dengan QRIS
-                            </button>
+                            <form action="{{ route('spmb.step2.post') }}" method="POST" id="qrisPaymentForm">
+                                @csrf
+                                <button type="submit" class="btn btn-primary btn-lg" id="btnPayQris">
+                                    <i class="fas fa-qrcode me-2"></i>Bayar dengan QRIS Tripay
+                                </button>
+                            </form>
                         @endif
                         </div>
                     </div>
@@ -127,6 +130,15 @@
             </div>
         </div>
     </div>
+    
+    <script>
+    // Loading state for payment button
+    document.getElementById('qrisPaymentForm')?.addEventListener('submit', function() {
+        const btn = document.getElementById('btnPayQris');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
+    });
+    </script>
 
     <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
