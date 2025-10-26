@@ -649,17 +649,13 @@
                                 ->where('status', 'active')
                                 ->exists();
                         @endphp
+                        @if($hasAnalisisTarget)
                         <li class="nav-item">
-                            @if($hasAnalisisTarget)
-                                <a class="nav-link" href="{{ route('manage.laporan.realisasi-pos') }}">
-                                    <i class="fa fa-target me-2"></i> Analisis Target Capaian
-                                </a>
-                            @else
-                                <a class="nav-link" href="{{ route('manage.analisis.index') }}">
-                                    <i class="fa fa-target me-2"></i> Analisis Target Capaian
-                                </a>
-                            @endif
+                            <a class="nav-link" href="{{ route('manage.laporan.realisasi-pos') }}">
+                                <i class="fa fa-target me-2"></i> Analisis Target Capaian
+                            </a>
                         </li>
+                        @endif
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('manage.laporan.tunggakan-siswa') }}">
                                 <i class="fa fa-exclamation-triangle me-2"></i> Tunggakan Siswa

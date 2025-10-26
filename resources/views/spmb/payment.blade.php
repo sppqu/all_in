@@ -153,18 +153,6 @@
                         </div>
                         @endif
 
-                        <div class="alert alert-info">
-                            <h6 class="alert-heading">
-                                <i class="fas fa-info-circle me-2"></i>Informasi Penting
-                            </h6>
-                            <ul class="mb-0">
-                                <li>Pastikan nominal pembayaran sesuai dengan yang tertera</li>
-                                <li>Pembayaran akan otomatis terverifikasi dalam beberapa menit</li>
-                                <li>Jika pembayaran gagal, Anda dapat mencoba lagi</li>
-                                <li>Simpan bukti pembayaran sebagai referensi</li>
-                            </ul>
-                        </div>
-
                         <div class="d-flex justify-content-between gap-2">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>ke Dashboard

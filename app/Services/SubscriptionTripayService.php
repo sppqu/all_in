@@ -11,16 +11,29 @@ class SubscriptionTripayService
     protected $privateKey;
     protected $merchantCode;
     protected $baseUrl;
+    protected $isSandbox;
 
     public function __construct()
     {
-        // Get Tripay config from environment or config
-        $this->apiKey = config('tripay.api_key');
-        $this->privateKey = config('tripay.private_key');
-        $this->merchantCode = config('tripay.merchant_code');
+        // Ambil langsung dari .env
+        $this->apiKey = env('TRIPAY_API_KEY', '');
+        $this->privateKey = env('TRIPAY_PRIVATE_KEY', '');
+        $this->merchantCode = env('TRIPAY_MERCHANT_CODE', '');
+        $this->isSandbox = env('TRIPAY_SANDBOX', true);
         
-        // Use sandbox URL
-        $this->baseUrl = 'https://tripay.co.id/api-sandbox/';
+        // Set base URL berdasarkan sandbox mode
+        if ($this->isSandbox) {
+            $this->baseUrl = 'https://tripay.co.id/api-sandbox/';
+        } else {
+            $this->baseUrl = 'https://tripay.co.id/api/';
+        }
+        
+        Log::info('Subscription Tripay Service initialized', [
+            'api_key_set' => !empty($this->apiKey) ? 'YES' : 'NO',
+            'merchant_code' => $this->merchantCode,
+            'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
+            'base_url' => $this->baseUrl
+        ]);
     }
 
     /**
