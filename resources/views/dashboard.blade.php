@@ -77,38 +77,11 @@
         </div>
     </div>
 
-    <!-- Second Row: Jumlah Siswa & Persentase Pembayaran -->
+    <!-- Second Row: Persentase Pembayaran & Cards -->
     <div class="row mb-4">
-        <!-- Jumlah Siswa Per Kelas (Card) -->
-        <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-users fa-lg"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Total Siswa</h6>
-                        </div>
-                    </div>
-                    <h2 class="fw-bold mb-2">{{ number_format($totalStudents ?? 0) }}</h2>
-                    <div class="d-flex align-items-center">
-                        @php
-                            $studentGrowth = $studentGrowthPercent ?? 0;
-                            $isGrowthPositive = $studentGrowth >= 0;
-                        @endphp
-                        <span class="badge {{ $isGrowthPositive ? 'bg-success' : 'bg-danger' }} me-2">
-                            <i class="fas fa-arrow-{{ $isGrowthPositive ? 'up' : 'down' }} me-1"></i>{{ abs($studentGrowth) }}%
-                        </span>
-                        <small style="opacity: 0.9;">vs bulan lalu</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Transaksi Hari Ini -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
                         <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
@@ -119,11 +92,20 @@
                         </div>
                     </div>
                     <h2 class="fw-bold mb-2">{{ number_format($todayTransactions ?? 0) }}</h2>
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-white text-dark me-2">
-                            Rp {{ number_format($todayPayments ?? 0, 0, ',', '.') }}
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-white text-dark me-2" style="font-size: 0.7rem;">
+                                Rp {{ number_format($todayPayments ?? 0, 0, ',', '.') }}
+                            </span>
+                            <small style="opacity: 0.9; font-size: 0.75rem;">total</small>
+                        </div>
+                        @php
+                            $transactionGrowth = $transactionGrowthPercent ?? 0;
+                            $isTransactionGrowthPositive = $transactionGrowth >= 0;
+                        @endphp
+                        <span class="badge" style="background-color: {{ $isTransactionGrowthPositive ? '#10b981' : '#ef4444' }}; font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+                            <i class="fas fa-arrow-{{ $isTransactionGrowthPositive ? 'up' : 'down' }}"></i> {{ abs($transactionGrowth) }}%
                         </span>
-                        <small style="opacity: 0.9;">total</small>
                     </div>
                 </div>
             </div>

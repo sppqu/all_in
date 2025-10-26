@@ -401,6 +401,20 @@ class AdminController extends Controller
         // Transaksi hari ini (count)
         $todayTransactions = $todayPaymentsCount;
         
+        // Hitung pertumbuhan transaksi hari ini vs kemarin
+        $yesterdayTransactions = DB::table('transfer as t')
+            ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->where('t.status', 1)
+            ->whereDate('t.updated_at', now()->subDay())
+            ->where(function($q){
+                $q->whereNull('t.bill_type')->orWhere('t.bill_type', '!=', 'tabungan');
+            })
+            ->count();
+        
+        $transactionGrowthPercent = $yesterdayTransactions > 0 
+            ? round((($todayTransactions - $yesterdayTransactions) / $yesterdayTransactions) * 100, 1)
+            : ($todayTransactions > 0 ? 100 : 0);
+        
         // Target prosentase pembayaran bulan ini
         $currentMonth = now()->month;
         $currentYear = now()->year;
@@ -534,7 +548,7 @@ class AdminController extends Controller
             return $b['percentage'] <=> $a['percentage'];
         });
         
-        // Top Rank Pembayaran User berdasarkan jumlah transaksi
+        // Top Rank Pembayaran User berdasarkan jumlah transaksi (max 5)
         $topPaymentUsers = DB::table('students as s')
             ->leftJoin('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->leftJoin('transfer as t', 's.student_id', '=', 't.student_id')
@@ -549,7 +563,7 @@ class AdminController extends Controller
             ->groupBy('s.student_id', 's.student_full_name', 'c.class_name')
             ->having('transaction_count', '>', 0)
             ->orderByDesc('transaction_count')
-            ->limit(10)
+            ->limit(5)
             ->get()
             ->map(function($user) {
                 return [
@@ -572,7 +586,7 @@ class AdminController extends Controller
             'bulananPayments','bebasPayments','onlinePayments','cashPayments',
             'todayPaymentsCount','todayReceiptsCount','todayExpensesCount','todaySavingsCount',
             'periods','selectedPeriodId',
-            'totalPaymentsThisYear','studentGrowthPercent','todayTransactions',
+            'totalPaymentsThisYear','studentGrowthPercent','todayTransactions','transactionGrowthPercent',
             'paymentCompletionPercent','totalArrears','arrearsCount','expiredPercentage',
             'subscriptionDaysLeft','subscriptionExpiresAt',
             'classLabels','classData','transactionsMonthly','paymentProgressByClass',
