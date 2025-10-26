@@ -295,6 +295,12 @@ class SPMBController extends Controller
                 return back()->with('error', 'Gagal membuat pembayaran Tripay. Silakan coba lagi.');
             }
 
+            // Get QR code from multiple possible fields
+            $qrCode = $tripayResponse['data']['qr_code'] 
+                ?? $tripayResponse['data']['qr_string'] 
+                ?? $tripayResponse['data']['qr_url'] 
+                ?? null;
+
             // Save payment record
             $payment = SPMBPayment::create([
                 'registration_id' => $registration->id,
@@ -305,7 +311,7 @@ class SPMBController extends Controller
                 'tripay_reference' => $tripayResponse['data']['reference'],
                 'status' => 'pending',
                 'payment_url' => $tripayResponse['data']['checkout_url'],
-                'qr_code' => $tripayResponse['data']['qr_code'] ?? null,
+                'qr_code' => $qrCode,
                 'expired_at' => now()->addHours(24)
             ]);
 
