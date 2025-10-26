@@ -126,32 +126,6 @@
                         </div>
                         @endif
 
-                        <div class="payment-methods">
-                            <h6 class="mb-3">
-                                <i class="fas fa-mobile-alt me-2"></i>Cara Pembayaran
-                            </h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6 class="text-primary">E-Wallet</h6>
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success me-2"></i>OVO</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>DANA</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>GoPay</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>ShopeePay</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>LinkAja</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6 class="text-primary">Mobile Banking</h6>
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success me-2"></i>BCA Mobile</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>Mandiri Online</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>BRI Mobile</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>BNI Mobile</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
 
                         @if($payment->expired_at)
                         <div class="alert alert-warning">
@@ -188,20 +162,6 @@
                             @endif
                         </div>
                         
-                        {{-- Debug Info (hapus setelah testing) --}}
-                        @if(config('app.debug'))
-                        <div class="alert alert-secondary mt-4">
-                            <small>
-                                <strong>Debug Info:</strong><br>
-                                Payment ID: {{ $payment->id }}<br>
-                                Reference: {{ $payment->tripay_reference }}<br>
-                                QR Code: {{ $payment->qr_code ? 'Available (' . strlen($payment->qr_code) . ' chars)' : 'NOT AVAILABLE' }}<br>
-                                Payment URL: {{ $payment->payment_url ?? 'N/A' }}<br>
-                                Amount: {{ $payment->amount }}<br>
-                                Status: {{ $payment->status }}
-                            </small>
-                        </div>
-                        @endif
 
                         <div class="text-center mt-4">
                             <small class="text-muted">
