@@ -240,12 +240,25 @@ class SPMBController extends Controller
      */
     public function processStep2(Request $request)
     {
-        \Log::info('=== PROCESS STEP 2 START ===');
+        \Log::info('=== PROCESS STEP 2 START ===', [
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl(),
+            'request_ip' => $request->ip(),
+            'has_csrf' => $request->hasHeader('X-CSRF-TOKEN') || $request->has('_token'),
+            'all_request_data' => $request->all(),
+            'session_data' => [
+                'registration_id' => Session::get('spmb_registration_id'),
+                'name' => Session::get('spmb_name'),
+                'phone' => Session::get('spmb_phone')
+            ]
+        ]);
         
         $registrationId = Session::get('spmb_registration_id');
         
         if (!$registrationId) {
-            \Log::error('No registration ID in session');
+            \Log::error('No registration ID in session', [
+                'session_all' => Session::all()
+            ]);
             return redirect()->route('spmb.login')->with('error', 'Sesi Anda telah berakhir. Silakan login kembali.');
         }
         
