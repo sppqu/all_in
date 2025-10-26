@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Force HTTPS in production
         if (config('app.env') === 'production' || env('FORCE_HTTPS', false)) {
-            URL::forceScheme('https');
+           // URL::forceScheme('https');
         }
 
         // Fix for MySQL 5.7+ compatibility

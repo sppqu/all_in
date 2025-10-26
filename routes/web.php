@@ -58,6 +58,14 @@ Route::any('manage/tripay/callback', [App\Http\Controllers\TripayCallbackControl
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class, 'auth', 'check.subscription']);
 
 // ============================================================================
+// MANUAL ADDON ACTIVATION (FOR ADMIN) - OUTSIDE manage GROUP
+// ============================================================================
+Route::get('/activate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualActivate'])
+    ->name('addon.manual.activate');
+Route::get('/deactivate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualDeactivate'])
+    ->name('addon.manual.deactivate');
+
+// ============================================================================
 // Manage Routes - Pindah ke atas untuk menghindari konflik
 // ============================================================================
 Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription')->group(function () {
@@ -140,10 +148,6 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::match(['get', 'post'], '/addons/callback', [App\Http\Controllers\AddonController::class, 'callback'])->name('addons.callback');
     Route::get('/addons/{slug}/check', [App\Http\Controllers\AddonController::class, 'checkUserAddon'])->name('addons.check')->middleware('auth');
     Route::post('/addons/refresh-status', [App\Http\Controllers\AddonController::class, 'refreshAddonStatus'])->name('addons.refresh-status')->middleware('auth');
-    
-    // Manual Addon Activation/Deactivation (Admin only)
-    Route::get('/activate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualActivate'])->name('addon.manual.activate');
-    Route::get('/deactivate/{userId}/{slug}', [App\Http\Controllers\AddonController::class, 'manualDeactivate'])->name('addon.manual.deactivate');
     
     // Manage Periods
     Route::resource('periods', PeriodController::class)->middleware('auth');
