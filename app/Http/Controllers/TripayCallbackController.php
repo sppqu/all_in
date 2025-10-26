@@ -103,6 +103,13 @@ class TripayCallbackController extends Controller
      */
     private function handleSubscriptionCallback($merchantRef, $status, $reference, $amount)
     {
+        Log::info('=== Handle Subscription Callback START ===', [
+            'merchant_ref' => $merchantRef,
+            'status' => $status,
+            'reference' => $reference,
+            'amount' => $amount
+        ]);
+
         // Extract user ID from merchant_ref (format: SUB-{user_id}-{timestamp})
         $parts = explode('-', $merchantRef);
         $userId = $parts[1] ?? null;
@@ -112,44 +119,67 @@ class TripayCallbackController extends Controller
             return;
         }
 
-        // Find subscription by merchant_ref or create new if PAID
-        $subscription = Subscription::where('transaction_id', $merchantRef)->first();
+        Log::info('Extracted User ID', ['user_id' => $userId]);
+
+        // Find subscription by transaction_id (merchant_ref)
+        $subscription = DB::table('subscriptions')
+            ->where('transaction_id', $merchantRef)
+            ->first();
+
+        Log::info('Subscription Query Result', [
+            'found' => $subscription ? 'YES' : 'NO',
+            'subscription' => $subscription
+        ]);
 
         if ($status === 'PAID') {
             if ($subscription) {
-                // Update existing subscription
-                $subscription->update([
-                    'status' => 'active',
-                    'payment_status' => 'paid',
-                    'payment_reference' => $reference,
-                    'updated_at' => now()
-                ]);
+                // Get subscription duration_days
+                $durationDays = $subscription->duration_days ?? 365;
+                
+                // Update existing subscription to active
+                $updated = DB::table('subscriptions')
+                    ->where('id', $subscription->id)
+                    ->update([
+                        'status' => 'active',
+                        'activated_at' => now(),
+                        'expires_at' => now()->addDays($durationDays),
+                        'payment_reference' => $reference,
+                        'updated_at' => now()
+                    ]);
 
-                Log::info('Subscription updated to PAID', [
+                Log::info('Subscription Updated to ACTIVE', [
                     'subscription_id' => $subscription->id,
-                    'merchant_ref' => $merchantRef
+                    'merchant_ref' => $merchantRef,
+                    'rows_affected' => $updated,
+                    'activated_at' => now(),
+                    'expires_at' => now()->addDays($durationDays)
                 ]);
             } else {
                 Log::warning('Subscription not found for merchant_ref', [
-                    'merchant_ref' => $merchantRef
+                    'merchant_ref' => $merchantRef,
+                    'all_subscriptions' => DB::table('subscriptions')->select('id', 'transaction_id', 'status')->get()
                 ]);
             }
 
         } elseif ($status === 'EXPIRED' || $status === 'FAILED') {
             if ($subscription) {
-                $subscription->update([
-                    'status' => 'cancelled',
-                    'payment_status' => 'failed',
-                    'payment_reference' => $reference,
-                    'updated_at' => now()
-                ]);
+                $updated = DB::table('subscriptions')
+                    ->where('id', $subscription->id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'payment_reference' => $reference,
+                        'updated_at' => now()
+                    ]);
 
                 Log::info('Subscription marked as failed/expired', [
                     'subscription_id' => $subscription->id,
-                    'status' => $status
+                    'status' => $status,
+                    'rows_affected' => $updated
                 ]);
             }
         }
+
+        Log::info('=== Handle Subscription Callback END ===');
     }
 
     /**
@@ -157,6 +187,13 @@ class TripayCallbackController extends Controller
      */
     private function handleAddonCallback($merchantRef, $status, $reference, $amount)
     {
+        Log::info('=== Handle Addon Callback START ===', [
+            'merchant_ref' => $merchantRef,
+            'status' => $status,
+            'reference' => $reference,
+            'amount' => $amount
+        ]);
+
         // Extract user_id and addon_id from merchant_ref (format: ADDON-{user_id}-{addon_id}-{timestamp})
         $parts = explode('-', $merchantRef);
         $userId = $parts[1] ?? null;
@@ -167,13 +204,22 @@ class TripayCallbackController extends Controller
             return;
         }
 
-        // Find user addon by merchant_ref
-        $userAddon = UserAddon::where('transaction_id', $merchantRef)->first();
+        Log::info('Extracted Data', ['user_id' => $userId, 'addon_id' => $addonId]);
+
+        // Find user addon by transaction_id
+        $userAddon = DB::table('user_addons')
+            ->where('transaction_id', $merchantRef)
+            ->first();
+
+        Log::info('User Addon Query Result', [
+            'found' => $userAddon ? 'YES' : 'NO',
+            'user_addon' => $userAddon
+        ]);
 
         if ($status === 'PAID') {
             if ($userAddon) {
-                // Update to active
-                $addon = $userAddon->addon;
+                // Get addon info to determine type
+                $addon = DB::table('addons')->where('id', $addonId)->first();
                 
                 $updateData = [
                     'status' => 'active',
@@ -191,33 +237,44 @@ class TripayCallbackController extends Controller
                     $updateData['expires_at'] = now()->addDays(30);
                 }
 
-                $userAddon->update($updateData);
+                $updated = DB::table('user_addons')
+                    ->where('id', $userAddon->id)
+                    ->update($updateData);
 
-                Log::info('Addon activated via Tripay', [
+                Log::info('Addon Activated via Tripay', [
                     'user_addon_id' => $userAddon->id,
                     'user_id' => $userId,
                     'addon_id' => $addonId,
-                    'merchant_ref' => $merchantRef
+                    'addon_type' => $addon->type ?? 'unknown',
+                    'expires_at' => $updateData['expires_at'],
+                    'merchant_ref' => $merchantRef,
+                    'rows_affected' => $updated
                 ]);
             } else {
                 Log::warning('UserAddon not found for merchant_ref', [
-                    'merchant_ref' => $merchantRef
+                    'merchant_ref' => $merchantRef,
+                    'all_user_addons' => DB::table('user_addons')->select('id', 'transaction_id', 'status')->get()
                 ]);
             }
 
         } elseif ($status === 'EXPIRED' || $status === 'FAILED') {
             if ($userAddon) {
-                $userAddon->update([
-                    'status' => 'cancelled',
-                    'updated_at' => now()
-                ]);
+                $updated = DB::table('user_addons')
+                    ->where('id', $userAddon->id)
+                    ->update([
+                        'status' => 'cancelled',
+                        'updated_at' => now()
+                    ]);
 
                 Log::info('Addon purchase cancelled/expired', [
                     'user_addon_id' => $userAddon->id,
-                    'status' => $status
+                    'status' => $status,
+                    'rows_affected' => $updated
                 ]);
             }
         }
+
+        Log::info('=== Handle Addon Callback END ===');
     }
 }
 
