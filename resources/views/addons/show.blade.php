@@ -305,7 +305,7 @@
     background-color: #f8f9fa;
 }
 
-.payment-option input[type="radio"]:checked + label {
+.payment-option:has(input[type="radio"]:checked) {
     border-color: #0d6efd;
     background-color: #e7f3ff;
 }
@@ -314,6 +314,10 @@
     cursor: pointer;
     margin-bottom: 0;
     padding: 8px;
+}
+
+.payment-option input[type="radio"] {
+    cursor: pointer;
 }
 </style>
 
