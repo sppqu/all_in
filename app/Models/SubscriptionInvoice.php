@@ -20,6 +20,7 @@ class SubscriptionInvoice extends Model
         'payment_status',
         'midtrans_order_id',
         'midtrans_transaction_id',
+        'payment_reference',
         'paid_at',
         'due_date',
         'billing_details'
