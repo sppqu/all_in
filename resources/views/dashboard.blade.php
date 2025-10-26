@@ -142,8 +142,12 @@
                         </div>
                     </div>
                     <h2 class="fw-bold mb-2">{{ number_format($paymentCompletionPercent ?? 0, 1) }}%</h2>
-                    <div class="progress bg-white bg-opacity-25" style="height: 6px; border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ $paymentCompletionPercent ?? 0 }}%"></div>
+                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: rgba(255, 255, 255, 0.3);">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ $paymentCompletionPercent ?? 0 }}%; 
+                                    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+                                    border-radius: 10px;
+                                    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);"></div>
                     </div>
                 </div>
             </div>
@@ -161,29 +165,16 @@
                             <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Expired Berlangganan</h6>
                         </div>
                     </div>
-                    
-                    <!-- Semi-circular Progress -->
-                    <div class="d-flex justify-content-center align-items-center mb-3">
-                        <div class="position-relative" style="width: 120px; height: 60px;">
-                            <svg width="120" height="60" class="position-absolute">
-                                <!-- Background circle -->
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="8" stroke-dasharray="314" stroke-dashoffset="0"/>
-                                <!-- Progress circle -->
-                                <circle cx="60" cy="60" r="50" fill="none" stroke="white" stroke-width="8" 
-                                        stroke-dasharray="314" 
-                                        stroke-dashoffset="{{ 314 - (314 * ($expiredPercentage ?? 0) / 100) }}"
-                                        stroke-linecap="round"
-                                        transform="rotate(-90 60 60)"/>
-                            </svg>
-                            <!-- Percentage text -->
-                            <div class="position-absolute top-50 start-50 translate-middle text-center">
-                                <div class="fw-bold" style="font-size: 1.2rem;">{{ number_format($expiredPercentage ?? 0, 1) }}%</div>
-                            </div>
-                        </div>
+                    <h2 class="fw-bold mb-2">{{ number_format($expiredPercentage ?? 0, 1) }}%</h2>
+                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: rgba(255, 255, 255, 0.3);">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ $expiredPercentage ?? 0 }}%; 
+                                    background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+                                    border-radius: 10px;
+                                    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);"></div>
                     </div>
-                    
-                    <div class="text-center">
-                        <small style="opacity: 0.9;">{{ $totalArrears ?? 0 }} of {{ $arrearsCount ?? 0 }} subscriptions</small>
+                    <div class="mt-2">
+                        <small style="opacity: 0.9;">{{ $totalArrears ?? 0 }} dari {{ $arrearsCount ?? 0 }} berlangganan</small>
                     </div>
                 </div>
             </div>

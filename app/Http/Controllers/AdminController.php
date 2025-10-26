@@ -425,19 +425,15 @@ class AdminController extends Controller
         // Data Expired Berlangganan
         $currentDate = now();
         
-        // Total berlangganan aktif
-        $totalActiveSubscriptions = DB::table('user_addons')
-            ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
-            ->where('user_addons.status', 'active')
-            ->where('addons.type', 'recurring')
+        // Total berlangganan aktif dari tabel subscriptions
+        $totalActiveSubscriptions = DB::table('subscriptions')
+            ->where('status', 'active')
             ->count();
             
-        // Berlangganan yang expired
-        $expiredSubscriptions = DB::table('user_addons')
-            ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
-            ->where('user_addons.status', 'active')
-            ->where('addons.type', 'recurring')
-            ->where('user_addons.expires_at', '<', $currentDate)
+        // Berlangganan yang expired (expired_at sudah lewat tapi status masih active)
+        $expiredSubscriptions = DB::table('subscriptions')
+            ->where('status', 'active')
+            ->where('expired_at', '<', $currentDate)
             ->count();
             
         // Hitung persentase expired
@@ -448,6 +444,13 @@ class AdminController extends Controller
         // Data untuk grafik
         $totalArrears = $expiredSubscriptions; // Jumlah expired
         $arrearsCount = $totalActiveSubscriptions; // Total berlangganan
+        
+        // Log untuk debug
+        \Log::info('Expired Subscription Stats', [
+            'total_active' => $totalActiveSubscriptions,
+            'expired' => $expiredSubscriptions,
+            'percentage' => $expiredPercentage
+        ]);
         
         // Class labels dan data untuk doughnut chart
         $classLabels = $labels;
