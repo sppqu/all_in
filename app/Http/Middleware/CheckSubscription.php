@@ -11,6 +11,9 @@ class CheckSubscription
 {
     public function handle(Request $request, Closure $next)
     {
+        // DISABLED: Allow all access without subscription check
+        return $next($request);
+        
         if (!auth()->check()) {
             return redirect()->route('login');
         }

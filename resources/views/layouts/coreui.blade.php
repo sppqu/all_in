@@ -533,12 +533,10 @@
                 <!-- Pembayaran Menu -->
                 @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && function_exists('menuCan') && menuCan('menu.pembayaran'))
                 <li class="nav-item">
-                    <x-subscription-guard>
-                        <a class="nav-link nav-group-toggle" href="#pembayaranSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="pembayaranSubmenu">
-                            <i class="fa fa-money-bill me-2"></i> Pembayaran
-                            <i class="fa fa-angle-right nav-group-toggle-icon ms-auto"></i>
-                        </a>
-                    </x-subscription-guard>
+                    <a class="nav-link nav-group-toggle" href="#pembayaranSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="pembayaranSubmenu">
+                        <i class="fa fa-money-bill me-2"></i> Pembayaran
+                        <i class="fa fa-angle-right nav-group-toggle-icon ms-auto"></i>
+                    </a>
                     <ul class="nav-group-items collapse" id="pembayaranSubmenu">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('payment.cash') }}">
