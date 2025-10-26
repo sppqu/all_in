@@ -1202,8 +1202,8 @@ Route::group(['middleware' => []], function () {
         return 'NO-CSRF-OK';
     });
     
-    // Payment callback routes
-    Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback');
+    // Payment callback routes (DEPRECATED - Use api.php for Tripay callback)
+    // Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback'); // MOVED TO api.php
     Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
     Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
 });
@@ -2182,8 +2182,8 @@ Route::group(['middleware' => []], function () {
         return 'NO-CSRF-OK';
     });
     
-    // Payment callback routes
-    Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback');
+    // Payment callback routes (DEPRECATED - Use api.php for Tripay callback)
+    // Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback'); // MOVED TO api.php
     Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
     Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
 });
