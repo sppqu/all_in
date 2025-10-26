@@ -58,7 +58,27 @@ class SubscriptionController extends BaseController
             ->orderBy('subscriptions.created_at', 'desc')
             ->first();
 
-        return view('subscription.index', compact('subscriptions', 'activeSubscription'));
+        // Ambil riwayat pembelian addon dari superadmin
+        $addonPurchases = DB::table('user_addons')
+            ->join('users', 'user_addons.user_id', '=', 'users.id')
+            ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
+            ->whereIn('users.role', ['admin', 'superadmin'])
+            ->where(function($query) {
+                $query->where('user_addons.status', '!=', 'pending')
+                      ->orWhereNotNull('user_addons.payment_reference');
+            })
+            ->select(
+                'user_addons.*',
+                'users.name as user_name',
+                'users.email as user_email',
+                'addons.name as addon_name',
+                'addons.slug as addon_slug',
+                'addons.type as addon_type'
+            )
+            ->orderBy('user_addons.created_at', 'desc')
+            ->get();
+
+        return view('subscription.index', compact('subscriptions', 'activeSubscription', 'addonPurchases'));
     }
 
     public function showPlans()
