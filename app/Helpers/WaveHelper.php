@@ -57,6 +57,21 @@ class WaveHelper
     }
 
     /**
+     * Get Step-2 QRIS fee
+     * Default: Rp 3.000 + admin additional fee
+     */
+    public static function getStep2QrisFee()
+    {
+        $defaultFee = 3000; // Default Rp 3.000
+        
+        // Get admin additional fee from settings
+        $settings = SPMBSettings::where('pendaftaran_dibuka', true)->first();
+        $adminFee = ($settings && $settings->step2_qris_fee > 0) ? $settings->step2_qris_fee : 0;
+        
+        return $defaultFee + $adminFee;
+    }
+
+    /**
      * Get available waves for selection
      */
     public static function getActiveWaves()

@@ -14,6 +14,7 @@ class SPMBSettings extends Model
         'tanggal_buka',
         'tanggal_tutup',
         'biaya_pendaftaran',
+        'step2_qris_fee',
         'biaya_spmb',
         'deskripsi',
         'pengaturan_tambahan'
@@ -24,6 +25,7 @@ class SPMBSettings extends Model
         'tanggal_buka' => 'date',
         'tanggal_tutup' => 'date',
         'biaya_pendaftaran' => 'decimal:2',
+        'step2_qris_fee' => 'decimal:2',
         'biaya_spmb' => 'decimal:2',
         'pengaturan_tambahan' => 'array'
     ];

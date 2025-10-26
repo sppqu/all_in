@@ -255,7 +255,7 @@ class SPMBController extends Controller
             $payment = SPMBPayment::create([
                 'registration_id' => $registration->id,
                 'type' => 'registration_fee',
-                'amount' => WaveHelper::getRegistrationFee($registration),
+                'amount' => WaveHelper::getStep2QrisFee(),
                 'payment_method' => 'QRIS',
                 'payment_reference' => $tripayResponse['data']['merchant_ref'],
                 'tripay_reference' => $tripayResponse['data']['reference'],
@@ -281,7 +281,7 @@ class SPMBController extends Controller
             $payment = SPMBPayment::create([
                 'registration_id' => $registration->id,
                 'type' => 'registration_fee',
-                'amount' => WaveHelper::getRegistrationFee($registration),
+                'amount' => WaveHelper::getStep2QrisFee(),
                 'payment_method' => 'QRIS',
                 'payment_reference' => 'MOCK-REG-' . time() . '-' . $registration->id,
                 'tripay_reference' => 'MOCK-' . time() . '-' . rand(1000, 9999),
@@ -568,9 +568,14 @@ class SPMBController extends Controller
 
     /**
      * Skip step 2 (payment) and go to step 3
+     * DISABLED: Step-2 QRIS payment is now mandatory
      */
     public function skipStep2()
     {
+        // Step-2 QRIS is now mandatory - cannot skip
+        abort(403, 'Step-2 QRIS payment is mandatory and cannot be skipped');
+        
+        /* DISABLED CODE - DO NOT REMOVE (for reference)
         $registrationId = Session::get('spmb_registration_id');
         
         if (!$registrationId) {
@@ -615,6 +620,7 @@ class SPMBController extends Controller
 
         return redirect()->route('spmb.step', ['step' => 3])
             ->with('success', 'Step 2 (pembayaran) di-skip! Lanjut ke step 3.');
+        */
     }
 
     /**

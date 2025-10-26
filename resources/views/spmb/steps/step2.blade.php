@@ -72,15 +72,19 @@
                 <div class="step-card">
                     <div class="step-header text-center">
                         <div class="step-icon">
-                            <i class="fas fa-credit-card"></i>
+                            <i class="fas fa-qrcode"></i>
                         </div>
-                        <h4>Pembayaran Biaya Pendaftaran</h4>
-                        <p class="mb-0">Lakukan pembayaran untuk melanjutkan pendaftaran</p>
+                        <h4>Pembayaran QRIS Step-2</h4>
+                        <p class="mb-0">Pembayaran wajib untuk melanjutkan pendaftaran</p>
                     </div>
                     <div class="step-body">
                         <div class="payment-info text-center">
-                            <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya Pendaftaran</h6>
-                            <div class="amount-display">Rp {{ number_format($settings->biaya_pendaftaran ?? 50000, 0, ',', '.') }}</div>
+                            <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya QRIS</h6>
+                            <div class="amount-display">Rp {{ number_format(\App\Helpers\WaveHelper::getStep2QrisFee(), 0, ',', '.') }}</div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Default Rp 3.000 + biaya tambahan admin
+                            </small>
                         </div>
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
@@ -113,14 +117,9 @@
                                 <i class="fas fa-eye me-1"></i>Lihat Status
                             </button>
                         @else
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('spmb.skip-step2') }}" class="btn btn-warning">
-                                    <i class="fas fa-forward me-1"></i>Skip Pembayaran
-                                </a>
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                    <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
-                                </button>
-                            </div>
+                            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                <i class="fas fa-qrcode me-2"></i>Bayar dengan QRIS
+                            </button>
                         @endif
                         </div>
                     </div>

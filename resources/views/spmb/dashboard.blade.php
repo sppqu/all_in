@@ -562,11 +562,9 @@
                     @if($registration->step == 2)
                         <div class="d-flex gap-2 flex-wrap">
                             <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-credit-card me-1"></i>Bayar
+                                <i class="fas fa-qrcode me-1"></i>Bayar QRIS
                             </a>
-                            <a href="{{ route('spmb.skip-step2') }}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-forward me-1"></i>Skip
-                            </a>
+                            <span class="badge bg-danger align-self-center">Wajib</span>
                         </div>
                     @elseif($registration->step > 2)
                         @if($paymentStatus === 'failed')

@@ -41,12 +41,12 @@ class SPMBTripayService
     }
 
     /**
-     * Create SPMB registration fee payment
+     * Create SPMB registration fee payment (Step-2 QRIS)
      */
     public function createRegistrationFeePayment($registration)
     {
-        $amount = config('tripay.spmb.registration_fee');
-        $paymentReference = 'REG-' . time() . '-' . $registration->id;
+        $amount = \App\Helpers\WaveHelper::getStep2QrisFee();
+        $paymentReference = 'QRIS-STEP2-' . time() . '-' . $registration->id;
         
         $data = [
             'method' => 'QRIS',
@@ -56,7 +56,7 @@ class SPMBTripayService
             'customer_phone' => $registration->phone,
             'order_items' => [
                 [
-                    'name' => 'Biaya Pendaftaran SPMB',
+                    'name' => 'Biaya QRIS Step-2 Pendaftaran (Default Rp 3.000 + Biaya Admin)',
                     'price' => $amount,
                     'quantity' => 1
                 ]
