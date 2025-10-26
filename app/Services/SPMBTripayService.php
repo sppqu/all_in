@@ -16,11 +16,26 @@ class SPMBTripayService
     public function __construct()
     {
         try {
-            $this->apiKey = config('tripay.api_key', '');
-            $this->privateKey = config('tripay.private_key', '');
-            $this->merchantCode = config('tripay.merchant_code', '');
-            $this->baseUrl = config('tripay.base_url', 'https://tripay.co.id/api/');
-            $this->isSandbox = config('tripay.is_sandbox', true);
+            // Ambil langsung dari .env
+            $this->apiKey = env('TRIPAY_API_KEY', '');
+            $this->privateKey = env('TRIPAY_PRIVATE_KEY', '');
+            $this->merchantCode = env('TRIPAY_MERCHANT_CODE', '');
+            $this->isSandbox = env('TRIPAY_SANDBOX', true);
+            
+            // Set base URL berdasarkan sandbox mode
+            if ($this->isSandbox) {
+                $this->baseUrl = 'https://tripay.co.id/api-sandbox/';
+            } else {
+                $this->baseUrl = 'https://tripay.co.id/api/';
+            }
+            
+            Log::info('SPMB Tripay Service initialized', [
+                'api_key_set' => !empty($this->apiKey) ? 'YES' : 'NO',
+                'api_key_length' => strlen($this->apiKey),
+                'merchant_code' => $this->merchantCode,
+                'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
+                'base_url' => $this->baseUrl
+            ]);
             
             // For development/testing, allow empty credentials
             if (empty($this->apiKey) || $this->apiKey === 'your_tripay_api_key_here') {
@@ -35,7 +50,7 @@ class SPMBTripayService
             $this->apiKey = 'mock_api_key';
             $this->privateKey = 'mock_private_key';
             $this->merchantCode = 'mock_merchant_code';
-            $this->baseUrl = 'https://tripay.co.id/api/';
+            $this->baseUrl = 'https://tripay.co.id/api-sandbox/';
             $this->isSandbox = true;
         }
     }
@@ -45,8 +60,15 @@ class SPMBTripayService
      */
     public function createRegistrationFeePayment($registration)
     {
-        $amount = \App\Helpers\WaveHelper::getStep2QrisFee();
+        $amount = (int) \App\Helpers\WaveHelper::getStep2QrisFee(); // Cast to integer
         $paymentReference = 'QRIS-STEP2-' . time() . '-' . $registration->id;
+        
+        Log::info('Creating SPMB Step-2 QRIS payment', [
+            'amount' => $amount,
+            'payment_reference' => $paymentReference,
+            'registration_id' => $registration->id,
+            'customer_name' => $registration->name
+        ]);
         
         $data = [
             'method' => 'QRIS',
@@ -56,7 +78,7 @@ class SPMBTripayService
             'customer_phone' => $registration->phone,
             'order_items' => [
                 [
-                    'name' => 'Biaya QRIS Step-2 Pendaftaran (Default Rp 3.000 )',
+                    'name' => 'Biaya QRIS Step-2 Pendaftaran (Default Rp 3.000)',
                     'price' => $amount,
                     'quantity' => 1
                 ]
@@ -107,13 +129,16 @@ class SPMBTripayService
                 return $this->createMockTransaction($data);
             }
 
+            // Cast amount to integer before signature generation
+            $amount = (int) $data['amount'];
+            
             // Generate signature
-            $signature = $this->generateSignature($data['merchant_ref'], $data['amount']);
+            $signature = $this->generateSignature($data['merchant_ref'], $amount);
             
             $payload = [
                 'method' => $data['method'],
                 'merchant_ref' => $data['merchant_ref'],
-                'amount' => $data['amount'],
+                'amount' => $amount,
                 'customer_name' => $data['customer_name'],
                 'customer_email' => 'student@sppqu.com',
                 'customer_phone' => $data['customer_phone'],
@@ -236,14 +261,19 @@ class SPMBTripayService
      */
     private function generateSignature($merchantRef, $amount)
     {
+        // Cast amount to integer before signature generation (IMPORTANT!)
+        $amount = (int) $amount;
+        
         $signature = hash_hmac('sha256', $this->merchantCode . $merchantRef . $amount, $this->privateKey);
         
         Log::info('SPMB Tripay signature generation', [
             'merchant_code' => $this->merchantCode,
             'merchant_ref' => $merchantRef,
             'amount' => $amount,
+            'amount_type' => gettype($amount),
             'private_key_length' => strlen($this->privateKey),
-            'signature' => $signature
+            'signature' => $signature,
+            'raw_string' => $this->merchantCode . $merchantRef . $amount
         ]);
         
         return $signature;
