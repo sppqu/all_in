@@ -430,10 +430,10 @@ class AdminController extends Controller
             ->where('status', 'active')
             ->count();
             
-        // Berlangganan yang expired (expired_at sudah lewat tapi status masih active)
+        // Berlangganan yang expired (expires_at sudah lewat tapi status masih active)
         $expiredSubscriptions = DB::table('subscriptions')
             ->where('status', 'active')
-            ->where('expired_at', '<', $currentDate)
+            ->where('expires_at', '<', $currentDate)
             ->count();
             
         // Hitung persentase expired
