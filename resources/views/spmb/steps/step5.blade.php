@@ -21,7 +21,7 @@
                 </span>
                 <form method="POST" action="{{ route('spmb.logout') }}" class="d-inline">
                     @csrf
-                    <button type="submit" class="btn btn-outline-light btn-sm">
+                    <button type="submit" class="btn btn-danger btn-sm">
                         <i class="fas fa-sign-out-alt me-1"></i>Logout
                     </button>
                 </form>
