@@ -113,10 +113,6 @@
                                 Scan QR Code QRIS
                             </h6>
                             <img src="{{ $payment->qr_code }}" alt="QR Code QRIS" class="qr-code img-fluid" id="qrCodeImage" style="max-width: 300px; height: auto;">
-                            <p class="mt-3 mb-0 text-muted">
-                                <i class="fas fa-mobile-alt me-2"></i>
-                                Scan dengan aplikasi e-wallet atau mobile banking
-                            </p>
                         </div>
                         @else
                         <div class="qr-code-container" id="qrCodeContainer">
@@ -135,10 +131,6 @@
                                 <div class="text-center">
                                     <img src="" alt="QR Code QRIS" class="qr-code img-fluid" id="qrCodeImage" style="max-width: 300px; height: auto;">
                                 </div>
-                                <p class="mt-3 mb-0 text-muted text-center">
-                                    <i class="fas fa-mobile-alt me-2"></i>
-                                    Scan dengan aplikasi e-wallet atau mobile banking
-                                </p>
                             </div>
                             <div class="alert alert-warning text-center d-none" id="qrNotAvailable">
                                 <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
