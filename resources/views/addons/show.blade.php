@@ -148,85 +148,112 @@
                     @else
                         <div class="text-center mb-4">
                             <h4 class="text-primary mb-0">Rp {{ number_format($addon->price, 0, ',', '.') }}</h4>
-                            <small class="text-muted">Sekali Bayar</small>
-                        </div>
-
-                        <!-- Informasi Rekening Pembayaran -->
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0">
-                                    <i class="fas fa-university me-2"></i>Informasi Rekening Pembayaran
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Bank</label>
-                                            <p class="mb-0">BANK CIMB NIAGA</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Nomor Rekening</label>
-                                            <p class="mb-0">
-                                                <code class="fs-5">763527686800</code>
-                                                <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('763527686800')">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Atas Nama</label>
-                                            <p class="mb-0">AGUS MUNIF</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Instruksi Pembayaran:</strong>
-                                    <ol class="mb-0 mt-2">
-                                        <li>Transfer sesuai nominal ke rekening di atas</li>
-                                        <li>Simpan bukti transfer</li>
-                                        <li>Konfirmasi pembayaran melalui WhatsApp atau email</li>
-                                        <li>Addon akan diaktifkan setelah konfirmasi</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Metode Pembayaran</label>
-                            <select class="form-select" disabled>
-                                <option value="manual_transfer" selected>Transfer Bank Manual</option>
-                            </select>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Metode pembayaran lainnya sedang dalam pengembangan
-                            </div>
-                        </div>
-
-                        <div class="d-grid">
-                            <a href="https://wa.me/6282188497818?text=Halo,%20saya%20ingin%20membeli%20addon%20SPMB%20dengan%20harga%20Rp%20199.000.%20Mohon%20informasi%20lebih%20lanjut%20untuk%20proses%20pembayaran." 
-                               class="btn btn-success btn-lg text-white" 
-                               target="_blank">
-                                <i class="fab fa-whatsapp me-2 text-white"></i>
-                                Beli Sekarang via WhatsApp
-                            </a>
-                        </div>
-
-                        <hr>
-
-                        <div class="text-center">
                             <small class="text-muted">
-                                <i class="fas fa-shield-alt me-1"></i>
-                                Pembayaran aman dengan SSL encryption
+                                @if($addon->type === 'one_time')
+                                    Sekali Bayar (Lifetime)
+                                @else
+                                    Per Bulan
+                                @endif
                             </small>
                         </div>
+
+                        <form action="{{ route('manage.addons.purchase', $addon->slug) }}" method="POST" id="purchaseForm">
+                            @csrf
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-credit-card me-2"></i>
+                                    Pilih Metode Pembayaran
+                                </label>
+                                <div class="payment-methods">
+                                    <!-- QRIS -->
+                                    <div class="form-check payment-option mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="qris" value="QRIS" required>
+                                        <label class="form-check-label w-100" for="qris">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <i class="fas fa-qrcode me-2 text-primary"></i>
+                                                    <strong>QRIS</strong>
+                                                    <br>
+                                                    <small class="text-muted">Scan & Pay via E-Wallet</small>
+                                                </div>
+                                                <span class="badge bg-success">Tercepat</span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- BRI Virtual Account -->
+                                    <div class="form-check payment-option mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="briva" value="BRIVA">
+                                        <label class="form-check-label w-100" for="briva">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-university me-2 text-primary"></i>
+                                                <strong>BRI Virtual Account</strong>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- BCA Virtual Account -->
+                                    <div class="form-check payment-option mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="bcava" value="BCAVA">
+                                        <label class="form-check-label w-100" for="bcava">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-university me-2 text-info"></i>
+                                                <strong>BCA Virtual Account</strong>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Mandiri Virtual Account -->
+                                    <div class="form-check payment-option mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="mandiriva" value="MANDIRIVA">
+                                        <label class="form-check-label w-100" for="mandiriva">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-university me-2 text-warning"></i>
+                                                <strong>Mandiri Virtual Account</strong>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- BNI Virtual Account -->
+                                    <div class="form-check payment-option mb-3">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="bniva" value="BNIVA">
+                                        <label class="form-check-label w-100" for="bniva">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-university me-2 text-danger"></i>
+                                                <strong>BNI Virtual Account</strong>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Pembayaran aman menggunakan Tripay Payment Gateway
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                <strong>Keamanan Terjamin</strong>
+                                <ul class="mb-0 mt-2 small">
+                                    <li>Transaksi dienkripsi dengan SSL</li>
+                                    <li>Pembayaran otomatis terverifikasi</li>
+                                    <li>Addon aktif setelah pembayaran berhasil</li>
+                                </ul>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="btnPurchase">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    Beli Sekarang
+                                </button>
+                                <a href="{{ route('manage.addons.index') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Kembali
+                                </a>
+                            </div>
+                        </form>
                     @endif
                 </div>
             </div>
@@ -264,68 +291,50 @@
     </div>
 </div>
 
+<style>
+.payment-option {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.payment-option input[type="radio"]:checked + label {
+    border-color: #0d6efd;
+    background-color: #e7f3ff;
+}
+
+.payment-option label {
+    cursor: pointer;
+    margin-bottom: 0;
+    padding: 8px;
+}
+</style>
+
 <script>
-function copyToClipboard(text) {
-    // Try modern clipboard API first
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(function() {
-            showCopySuccess();
-        }).catch(function(err) {
-            console.error('Clipboard API failed:', err);
-            fallbackCopyTextToClipboard(text);
-        });
-    } else {
-        // Fallback for older browsers or non-secure contexts
-        fallbackCopyTextToClipboard(text);
+// Handle form submission
+document.getElementById('purchaseForm')?.addEventListener('submit', function(e) {
+    const btn = document.getElementById('btnPurchase');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memproses...';
     }
-}
+});
 
-function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    
-    // Avoid scrolling to bottom
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    textArea.style.opacity = "0";
-    
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            showCopySuccess();
-        } else {
-            showCopyError();
+// Add click event to payment options for better UX
+document.querySelectorAll('.payment-option').forEach(option => {
+    option.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
         }
-    } catch (err) {
-        console.error('Fallback copy failed:', err);
-        showCopyError();
-    }
-    
-    document.body.removeChild(textArea);
-}
-
-function showCopySuccess() {
-    const button = event.target.closest('button');
-    const originalHTML = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-check"></i>';
-    button.classList.remove('btn-outline-secondary');
-    button.classList.add('btn-success');
-    
-    // Reset after 2 seconds
-    setTimeout(function() {
-        button.innerHTML = originalHTML;
-        button.classList.remove('btn-success');
-        button.classList.add('btn-outline-secondary');
-    }, 2000);
-}
-
-function showCopyError() {
-    alert('Menyalin nomor rekening berhasil!');
-}
+    });
+});
 </script>
 @endsection
