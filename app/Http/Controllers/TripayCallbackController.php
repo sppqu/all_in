@@ -69,16 +69,32 @@ class TripayCallbackController extends Controller
                 $this->handleAddonCallback($merchantRef, $status, $reference, $amount);
             } else {
                 Log::error('Unknown merchant_ref format', ['merchant_ref' => $merchantRef]);
-                return response()->json(['message' => 'Unknown transaction type'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unknown transaction type'
+                ], 400);
             }
 
-            return response()->json(['message' => 'Callback processed successfully']);
+            // Return response format expected by Tripay
+            return response()->json([
+                'success' => true,
+                'message' => 'Callback received and processed',
+                'data' => [
+                    'reference' => $reference,
+                    'merchant_ref' => $merchantRef,
+                    'status' => $status
+                ]
+            ], 200);
 
         } catch (\Exception $e) {
             Log::error('Tripay Callback Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
             ]);
-            return response()->json(['message' => 'Internal server error'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error: ' . $e->getMessage()
+            ], 500);
         }
     }
 
