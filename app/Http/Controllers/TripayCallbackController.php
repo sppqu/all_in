@@ -62,11 +62,13 @@ class TripayCallbackController extends Controller
                 'amount' => $amount
             ]);
 
-            // Determine if this is subscription or addon based on merchant_ref
+            // Determine if this is subscription, addon, or SPMB based on merchant_ref
             if (str_starts_with($merchantRef, 'SUB-')) {
                 $this->handleSubscriptionCallback($merchantRef, $status, $reference, $amount);
             } elseif (str_starts_with($merchantRef, 'ADDON-')) {
                 $this->handleAddonCallback($merchantRef, $status, $reference, $amount);
+            } elseif (str_starts_with($merchantRef, 'QRIS-STEP2-') || str_starts_with($merchantRef, 'SPMB-')) {
+                $this->handleSPMBCallback($merchantRef, $status, $reference, $amount);
             } else {
                 Log::error('Unknown merchant_ref format', ['merchant_ref' => $merchantRef]);
                 return response()->json([
@@ -310,6 +312,113 @@ class TripayCallbackController extends Controller
         }
 
         Log::info('=== Handle Addon Callback END ===');
+    }
+
+    /**
+     * Handle SPMB payment callback (Step-2 Registration Fee & SPMB Fee)
+     */
+    private function handleSPMBCallback($merchantRef, $status, $reference, $amount)
+    {
+        Log::info('=== Handle SPMB Callback START ===', [
+            'merchant_ref' => $merchantRef,
+            'status' => $status,
+            'reference' => $reference,
+            'amount' => $amount
+        ]);
+
+        // Find payment by payment_reference OR tripay_reference
+        $payment = DB::table('spmb_payments')
+            ->where(function($query) use ($merchantRef, $reference) {
+                $query->where('payment_reference', $merchantRef)
+                      ->orWhere('tripay_reference', $reference);
+            })
+            ->first();
+
+        Log::info('SPMB Payment Query Result', [
+            'found' => $payment ? 'YES' : 'NO',
+            'payment_id' => $payment->id ?? null,
+            'payment' => $payment
+        ]);
+
+        if (!$payment) {
+            Log::warning('SPMB Payment not found', [
+                'merchant_ref' => $merchantRef,
+                'reference' => $reference,
+                'all_payments' => DB::table('spmb_payments')
+                    ->select('id', 'payment_reference', 'tripay_reference', 'status')
+                    ->limit(10)
+                    ->get()
+            ]);
+            return;
+        }
+
+        if ($status === 'PAID') {
+            // Update payment status to paid
+            $updated = DB::table('spmb_payments')
+                ->where('id', $payment->id)
+                ->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+            Log::info('SPMB Payment Updated to PAID', [
+                'payment_id' => $payment->id,
+                'payment_type' => $payment->type,
+                'rows_affected' => $updated
+            ]);
+
+            // Update registration based on payment type
+            if ($payment->type === 'registration_fee') {
+                // Step-2 Registration Fee
+                $regUpdated = DB::table('spmb_registrations')
+                    ->where('id', $payment->registration_id)
+                    ->update([
+                        'registration_fee_paid' => true,
+                        'step' => 3, // Move to next step
+                        'updated_at' => now()
+                    ]);
+
+                Log::info('SPMB Registration Updated - Step-2 Paid', [
+                    'registration_id' => $payment->registration_id,
+                    'moved_to_step' => 3,
+                    'rows_affected' => $regUpdated
+                ]);
+            } elseif ($payment->type === 'spmb_fee') {
+                // Final SPMB Fee
+                $regUpdated = DB::table('spmb_registrations')
+                    ->where('id', $payment->registration_id)
+                    ->update([
+                        'spmb_fee_paid' => true,
+                        'step' => 6, // Completion
+                        'status' => 'completed',
+                        'updated_at' => now()
+                    ]);
+
+                Log::info('SPMB Registration Updated - SPMB Fee Paid', [
+                    'registration_id' => $payment->registration_id,
+                    'status' => 'completed',
+                    'rows_affected' => $regUpdated
+                ]);
+            }
+
+        } elseif ($status === 'EXPIRED' || $status === 'FAILED') {
+            // Update payment status to failed/expired
+            $updated = DB::table('spmb_payments')
+                ->where('id', $payment->id)
+                ->update([
+                    'status' => strtolower($status),
+                    'updated_at' => now()
+                ]);
+
+            Log::info('SPMB Payment marked as failed/expired', [
+                'payment_id' => $payment->id,
+                'status' => $status,
+                'rows_affected' => $updated
+            ]);
+        }
+
+        Log::info('=== Handle SPMB Callback END ===');
     }
 }
 

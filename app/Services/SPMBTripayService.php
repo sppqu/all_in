@@ -84,7 +84,7 @@ class SPMBTripayService
                 ]
             ],
             'return_url' => route('spmb.payment.success'),
-            'callback_url' => route('spmb.payment.callback')
+            'callback_url' => url('/api/manage/tripay/callback')
         ];
 
         return $this->createTransaction($data);
@@ -112,7 +112,7 @@ class SPMBTripayService
                 ]
             ],
             'return_url' => route('spmb.payment.success'),
-            'callback_url' => route('spmb.payment.callback')
+            'callback_url' => url('/api/manage/tripay/callback')
         ];
 
         return $this->createTransaction($data);
