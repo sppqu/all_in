@@ -469,31 +469,10 @@
             <!-- Navigation Menu -->
             <div class="nav-title">APLIKASI</div>
             <ul class="nav flex-column">
-                @if(session('subscription_expired'))
-                <!-- Subscription Expired or No Subscription - All menus disabled except subscription -->
-                <li class="nav-item">
-                    @php
-                        $checkUserId = getCheckUserId(auth()->id());
-                        $hasSubscriptionHistory = DB::table('subscriptions')
-                            ->where('user_id', $checkUserId)
-                            ->exists();
-                    @endphp
-                    
-                    @if($hasSubscriptionHistory)
-                        <div class="alert alert-danger m-3" role="alert">
-                            <i class="fa fa-exclamation-circle me-2"></i>
-                            <strong>Berlangganan Berakhir!</strong><br>
-                            <small>Silakan perpanjang berlangganan untuk mengakses fitur aplikasi.</small>
-                        </div>
-                    @else
-                        <div class="alert alert-warning m-3" role="alert">
-                            <i class="fa fa-info-circle me-2"></i>
-                            <strong>Belum Berlangganan!</strong><br>
-                            <small>Silakan berlangganan terlebih dahulu untuk mengakses fitur aplikasi.</small>
-                        </div>
-                    @endif
-                </li>
-                @else
+                @php
+                    // Always show menus - no subscription check for now
+                    $showAllMenus = true;
+                @endphp
                 @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal') || auth()->user()->role == 'superadmin')
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/manage/dashboard') }}">
@@ -575,9 +554,8 @@
                 </li>
                 @elseif(function_exists('menuCan') && menuCan('menu.pembayaran'))
                 <li class="nav-item">
-                    <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                    <a class="nav-link" href="{{ route('manage.pembayaran.index') }}">
                         <i class="fa fa-money-bill me-2"></i> Pembayaran
-                        <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                     </a>
                 </li>
                 @endif
@@ -648,9 +626,8 @@
                 </li>
                 @elseif(function_exists('menuCan') && menuCan('menu.akuntansi'))
                 <li class="nav-item">
-                    <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                    <a class="nav-link" href="{{ route('manage.akuntansi.index') }}">
                         <i class="fa fa-calculator me-2"></i> Keuangan
-                        <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                     </a>
                 </li>
                 @endif
@@ -692,9 +669,8 @@
                                     <i class="fa fa-target me-2"></i> Analisis Target Capaian
                                 </a>
                             @else
-                                <a class="nav-link disabled" href="#" onclick="showAddonRequired('analisis-target')" style="opacity: 0.5; cursor: not-allowed;">
+                                <a class="nav-link" href="{{ route('manage.analisis.index') }}">
                                     <i class="fa fa-target me-2"></i> Analisis Target Capaian
-                                    <i class="fa fa-lock me-2 text-warning" title="Add-on Required"></i>
                                 </a>
                             @endif
                         </li>
@@ -707,9 +683,8 @@
                 </li>
                 @elseif(menuCan('menu.laporan'))
                 <li class="nav-item">
-                    <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                    <a class="nav-link" href="{{ route('manage.laporan.index') }}">
                         <i class="fa fa-file-alt me-2"></i> Laporan Pembayaran
-                        <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                     </a>
                 </li>
                 @endif
@@ -755,7 +730,6 @@
                     </a>
                 </li>
                 @endif
-                @endif
             </ul>
             
             @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal') || auth()->user()->role == 'superadmin')
@@ -781,9 +755,8 @@
                     </li>
                 @elseif(menuCan('menu.kirim_tagihan'))
                     <li class="nav-item">
-                        <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                        <a class="nav-link" href="{{ route('manage.bulk-whatsapp.index') }}">
                             <i class="fa fa-paper-plane me-2"></i> Kirim Tagihan
-                            <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                         </a>
                     </li>
                 @endif
@@ -800,15 +773,13 @@
                     </li>
                 @elseif(menuCan('menu.users'))
                     <li class="nav-item">
-                        <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                        <a class="nav-link" href="{{ route('manage.users.index') }}">
                             <i class="fa fa-user-cog me-2"></i> Pengguna
-                            <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                        <a class="nav-link" href="{{ route('manage.permissions.index') }}">
                             <i class="fa fa-shield-alt me-2"></i> Hak Akses Menu
-                            <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                         </a>
                     </li>
                 @endif
@@ -820,9 +791,8 @@
                     </li>
                 @elseif(menuCan('menu.general_setting'))
                     <li class="nav-item">
-                        <a class="nav-link disabled" href="#" onclick="showSubscriptionRequired()" style="opacity: 0.5; cursor: not-allowed;">
+                        <a class="nav-link" href="{{ route('manage.general-setting.index') }}">
                             <i class="fa fa-cogs me-2"></i> General Setting
-                            <i class="fa fa-crown me-2 text-warning" title="Fitur Premium"></i>
                         </a>
                     </li>
                 @endif
