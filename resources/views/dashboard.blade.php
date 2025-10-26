@@ -93,7 +93,7 @@
                     </div>
                     <h2 class="fw-bold mb-2">Rp {{ number_format($monthPayments ?? 0, 0, ',', '.') }}</h2>
                     <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center">
                             <span class="badge bg-white text-dark me-2" style="font-size: 0.7rem;">
                                 {{ number_format($monthPaymentsCount ?? 0) }} transaksi
                             </span>
@@ -188,25 +188,29 @@
             </div>
         </div>
 
-        <!-- Total Tunggakan Siswa -->
+        <!-- Kalender -->
         <div class="col-md-3 mb-3">
             <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-                            <i class="fas fa-exclamation-circle fa-lg text-white"></i>
+                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                            <i class="fas fa-calendar-alt fa-lg text-white"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Total Tunggakan Siswa</h6>
+                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Kalender Hari Ini</h6>
                         </div>
                     </div>
-                    <h2 class="fw-bold mb-2 text-danger">Rp {{ number_format($totalArrears ?? 0, 0, ',', '.') }}</h2>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <span class="badge bg-danger text-white me-2" style="font-size: 0.7rem;">
-                                {{ $unpaidStudentsCount ?? 0 }} siswa
-                            </span>
-                            <small class="text-muted" style="font-size: 0.75rem;">belum lunas</small>
+                    @php
+                        $currentDate = \Carbon\Carbon::now();
+                        $dayName = $currentDate->locale('id')->isoFormat('dddd');
+                        $dateNumber = $currentDate->format('d');
+                        $monthYear = $currentDate->locale('id')->isoFormat('MMMM YYYY');
+                    @endphp
+                    <div class="text-center mb-3">
+                        <div class="fw-bold mb-1" style="color: #8b5cf6; font-size: 3rem; line-height: 1;">{{ $dateNumber }}</div>
+                        <div class="text-muted" style="font-size: 0.9rem;">{{ $monthYear }}</div>
+                        <div class="badge mt-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 0.75rem;">
+                            {{ $dayName }}
                         </div>
                     </div>
                 </div>
