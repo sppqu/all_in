@@ -448,7 +448,7 @@ class AdminController extends Controller
             ->whereRaw('bebas_total_pay < bebas_bill')
             ->select(
                 DB::raw('SUM(bebas_bill - bebas_total_pay) as total_arrears'),
-                DB::raw('COUNT(DISTINCT students_students_id) as unpaid_count')
+                DB::raw('COUNT(DISTINCT student_student_id) as unpaid_count')
             )
             ->first();
         
