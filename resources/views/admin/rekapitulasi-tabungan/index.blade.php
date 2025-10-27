@@ -138,7 +138,6 @@
                                             <th>Total Setoran</th>
                                             <th>Total Penarikan</th>
                                             <th>Saldo Akhir</th>
-                                            <th>Update Terakhir</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
@@ -152,7 +151,6 @@
                                                  <td class="text-success">Rp {{ number_format($data['total_setoran'], 0, ',', '.') }}</td>
                                                  <td class="text-danger">Rp {{ number_format($data['jumlah_penarikan'], 0, ',', '.') }}</td>
                                                  <td class="text-primary fw-bold">Rp {{ number_format($data['saldo_akhir'], 0, ',', '.') }}</td>
-                                                 <td>{{ $data['last_update'] ? \Carbon\Carbon::parse($data['last_update'])->format('d/m/Y H:i') : '-' }}</td>
                                                  <td>
                                                      <button type="button" 
                                                              class="btn btn-sm btn-info text-white" 

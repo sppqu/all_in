@@ -14,17 +14,11 @@ class IpaymuService
 
     public function __construct()
     {
-        // Ambil kredensial dari .env
-        $this->va = env('IPAYMU_VA', '');
-        $this->apiKey = env('IPAYMU_API_KEY', '');
-        $this->isSandbox = env('IPAYMU_SANDBOX', true);
-        
-        // Set base URL berdasarkan sandbox mode
-        if ($this->isSandbox) {
-            $this->baseUrl = 'https://sandbox.ipaymu.com/api/v2/';
-        } else {
-            $this->baseUrl = 'https://my.ipaymu.com/api/v2/';
-        }
+        // Ambil kredensial dari config (bukan env langsung)
+        $this->va = config('ipaymu.va', '');
+        $this->apiKey = config('ipaymu.api_key', '');
+        $this->isSandbox = config('ipaymu.sandbox', true);
+        $this->baseUrl = config('ipaymu.base_url');
         
         Log::info('iPaymu Service initialized', [
             'va_set' => !empty($this->va) ? 'YES' : 'NO',
