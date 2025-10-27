@@ -114,20 +114,20 @@ class AddonController extends Controller
         ]);
 
         try {
-            // Use Tripay payment gateway
-            $tripay = new \App\Services\SubscriptionTripayService();
-            $merchantRef = 'ADDON-' . $user->id . '-' . $addon->id . '-' . time();
+            // Use iPaymu payment gateway
+            $ipaymu = new \App\Services\IpaymuService();
             
-            $result = $tripay->createSubscriptionPayment([
+            $result = $ipaymu->createAddonPayment([
                 'user_id' => $user->id,
-                'method' => $request->payment_method, // QRIS, BRIVA, BCAVA, dll
+                'addon_id' => $addon->id,
+                'method' => $request->payment_method, // QRIS, VA, dll
                 'amount' => $addon->price,
-                'plan_name' => 'SPPQU Addon - ' . $addon->name,
+                'addon_name' => 'SPPQU Addon - ' . $addon->name,
                 'customer_name' => $user->name,
                 'customer_email' => $user->email,
                 'customer_phone' => $user->phone ?? '08123456789',
                 'return_url' => route('manage.addons.index'),
-                'callback_url' => url('/api/manage/tripay/callback')
+                'callback_url' => url('/api/manage/ipaymu/callback')
             ]);
 
             if (!$result['success']) {
@@ -141,21 +141,21 @@ class AddonController extends Controller
             DB::table('user_addons')
                 ->where('id', $userAddonId)
                 ->update([
-                    'transaction_id' => $result['merchant_ref'],
-                    'payment_reference' => $result['reference'] ?? null,
+                    'transaction_id' => $result['reference_id'],
+                    'payment_reference' => $result['transaction_id'] ?? null,
                     'updated_at' => now()
                 ]);
 
-            Log::info('Addon payment created via Tripay', [
+            Log::info('Addon payment created via iPaymu', [
                 'user_id' => $user->id,
                 'addon_id' => $addon->id,
                 'user_addon_id' => $userAddonId,
-                'merchant_ref' => $result['merchant_ref'],
-                'reference' => $result['reference']
+                'reference_id' => $result['reference_id'],
+                'transaction_id' => $result['transaction_id']
             ]);
 
-            // Return Tripay payment page
-            return view('addons.payment-tripay', compact('result', 'userAddonId', 'addon'));
+            // Return iPaymu payment page
+            return view('addons.payment-ipaymu', compact('result', 'userAddonId', 'addon'));
 
         } catch (\Exception $e) {
             // Delete user addon if error occurred

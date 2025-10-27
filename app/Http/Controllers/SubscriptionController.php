@@ -236,22 +236,20 @@ class SubscriptionController extends BaseController
             ]
         ]);
 
-        // Use Tripay instead of Midtrans
+        // Use iPaymu for payment gateway
         try {
-            $tripay = new \App\Services\SubscriptionTripayService();
+            $ipaymu = new \App\Services\IpaymuService();
             
-            $merchantRef = 'SUB-' . $user->id . '-' . time();
-            
-            $result = $tripay->createSubscriptionPayment([
+            $result = $ipaymu->createSubscriptionPayment([
                 'user_id' => $user->id,
-                'method' => $request->payment_method, // QRIS, BRIVA, BCAVA, dll
+                'method' => $request->payment_method, // QRIS, VA, dll
                 'amount' => $plan['price'],
                 'plan_name' => 'SPPQU Subscription - ' . $plan['name'],
                 'customer_name' => $user->name,
                 'customer_email' => $user->email,
                 'customer_phone' => $user->phone ?? '08123456789',
                 'return_url' => route('manage.subscription.index'),
-                'callback_url' => url('/api/manage/tripay/callback')
+                'callback_url' => url('/api/manage/ipaymu/callback')
             ]);
 
             if (!$result['success']) {
@@ -266,20 +264,20 @@ class SubscriptionController extends BaseController
             DB::table('subscriptions')
                 ->where('id', $subscriptionId)
                 ->update([
-                    'transaction_id' => $result['merchant_ref'],
-                    'payment_reference' => $result['reference'] ?? null,
-                    'payment_url' => $result['checkout_url'] ?? null,
+                    'transaction_id' => $result['reference_id'],
+                    'payment_reference' => $result['transaction_id'] ?? null,
+                    'payment_url' => $result['payment_url'] ?? null,
                     'updated_at' => now()
                 ]);
 
             // Update invoice with order ID
             $invoice->update([
-                'midtrans_order_id' => $result['merchant_ref'],
-                'payment_reference' => $result['reference'] ?? null
+                'midtrans_order_id' => $result['reference_id'],
+                'payment_reference' => $result['transaction_id'] ?? null
             ]);
 
-            // Return Tripay payment page
-            return view('subscription.payment-tripay', compact('result', 'subscriptionId', 'plan', 'invoice'));
+            // Return iPaymu payment page
+            return view('subscription.payment-ipaymu', compact('result', 'subscriptionId', 'plan', 'invoice'));
 
         } catch (\Exception $e) {
             // Delete subscription and invoice if error occurred
