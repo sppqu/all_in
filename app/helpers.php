@@ -132,7 +132,7 @@ if (!function_exists('getSubscriptionDaysLeft')) {
 
 if (!function_exists('menuCan')) {
     /**
-     * Check if user can access menu based on subscription
+     * Check if user can access menu based on role permissions from database
      */
     function menuCan($menuKey) {
         $user = auth()->user();
@@ -146,12 +146,23 @@ if (!function_exists('menuCan')) {
             return true;
         }
         
-        // For admin users, check subscription
-        if (in_array($user->role, ['admin', 'superadmin'])) {
+        // Check menu_permissions table first for all roles
+        $permission = \DB::table('menu_permissions')
+            ->where('role', $user->role)
+            ->where('menu_key', $menuKey)
+            ->first();
+        
+        // If permission found in database, use it
+        if ($permission !== null) {
+            return (bool) $permission->allowed;
+        }
+        
+        // Fallback: For admin users without specific permission in DB, check subscription
+        if (in_array($user->role, ['admin'])) {
             return hasActiveSubscription($user->id);
         }
         
-        // For other users, check based on role permissions
+        // Fallback: Check hardcoded permissions for backward compatibility
         $menuPermissions = [
             'menu.data_master' => ['admin', 'superadmin'],
             'menu.setting_tarif' => ['admin', 'superadmin'],
