@@ -251,7 +251,7 @@
                                         <span class="input-group-text">Rp</span>
                                         <input type="number" class="form-control @error('amount') is-invalid @enderror" 
                                                id="amount" name="amount" value="{{ old('amount', $additionalFee->amount) }}" 
-                                               min="0" step="1000" placeholder="350000" required>
+                                               min="0" step="1" placeholder="350000" required>
                                         @error('amount')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror

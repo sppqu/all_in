@@ -324,7 +324,7 @@ const paymentMethodsData = @json($paymentMethods ?? []);
                                             <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaran()">
+                                            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaran()">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -995,7 +995,7 @@ function resetRincianTable() {
                 <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
             </td>
             <td>
-                <input type="number" class="form-control form-select-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaran()">
+                <input type="number" class="form-control form-select-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaran()">
             </td>
         </tr>
     `;
@@ -1033,7 +1033,7 @@ function tambahBarisRincian() {
             <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
         </td>
         <td>
-            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaran()">
+            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaran()">
         </td>
     `;
     tbody.appendChild(row);
@@ -1632,7 +1632,7 @@ function resetEditForm() {
                         <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaranEdit()">
+                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaranEdit()">
                     </td>
                 </tr>
             `;
@@ -1702,7 +1702,7 @@ function tambahBarisRincianEdit() {
             <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
         </td>
         <td>
-            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaranEdit()">
+            <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaranEdit()">
         </td>
     `;
     tbody.appendChild(row);
@@ -2019,7 +2019,7 @@ function populateEditExpenseDetails(details) {
                         <input type="text" class="form-control form-control-sm" name="keterangan_item[]" value="${safeKeteranganItem}" placeholder="Keterangan item" required>
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" value="${safeJumlah}" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaranEdit()">
+                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" value="${safeJumlah}" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaranEdit()">
                     </td>
                 </tr>
             `;
@@ -2053,7 +2053,7 @@ function populateEditExpenseDetails(details) {
                         <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
                     </td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalPengeluaranEdit()">
+                        <input type="number" class="form-control form-control-sm" name="jumlah_pengeluaran[]" placeholder="0" min="0" step="1" required onchange="hitungTotalPengeluaranEdit()">
                     </td>
                 </tr>
             `;

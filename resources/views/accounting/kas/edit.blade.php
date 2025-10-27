@@ -79,7 +79,7 @@
                                         <input type="number" class="form-control @error('saldo') is-invalid @enderror" 
                                                id="saldo" name="saldo" 
                                                value="{{ old('saldo', $kas->saldo) }}" 
-                                               placeholder="0" min="0" step="1000" required>
+                                               placeholder="0" min="0" step="1" required>
                                     </div>
                                     @error('saldo')
                                         <div class="invalid-feedback">{{ $message }}</div>

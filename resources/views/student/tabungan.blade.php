@@ -175,7 +175,7 @@
                             <i class="fas fa-money-bill-wave text-success"></i>
                         </span>
                         <input type="number" class="form-control border-start-0" id="setorAmount" 
-                               placeholder="Masukkan jumlah setoran" min="10000" step="1000" required
+                               placeholder="Masukkan jumlah setoran" min="10000" step="1" required
                                style="font-size: 18px; font-weight: 600;">
                         <span class="input-group-text bg-light border-start-0">IDR</span>
                     </div>

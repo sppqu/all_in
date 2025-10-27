@@ -1081,7 +1081,7 @@ function renderEditRincianTable(items) {
                 <input type="text" class="form-control form-control-sm" name="keterangan_item[]" value="${keterangan}" required>
             </td>
             <td>
-                <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" value="${jumlah}" min="0" step="1000" required onchange="hitungTotalEdit()">
+                <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" value="${jumlah}" min="0" step="1" required onchange="hitungTotalEdit()">
             </td>
             <td>
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusBarisEdit(this)">
@@ -1117,7 +1117,7 @@ function tambahBarisEdit() {
             <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
         </td>
         <td>
-            <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" placeholder="0" min="0" step="1000" required onchange="hitungTotalEdit()">
+            <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" placeholder="0" min="0" step="1" required onchange="hitungTotalEdit()">
         </td>
         <td>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusBarisEdit(this)">
@@ -1450,7 +1450,7 @@ function tambahBaris() {
             <input type="text" class="form-control form-control-sm" name="keterangan_item[]" placeholder="Keterangan item" required>
         </td>
         <td>
-            <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" placeholder="0" min="0" step="1000" required onchange="hitungTotal()">
+            <input type="number" class="form-control form-control-sm" name="jumlah_penerimaan[]" placeholder="0" min="0" step="1" required onchange="hitungTotal()">
         </td>
         <td>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="hapusBaris(this)">

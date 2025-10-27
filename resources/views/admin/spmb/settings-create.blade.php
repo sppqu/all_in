@@ -148,7 +148,7 @@
                                                name="biaya_pendaftaran" 
                                                value="{{ old('biaya_pendaftaran', 50000) }}"
                                                min="0" 
-                                               step="1000"
+                                               step="1"
                                                required>
                                         @error('biaya_pendaftaran')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -169,7 +169,7 @@
                                                name="biaya_spmb" 
                                                value="{{ old('biaya_spmb', 100000) }}"
                                                min="0" 
-                                               step="1000"
+                                               step="1"
                                                required>
                                         @error('biaya_spmb')
                                             <div class="invalid-feedback">{{ $message }}</div>

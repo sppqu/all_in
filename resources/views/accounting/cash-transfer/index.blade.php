@@ -240,7 +240,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="jumlah_transfer" class="form-label fw-bold text-success">Jumlah Transfer <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control border-success" id="jumlah_transfer" name="jumlah_transfer" placeholder="0" min="0" step="1000" required>
+                        <input type="number" class="form-control border-success" id="jumlah_transfer" name="jumlah_transfer" placeholder="0" min="0" step="1" required>
                     </div>
                 </div>
                 <div class="modal-footer">
