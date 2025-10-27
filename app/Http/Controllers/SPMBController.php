@@ -278,50 +278,39 @@ class SPMBController extends Controller
         }
 
         try {
-            \Log::info('Creating Tripay payment...');
+            \Log::info('Creating iPaymu SPMB payment...');
             
-            // Create payment for registration fee
-            $tripayResponse = $this->tripayService->createRegistrationFeePayment($registration);
-
-            \Log::info('Tripay response received', [
-                'response' => $tripayResponse
+            // Use iPaymu for SPMB payment
+            $ipaymu = new \App\Services\IpaymuService();
+            
+            $ipaymuResponse = $ipaymu->createSPMBPayment([
+                'registration_id' => $registration->id,
+                'amount' => WaveHelper::getStep2QrisFee(),
+                'method' => 'qris', // Default QRIS for Step 2
+                'product_name' => 'Step 2 Registration Fee',
+                'customer_name' => $registration->nama_lengkap,
+                'customer_phone' => $registration->no_hp,
+                'customer_email' => $registration->email ?? 'spmb@sppqu.com',
+                'return_url' => route('spmb.payment.success'),
+                'callback_url' => url('/api/manage/ipaymu/callback')
             ]);
 
-            if (!$tripayResponse || !isset($tripayResponse['success']) || !$tripayResponse['success']) {
+            \Log::info('iPaymu SPMB response received', [
+                'response' => $ipaymuResponse
+            ]);
+
+            if (!$ipaymuResponse || !isset($ipaymuResponse['success']) || !$ipaymuResponse['success']) {
                 \Log::error('SPMB Payment failed', [
                     'registration_id' => $registration->id,
-                    'response' => $tripayResponse
+                    'response' => $ipaymuResponse
                 ]);
-                return back()->with('error', 'Gagal membuat pembayaran Tripay. Silakan coba lagi.');
+                return back()->with('error', 'Gagal membuat pembayaran iPaymu: ' . ($ipaymuResponse['message'] ?? 'Silakan coba lagi.'));
             }
 
-            // Get QR code from multiple possible fields
-            $qrCode = $tripayResponse['data']['qr_code'] 
-                ?? $tripayResponse['data']['qr_string'] 
-                ?? $tripayResponse['data']['qr_url'] 
+            // Get QR code from response
+            $qrCode = $ipaymuResponse['qr_string'] 
+                ?? $ipaymuResponse['qr_code'] 
                 ?? null;
-
-            // If QR code not in create response, try to fetch from detail
-            if (!$qrCode) {
-                \Log::info('QR Code not in create response, fetching from detail API');
-                try {
-                    $detailResponse = $this->tripayService->getTransactionDetail($tripayResponse['data']['reference']);
-                    if ($detailResponse && isset($detailResponse['success']) && $detailResponse['success']) {
-                        $qrCode = $detailResponse['data']['qr_code'] 
-                            ?? $detailResponse['data']['qr_string'] 
-                            ?? $detailResponse['data']['qr_url'] 
-                            ?? null;
-                        \Log::info('QR Code fetched from detail API', [
-                            'has_qr' => !empty($qrCode),
-                            'qr_length' => !empty($qrCode) ? strlen($qrCode) : 0
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Failed to fetch QR from detail API', [
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            }
 
             // Save payment record
             $payment = SPMBPayment::create([
@@ -329,15 +318,15 @@ class SPMBController extends Controller
                 'type' => 'registration_fee',
                 'amount' => WaveHelper::getStep2QrisFee(),
                 'payment_method' => 'QRIS',
-                'payment_reference' => $tripayResponse['data']['merchant_ref'],
-                'tripay_reference' => $tripayResponse['data']['reference'],
+                'payment_reference' => $ipaymuResponse['reference_id'],
+                'tripay_reference' => $ipaymuResponse['transaction_id'] ?? $ipaymuResponse['session_id'],
                 'status' => 'pending',
-                'payment_url' => $tripayResponse['data']['checkout_url'],
+                'payment_url' => $ipaymuResponse['payment_url'],
                 'qr_code' => $qrCode,
                 'expired_at' => now()->addHours(24)
             ]);
 
-            \Log::info('SPMB Payment created successfully', [
+            \Log::info('SPMB Payment created successfully with iPaymu', [
                 'payment_id' => $payment->id,
                 'registration_id' => $registration->id,
                 'amount' => $payment->amount,
@@ -345,7 +334,7 @@ class SPMBController extends Controller
                 'has_qr_code' => !empty($payment->qr_code) ? 'YES' : 'NO',
                 'qr_code_length' => !empty($payment->qr_code) ? strlen($payment->qr_code) : 0,
                 'payment_url' => $payment->payment_url,
-                'tripay_reference' => $payment->tripay_reference
+                'reference_id' => $payment->payment_reference
             ]);
 
             return redirect()->route('spmb.payment', ['id' => $payment->id]);

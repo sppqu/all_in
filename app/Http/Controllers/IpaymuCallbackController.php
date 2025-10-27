@@ -58,6 +58,8 @@ class IpaymuCallbackController extends Controller
                 $this->handleSubscriptionCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'ADDON-')) {
                 $this->handleAddonCallback($referenceId, $status, $statusCode, $transactionId, $amount);
+            } elseif (str_starts_with($referenceId, 'SPMB-STEP2-')) {
+                $this->handleSPMBCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } else {
                 Log::error('Unknown reference_id format', ['reference_id' => $referenceId]);
                 return response()->json(['success' => false, 'message' => 'Unknown transaction type'], 400);
@@ -227,6 +229,80 @@ class IpaymuCallbackController extends Controller
                 'expires_at' => $expiresAt
             ]);
         }
+    }
+
+    /**
+     * Handle SPMB payment callback
+     */
+    private function handleSPMBCallback($referenceId, $status, $statusCode, $transactionId, $amount)
+    {
+        Log::info('Processing SPMB Callback', [
+            'reference_id' => $referenceId,
+            'status' => $status,
+            'status_code' => $statusCode
+        ]);
+
+        // Find SPMB payment by payment_reference (reference_id)
+        $payment = DB::table('spmb_payments')
+            ->where('payment_reference', $referenceId)
+            ->first();
+
+        if (!$payment) {
+            Log::error('SPMB payment not found for reference_id: ' . $referenceId);
+            return;
+        }
+
+        // Map iPaymu status to our status
+        $newStatus = 'pending';
+        if (strtolower($status) === 'berhasil' || $statusCode == 1) {
+            $newStatus = 'paid';
+        } elseif (strtolower($status) === 'pending' || $statusCode == 0) {
+            $newStatus = 'pending';
+        } elseif (strtolower($status) === 'expired' || strtolower($status) === 'failed') {
+            $newStatus = 'failed';
+        }
+
+        Log::info('Updating SPMB payment status', [
+            'payment_id' => $payment->id,
+            'old_status' => $payment->status,
+            'new_status' => $newStatus
+        ]);
+
+        // Update payment status
+        DB::table('spmb_payments')
+            ->where('id', $payment->id)
+            ->update([
+                'status' => $newStatus,
+                'tripay_reference' => $transactionId,
+                'updated_at' => now()
+            ]);
+
+        // If paid, update registration to next step
+        if ($newStatus === 'paid') {
+            $registration = DB::table('spmb_registrations')
+                ->where('id', $payment->registration_id)
+                ->first();
+
+            if ($registration && $registration->step == 2) {
+                DB::table('spmb_registrations')
+                    ->where('id', $payment->registration_id)
+                    ->update([
+                        'step' => 3,
+                        'updated_at' => now()
+                    ]);
+
+                Log::info('SPMB registration step updated after payment', [
+                    'registration_id' => $payment->registration_id,
+                    'old_step' => 2,
+                    'new_step' => 3
+                ]);
+            }
+        }
+
+        Log::info('SPMB payment callback processed successfully', [
+            'payment_id' => $payment->id,
+            'final_status' => $newStatus
+        ]);
     }
 }
 

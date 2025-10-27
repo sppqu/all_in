@@ -109,12 +109,17 @@
                         </div>
                     @endif
 
-                    @if(isset($result['va_number']) && $result['va_number'])
+                    @php
+                        // Check multiple possible VA number fields
+                        $vaNumber = $result['va_number'] ?? $result['payment_no'] ?? $result['payment_code'] ?? null;
+                    @endphp
+                    
+                    @if($vaNumber)
                         <!-- Virtual Account Payment -->
                         <div class="alert alert-light border mb-4">
                             <h6 class="text-center mb-3">Nomor Virtual Account</h6>
                             <div class="input-group input-group-lg">
-                                <input type="text" class="form-control text-center fw-bold" value="{{ $result['va_number'] }}" id="vaNumber" readonly style="font-size: 1.5rem; letter-spacing: 0.1em;">
+                                <input type="text" class="form-control text-center fw-bold" value="{{ $vaNumber }}" id="vaNumber" readonly style="font-size: 1.5rem; letter-spacing: 0.1em;">
                                 <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('vaNumber')">
                                     <i class="fas fa-copy"></i> Salin
                                 </button>
@@ -124,6 +129,17 @@
                                 Transfer ke nomor VA di atas menggunakan {{ $result['payment_name'] ?? 'Bank' }}
                             </p>
                         </div>
+                    @endif
+                    
+                    {{-- Debug Info (remove after testing) --}}
+                    @if(config('app.debug'))
+                    <div class="alert alert-info small">
+                        <strong>Debug Info:</strong><br>
+                        VA Number: {{ $result['va_number'] ?? 'null' }}<br>
+                        Payment No: {{ $result['payment_no'] ?? 'null' }}<br>
+                        Payment Code: {{ $result['payment_code'] ?? 'null' }}<br>
+                        Payment URL: {{ $result['payment_url'] ?? 'null' }}
+                    </div>
                     @endif
 
                     <div class="row mt-4">

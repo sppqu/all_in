@@ -112,7 +112,19 @@
                                 <i class="fas fa-qrcode me-2"></i>
                                 Scan QR Code QRIS
                             </h6>
+                            @php
+                                // Check if qr_code is an image URL or QR string
+                                $isImageUrl = str_starts_with($payment->qr_code, 'http') || str_starts_with($payment->qr_code, 'data:image');
+                            @endphp
+                            @if($isImageUrl)
                             <img src="{{ $payment->qr_code }}" alt="QR Code QRIS" class="qr-code img-fluid" id="qrCodeImage" style="max-width: 300px; height: auto;">
+                            @else
+                            <div id="qrcode" style="display: inline-block; padding: 20px; background: white; border-radius: 10px;"></div>
+                            @endif
+                            <p class="text-muted mt-3 small mb-0">
+                                <i class="fas fa-mobile-alt me-1"></i>
+                                Scan dengan aplikasi e-wallet Anda (GoPay, OVO, Dana, LinkAja, ShopeePay, dll)
+                            </p>
                         </div>
                         @else
                         <div class="qr-code-container" id="qrCodeContainer">
@@ -178,7 +190,22 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
+        // Generate QR Code if qr_code is a string (not image URL)
+        @if($payment->qr_code && !str_starts_with($payment->qr_code, 'http') && !str_starts_with($payment->qr_code, 'data:image'))
+        document.addEventListener('DOMContentLoaded', function() {
+            new QRCode(document.getElementById("qrcode"), {
+                text: "{{ $payment->qr_code }}",
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+        @endif
+
         @if(!$payment->qr_code)
         // Fetch QR Code if not available
         function fetchQRCode() {

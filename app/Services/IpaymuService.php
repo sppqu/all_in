@@ -144,9 +144,19 @@ class IpaymuService
             if ($response->successful()) {
                 $responseData = $response->json();
                 
+                // Log detailed response data for debugging
+                Log::info('iPaymu Response Data Structure', [
+                    'full_response' => $responseData,
+                    'data_keys' => isset($responseData['Data']) ? array_keys($responseData['Data']) : 'NO DATA KEY',
+                    'via_field' => $responseData['Data']['Via'] ?? 'NOT FOUND',
+                    'payment_no' => $responseData['Data']['PaymentNo'] ?? 'NOT FOUND',
+                    'payment_code' => $responseData['Data']['PaymentCode'] ?? 'NOT FOUND',
+                    'account_number' => $responseData['Data']['AccountNumber'] ?? 'NOT FOUND'
+                ]);
+                
                 // Check if response is success
                 if ($responseData['Status'] == 200) {
-                    return [
+                    $result = [
                         'success' => true,
                         'reference_id' => $referenceId,
                         'session_id' => $responseData['Data']['SessionID'] ?? null,
@@ -155,11 +165,17 @@ class IpaymuService
                         'payment_no' => $responseData['Data']['PaymentNo'] ?? null,
                         'payment_name' => $responseData['Data']['PaymentName'] ?? null,
                         'payment_channel' => $responseData['Data']['PaymentChannel'] ?? null,
-                        'va_number' => $responseData['Data']['Via'] ?? null,
+                        'va_number' => $responseData['Data']['Via'] ?? $responseData['Data']['PaymentNo'] ?? $responseData['Data']['PaymentCode'] ?? $responseData['Data']['AccountNumber'] ?? null,
                         'qr_string' => $responseData['Data']['QrString'] ?? null,
                         'expired' => $responseData['Data']['Expired'] ?? null,
                         'message' => $responseData['Message'] ?? 'Payment created successfully'
                     ];
+                    
+                    Log::info('iPaymu Final Result', [
+                        'result' => $result
+                    ]);
+                    
+                    return $result;
                 } else {
                     return [
                         'success' => false,
@@ -243,8 +259,18 @@ class IpaymuService
             if ($response->successful()) {
                 $responseData = $response->json();
                 
+                // Log detailed response data for debugging
+                Log::info('iPaymu Addon Response Data Structure', [
+                    'full_response' => $responseData,
+                    'data_keys' => isset($responseData['Data']) ? array_keys($responseData['Data']) : 'NO DATA KEY',
+                    'via_field' => $responseData['Data']['Via'] ?? 'NOT FOUND',
+                    'payment_no' => $responseData['Data']['PaymentNo'] ?? 'NOT FOUND',
+                    'payment_code' => $responseData['Data']['PaymentCode'] ?? 'NOT FOUND',
+                    'account_number' => $responseData['Data']['AccountNumber'] ?? 'NOT FOUND'
+                ]);
+                
                 if ($responseData['Status'] == 200) {
-                    return [
+                    $result = [
                         'success' => true,
                         'reference_id' => $referenceId,
                         'session_id' => $responseData['Data']['SessionID'] ?? null,
@@ -253,11 +279,17 @@ class IpaymuService
                         'payment_no' => $responseData['Data']['PaymentNo'] ?? null,
                         'payment_name' => $responseData['Data']['PaymentName'] ?? null,
                         'payment_channel' => $responseData['Data']['PaymentChannel'] ?? null,
-                        'va_number' => $responseData['Data']['Via'] ?? null,
+                        'va_number' => $responseData['Data']['Via'] ?? $responseData['Data']['PaymentNo'] ?? $responseData['Data']['PaymentCode'] ?? $responseData['Data']['AccountNumber'] ?? null,
                         'qr_string' => $responseData['Data']['QrString'] ?? null,
                         'expired' => $responseData['Data']['Expired'] ?? null,
                         'message' => $responseData['Message'] ?? 'Payment created successfully'
                     ];
+                    
+                    Log::info('iPaymu Addon Final Result', [
+                        'result' => $result
+                    ]);
+                    
+                    return $result;
                 } else {
                     return [
                         'success' => false,
@@ -355,6 +387,120 @@ class IpaymuService
         ];
 
         return $channelMap[$method] ?? 'bag';
+    }
+
+    /**
+     * Create SPMB payment transaction (Step 2 Registration Fee)
+     */
+    public function createSPMBPayment($data)
+    {
+        try {
+            $referenceId = 'SPMB-STEP2-' . $data['registration_id'] . '-' . time();
+            $amount = (int) $data['amount'];
+            
+            $bodyParams = [
+                'name' => $data['customer_name'],
+                'phone' => $data['customer_phone'] ?? '08123456789',
+                'email' => $data['customer_email'] ?? 'spmb@sppqu.com',
+                'amount' => $amount,
+                'notifyUrl' => $data['callback_url'],
+                'returnUrl' => $data['return_url'],
+                'cancelUrl' => $data['return_url'],
+                'referenceId' => $referenceId,
+                'buyerName' => $data['customer_name'],
+                'buyerPhone' => $data['customer_phone'] ?? '08123456789',
+                'buyerEmail' => $data['customer_email'] ?? 'spmb@sppqu.com',
+                'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'qris'),
+                'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'qris'),
+                'product' => [
+                    'SPMB Registration Fee - ' . ($data['product_name'] ?? 'Step 2')
+                ],
+                'qty' => [1],
+                'price' => [$amount],
+                'weight' => [1],
+                'width' => [1],
+                'height' => [1],
+                'length' => [1],
+                'deliveryArea' => '76111',
+                'deliveryAddress' => 'Jl. SPMB Registration'
+            ];
+
+            $signature = $this->generateSignature($bodyParams);
+
+            Log::info('iPaymu SPMB Payment Request', [
+                'body_params' => $bodyParams,
+                'reference_id' => $referenceId
+            ]);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'signature' => $signature,
+                'va' => $this->va,
+                'timestamp' => now()->timestamp
+            ])->post($this->baseUrl . 'payment/direct', $bodyParams);
+
+            Log::info('iPaymu SPMB Payment Response', [
+                'status' => $response->status(),
+                'body' => $response->json()
+            ]);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                
+                // Log detailed response data for debugging
+                Log::info('iPaymu SPMB Response Data Structure', [
+                    'full_response' => $responseData,
+                    'data_keys' => isset($responseData['Data']) ? array_keys($responseData['Data']) : 'NO DATA KEY',
+                    'via_field' => $responseData['Data']['Via'] ?? 'NOT FOUND',
+                    'payment_no' => $responseData['Data']['PaymentNo'] ?? 'NOT FOUND',
+                    'qr_string' => $responseData['Data']['QrString'] ?? 'NOT FOUND'
+                ]);
+                
+                if ($responseData['Status'] == 200) {
+                    $result = [
+                        'success' => true,
+                        'reference_id' => $referenceId,
+                        'session_id' => $responseData['Data']['SessionID'] ?? null,
+                        'transaction_id' => $responseData['Data']['TransactionId'] ?? null,
+                        'payment_url' => $responseData['Data']['Url'] ?? null,
+                        'payment_no' => $responseData['Data']['PaymentNo'] ?? null,
+                        'payment_name' => $responseData['Data']['PaymentName'] ?? null,
+                        'payment_channel' => $responseData['Data']['PaymentChannel'] ?? null,
+                        'va_number' => $responseData['Data']['Via'] ?? $responseData['Data']['PaymentNo'] ?? null,
+                        'qr_string' => $responseData['Data']['QrString'] ?? null,
+                        'qr_code' => $responseData['Data']['QrString'] ?? null,
+                        'expired' => $responseData['Data']['Expired'] ?? null,
+                        'message' => $responseData['Message'] ?? 'Payment created successfully'
+                    ];
+                    
+                    Log::info('iPaymu SPMB Final Result', [
+                        'result' => $result
+                    ]);
+                    
+                    return $result;
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => $responseData['Message'] ?? 'Failed to create payment'
+                    ];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Failed to connect to iPaymu: ' . $response->status()
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('iPaymu SPMB Payment Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
     }
 
     /**
