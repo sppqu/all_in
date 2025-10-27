@@ -125,16 +125,6 @@
                         </div>
                     @endif
                     
-                    {{-- Debug Info (remove after testing) --}}
-                    @if(config('app.debug'))
-                    <div class="alert alert-info small">
-                        <strong>Debug Info:</strong><br>
-                        VA Number: {{ $result['va_number'] ?? 'null' }}<br>
-                        Payment No: {{ $result['payment_no'] ?? 'null' }}<br>
-                        Payment Code: {{ $result['payment_code'] ?? 'null' }}<br>
-                        Payment URL: {{ $result['payment_url'] ?? 'null' }}
-                    </div>
-                    @endif
 
                     <div class="row mt-4">
                         <div class="col-md-6">

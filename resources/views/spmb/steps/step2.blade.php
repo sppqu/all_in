@@ -166,7 +166,7 @@
                             <form action="{{ route('spmb.step2.post') }}" method="POST" id="qrisPaymentForm">
                                 @csrf
                                 <button type="submit" class="btn btn-primary btn-lg" id="btnPayQris">
-                                    <i class="fas fa-qrcode me-2"></i>Bayar dengan QRIS Tripay
+                                    <i class="fas fa-qrcode me-2"></i>Bayar dengan QRIS
                                 </button>
                             </form>
                         @endif

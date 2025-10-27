@@ -398,22 +398,34 @@ class IpaymuService
             $referenceId = 'SPMB-STEP2-' . $data['registration_id'] . '-' . time();
             $amount = (int) $data['amount'];
             
+            // Ensure phone number starts with 08 or 62
+            $phone = $data['customer_phone'] ?? '08123456789';
+            if (!str_starts_with($phone, '08') && !str_starts_with($phone, '62')) {
+                $phone = '08' . ltrim($phone, '0');
+            }
+            
+            // Ensure email is valid
+            $email = $data['customer_email'] ?? 'spmb@sppqu.com';
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $email = 'spmb@sppqu.com';
+            }
+            
             $bodyParams = [
-                'name' => $data['customer_name'],
-                'phone' => $data['customer_phone'] ?? '08123456789',
-                'email' => $data['customer_email'] ?? 'spmb@sppqu.com',
+                'name' => substr($data['customer_name'], 0, 50), // Max 50 char
+                'phone' => $phone,
+                'email' => $email,
                 'amount' => $amount,
                 'notifyUrl' => $data['callback_url'],
                 'returnUrl' => $data['return_url'],
                 'cancelUrl' => $data['return_url'],
                 'referenceId' => $referenceId,
-                'buyerName' => $data['customer_name'],
-                'buyerPhone' => $data['customer_phone'] ?? '08123456789',
-                'buyerEmail' => $data['customer_email'] ?? 'spmb@sppqu.com',
+                'buyerName' => substr($data['customer_name'], 0, 50),
+                'buyerPhone' => $phone,
+                'buyerEmail' => $email,
                 'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'qris'),
                 'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'qris'),
                 'product' => [
-                    'SPMB Registration Fee - ' . ($data['product_name'] ?? 'Step 2')
+                    'SPMB Registration Fee Step 2'
                 ],
                 'qty' => [1],
                 'price' => [$amount],
@@ -422,21 +434,25 @@ class IpaymuService
                 'height' => [1],
                 'length' => [1],
                 'deliveryArea' => '76111',
-                'deliveryAddress' => 'Jl. SPMB Registration'
+                'deliveryAddress' => 'Jl SPMB Registration'
             ];
 
             $signature = $this->generateSignature($bodyParams);
+            $timestamp = time();
 
             Log::info('iPaymu SPMB Payment Request', [
                 'body_params' => $bodyParams,
-                'reference_id' => $referenceId
+                'reference_id' => $referenceId,
+                'signature' => $signature,
+                'timestamp' => $timestamp,
+                'va' => $this->va
             ]);
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
-                'timestamp' => now()->timestamp
+                'timestamp' => $timestamp
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             Log::info('iPaymu SPMB Payment Response', [
@@ -479,16 +495,30 @@ class IpaymuService
                     
                     return $result;
                 } else {
+                    Log::error('iPaymu SPMB Payment Failed (Non-200 Status)', [
+                        'status' => $responseData['Status'] ?? 'unknown',
+                        'message' => $responseData['Message'] ?? 'No message',
+                        'response' => $responseData
+                    ]);
+                    
                     return [
                         'success' => false,
                         'message' => $responseData['Message'] ?? 'Failed to create payment'
                     ];
                 }
             }
+            
+            // Handle HTTP error responses (400, 500, etc)
+            $errorBody = $response->json();
+            Log::error('iPaymu SPMB API Error', [
+                'http_status' => $response->status(),
+                'response_body' => $errorBody,
+                'request_body' => $bodyParams
+            ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to connect to iPaymu: ' . $response->status()
+                'message' => 'iPaymu API Error (' . $response->status() . '): ' . ($errorBody['Message'] ?? $response->body())
             ];
 
         } catch (\Exception $e) {
