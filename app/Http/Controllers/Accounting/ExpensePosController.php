@@ -22,10 +22,21 @@ class ExpensePosController extends Controller
             ->orderBy('pos_name')
             ->get();
         
+        // Ambil data pos penerimaan untuk dropdown sumber dana
+        $receiptPos = DB::table('pos_pembayaran')
+            ->orderBy('pos_name')
+            ->get();
+        
         // Ambil data metode pembayaran untuk dropdown
         $paymentMethods = DB::table('payment_methods')
             ->where('status', 'ON')
             ->orderBy('nama_metode')
+            ->get();
+        
+        // Ambil data kas untuk dropdown
+        $kasList = DB::table('kas')
+            ->where('is_active', 1)
+            ->orderBy('nama_kas')
             ->get();
         
         // Ambil data transaksi pengeluaran
@@ -44,7 +55,7 @@ class ExpensePosController extends Controller
             ->orderBy('et.tanggal', 'desc')
             ->get();
         
-        return view('accounting.expense-pos.index', compact('expensePos', 'paymentMethods', 'transactions', 'startDate', 'endDate'));
+        return view('accounting.expense-pos.index', compact('expensePos', 'receiptPos', 'paymentMethods', 'kasList', 'transactions', 'startDate', 'endDate'));
     }
 
     /**
