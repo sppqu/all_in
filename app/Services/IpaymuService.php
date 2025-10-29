@@ -24,11 +24,27 @@ class IpaymuService
         $source = 'config'; // default
         
         if ($useEnvConfig) {
-            // Force use ENV config for internal system (addon, subscription)
+            // Try ENV config first for internal system (addon, subscription, SPMB Step 2)
             $this->va = config('ipaymu.va', '');
             $this->apiKey = config('ipaymu.api_key', '');
             $this->isSandbox = config('ipaymu.sandbox', true);
-            $source = 'env_config';
+            
+            // If ENV is empty, fallback to database
+            if (empty($this->va) || empty($this->apiKey)) {
+                Log::warning('⚠️ ENV config empty, falling back to database');
+                $gateway = \DB::table('setup_gateways')->first();
+                
+                if ($gateway && $gateway->ipaymu_is_active) {
+                    $this->va = $gateway->ipaymu_va ?? '';
+                    $this->apiKey = $gateway->ipaymu_api_key ?? '';
+                    $this->isSandbox = ($gateway->ipaymu_mode ?? 'sandbox') === 'sandbox';
+                    $source = 'env_fallback_to_db';
+                } else {
+                    $source = 'env_empty';
+                }
+            } else {
+                $source = 'env_config';
+            }
         } else {
             // Use database config for student payments (cart, bulanan, bebas, tabungan)
             $gateway = \DB::table('setup_gateways')->first();
@@ -43,7 +59,7 @@ class IpaymuService
                 $this->va = config('ipaymu.va', '');
                 $this->apiKey = config('ipaymu.api_key', '');
                 $this->isSandbox = config('ipaymu.sandbox', true);
-                $source = 'env_fallback';
+                $source = 'db_fallback_to_env';
             }
         }
         
@@ -55,8 +71,8 @@ class IpaymuService
         Log::info('iPaymu Service initialized', [
             'source' => $source,
             'use_env_config' => $useEnvConfig ? 'YES' : 'NO',
-            'va_set' => !empty($this->va) ? 'YES' : 'NO',
-            'api_key_set' => !empty($this->apiKey) ? 'YES' : 'NO',
+            'va_set' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : 'NO',
+            'api_key_set' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO',
             'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
             'base_url' => $this->baseUrl
         ]);
@@ -483,10 +499,30 @@ class IpaymuService
                 'timestamp' => $timestamp
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
+            $responseBody = $response->json();
+            
             Log::info('iPaymu SPMB Payment Response', [
                 'status' => $response->status(),
-                'body' => $response->json()
+                'body' => $responseBody
             ]);
+
+            // Handle 401 Unauthorized specifically
+            if ($response->status() === 401) {
+                Log::error('❌ iPaymu 401 Unauthorized - Signature Invalid', [
+                    'va' => $this->va ? 'SET (len:'.strlen($this->va).')' : 'EMPTY',
+                    'api_key' => $this->apiKey ? 'SET (len:'.strlen($this->apiKey).')' : 'EMPTY',
+                    'base_url' => $this->baseUrl,
+                    'is_sandbox' => $this->isSandbox,
+                    'signature_sent' => $signature,
+                    'error_response' => $responseBody
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => 'Kredensial iPaymu tidak valid. Silakan hubungi administrator untuk mengecek konfigurasi iPaymu.',
+                    'error_code' => 401
+                ];
+            }
 
             if ($response->successful()) {
                 $responseData = $response->json();

@@ -305,9 +305,18 @@ class SPMBController extends Controller
             if (!$ipaymuResponse || !isset($ipaymuResponse['success']) || !$ipaymuResponse['success']) {
                 \Log::error('SPMB Payment failed', [
                     'registration_id' => $registration->id,
-                    'response' => $ipaymuResponse
+                    'response' => $ipaymuResponse,
+                    'error_code' => $ipaymuResponse['error_code'] ?? null
                 ]);
-                return back()->with('error', 'Gagal membuat pembayaran iPaymu: ' . ($ipaymuResponse['message'] ?? 'Silakan coba lagi.'));
+                
+                $errorMessage = 'Gagal membuat pembayaran iPaymu: ' . ($ipaymuResponse['message'] ?? 'Silakan coba lagi.');
+                
+                // Add specific message for 401 error
+                if (isset($ipaymuResponse['error_code']) && $ipaymuResponse['error_code'] == 401) {
+                    $errorMessage .= ' (Konfigurasi iPaymu belum diatur atau tidak valid)';
+                }
+                
+                return back()->with('error', $errorMessage);
             }
 
             // Get QR code from response
