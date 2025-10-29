@@ -1035,8 +1035,92 @@
             });
         }
 
-        // Subscription notification system (disabled)
-        function checkSubscriptionNotifications() { /* notifications disabled */ }
+        // Show subscription notification popup with action buttons
+        function showSubscriptionNotificationPopup(notification) {
+            // Create modal for subscription notification
+            const modalId = `subscriptionNotification_${notification.id}`;
+            
+            // Check if modal already exists
+            if (document.getElementById(modalId)) {
+                return; // Already shown
+            }
+            
+            // Determine color scheme based on notification color
+            const colorClass = notification.color === 'danger' ? 'danger' : (notification.color === 'warning' ? 'warning' : 'info');
+            const iconClass = notification.icon || 'fa-bell';
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header bg-${colorClass} text-white border-0">
+                                <h5 class="modal-title fw-bold">
+                                    <i class="fas ${iconClass} me-2"></i>
+                                    ${notification.title}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="markNotificationAsRead(${notification.id})"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-${colorClass} border-0 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <i class="fas ${iconClass} fa-2x"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <p class="mb-0">${notification.message}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${notification.type === 'subscription_expired' ? 
+                                    '<div class="text-center"><i class="fas fa-lock fa-3x text-muted mb-3"></i><p class="text-muted">Akses fitur terbatas hingga Anda memperpanjang berlangganan.</p></div>' : 
+                                    ''}
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="markNotificationAsRead(${notification.id})">
+                                    <i class="fas fa-times me-2"></i>
+                                    ${notification.type === 'subscription_expired' ? 'Nanti' : 'Tutup'}
+                                </button>
+                                <a href="{{ route('manage.subscription.plans') }}" class="btn btn-${colorClass}" onclick="markNotificationAsRead(${notification.id})">
+                                    <i class="fas fa-credit-card me-2"></i>
+                                    Perpanjang Sekarang
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Append modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal after a short delay
+            setTimeout(() => {
+                const modalElement = document.getElementById(modalId);
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                
+                // Auto-dismiss for info notifications after 15 seconds
+                if (notification.color === 'info') {
+                    setTimeout(() => {
+                        modal.hide();
+                        markNotificationAsRead(notification.id);
+                    }, 15000);
+                }
+            }, 500);
+        }
+        
+        // Mark notification as read
+        function markNotificationAsRead(notificationId) {
+            fetch(`/manage/notifications/${notificationId}/read`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            }).then(response => response.json())
+              .catch(error => console.error('Error marking notification as read:', error));
+        }
 
         function showNotification(notification) {
             // Create notification element
@@ -1427,6 +1511,20 @@
                     
                     @if(session('info'))
                         showToast('{{ session('info') }}', 'info');
+                    @endif
+                    
+                    // Show subscription notifications from database
+                    @if(isset($subscriptionNotifications) && $subscriptionNotifications->count() > 0)
+                        @foreach($subscriptionNotifications as $notification)
+                            showSubscriptionNotificationPopup({
+                                id: {{ $notification->id }},
+                                type: '{{ $notification->type }}',
+                                title: '{{ addslashes($notification->title) }}',
+                                message: '{{ addslashes($notification->message) }}',
+                                icon: '{{ $notification->icon }}',
+                                color: '{{ $notification->color }}'
+                            });
+                        @endforeach
                     @endif
                 });
                 

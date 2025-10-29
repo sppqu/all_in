@@ -17,6 +17,18 @@ class Kernel extends ConsoleKernel
                 ->everyMinute()
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/payment-expire.log'));
+        
+        // Cek status berlangganan setiap hari pukul 09:00 pagi
+        $schedule->command('subscriptions:check-status')
+                ->dailyAt('09:00')
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/subscription-check.log'));
+        
+        // Cek status berlangganan setiap 6 jam untuk notifikasi kritis
+        $schedule->command('subscriptions:check-status')
+                ->everySixHours()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/subscription-check.log'));
     }
 
     /**
