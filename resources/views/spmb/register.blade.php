@@ -221,9 +221,10 @@
                         <div class="info-box">
                             <h6 class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i>Informasi Penting</h6>
                             <ul class="mb-0 small">
-                                <li>Password akan otomatis dibuat dari 6 digit terakhir nomor HP</li>
+                                <li><strong>Password otomatis</strong>: 6 digit terakhir nomor HP Anda</li>
                                 <li>Pastikan nomor HP aktif untuk menerima notifikasi</li>
                                 <li>Data yang diisi harus sesuai dengan identitas asli</li>
+                                <li>Anda dapat mengubah password setelah login</li>
                             </ul>
                         </div>
 
@@ -261,34 +262,6 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="password" class="form-label">Konfirmasi Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-lock"></i>
-                                    </span>
-                                    <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                                           id="password" name="password" 
-                                           placeholder="Masukkan 6 digit terakhir HP" required>
-                                </div>
-                                @error('password')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Masukkan 6 digit terakhir dari nomor HP Anda</small>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="password_confirmation" class="form-label">Ulangi Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-lock"></i>
-                                    </span>
-                                    <input type="password" class="form-control" 
-                                           id="password_confirmation" name="password_confirmation" 
-                                           placeholder="Ulangi 6 digit terakhir HP" required>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="terms" required>
                                     <label class="form-check-label" for="terms">
@@ -321,12 +294,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Auto-fill password confirmation when password changes
-        document.getElementById('password').addEventListener('input', function() {
-            document.getElementById('password_confirmation').value = this.value;
-        });
-    </script>
 </body>
 </html>
 

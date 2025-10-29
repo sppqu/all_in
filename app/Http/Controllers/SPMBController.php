@@ -66,11 +66,10 @@ class SPMBController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:spmb_registrations,phone',
-            'password' => 'required|string|min:6|max:6|confirmed'
+            'phone' => 'required|string|max:20|unique:spmb_registrations,phone'
         ]);
 
-        // Generate 6-digit password from last 6 digits of phone
+        // Automatically generate password from last 6 digits of phone
         $password = substr($request->phone, -6);
 
         $registration = SPMBRegistration::create([
