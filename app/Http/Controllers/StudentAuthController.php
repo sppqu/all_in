@@ -1921,7 +1921,7 @@ class StudentAuthController extends Controller
             'bill_type' => 'required|in:bulanan,bebas',
             'bill_id' => 'required|integer',
             'payment_type' => 'required|in:realtime,manual',
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:10000', // Minimal Rp 10.000 untuk iPaymu
             'description' => 'nullable|string|max:500',
             // Conditional validation
             'payment_method' => 'required_if:payment_type,realtime|string',
@@ -3229,6 +3229,14 @@ class StudentAuthController extends Controller
             }
 
             $totalAmount = (int) $request->total_amount;
+
+            // Validate minimum amount for iPaymu (Rp 10.000)
+            if ($totalAmount < 10000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total pembayaran minimal Rp 10.000 untuk pembayaran online iPaymu. Total saat ini: Rp ' . number_format($totalAmount, 0, ',', '.')
+                ], 400);
+            }
 
             // Initialize iPaymu service
             $ipaymuService = new IpaymuService();
