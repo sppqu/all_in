@@ -236,9 +236,9 @@ class SubscriptionController extends BaseController
             ]
         ]);
 
-        // Use iPaymu for payment gateway
+        // Use iPaymu for payment gateway with ENV config (for internal system/subscription)
         try {
-            $ipaymu = new \App\Services\IpaymuService();
+            $ipaymu = new \App\Services\IpaymuService(true); // true = use ENV config
             
             $result = $ipaymu->createSubscriptionPayment([
                 'user_id' => $user->id,

@@ -114,8 +114,8 @@ class AddonController extends Controller
         ]);
 
         try {
-            // Use iPaymu payment gateway
-            $ipaymu = new \App\Services\IpaymuService();
+            // Use iPaymu payment gateway with ENV config (for internal system/addon)
+            $ipaymu = new \App\Services\IpaymuService(true); // true = use ENV config
             
             $result = $ipaymu->createAddonPayment([
                 'user_id' => $user->id,

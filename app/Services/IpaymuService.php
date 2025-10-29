@@ -12,20 +12,39 @@ class IpaymuService
     protected $baseUrl;
     protected $isSandbox;
 
-    public function __construct()
+    /**
+     * Constructor
+     * 
+     * @param bool $useEnvConfig Force use ENV config instead of database
+     *                           TRUE = Use ENV (for addon/subscription - internal system)
+     *                           FALSE = Use Database (for student payments)
+     */
+    public function __construct($useEnvConfig = false)
     {
-        // Ambil kredensial dari database (setup_gateways table)
-        $gateway = \DB::table('setup_gateways')->first();
+        $source = 'config'; // default
         
-        if ($gateway && $gateway->ipaymu_is_active) {
-            $this->va = $gateway->ipaymu_va ?? '';
-            $this->apiKey = $gateway->ipaymu_api_key ?? '';
-            $this->isSandbox = ($gateway->ipaymu_mode ?? 'sandbox') === 'sandbox';
-        } else {
-            // Fallback to config if database not available or not active
+        if ($useEnvConfig) {
+            // Force use ENV config for internal system (addon, subscription)
             $this->va = config('ipaymu.va', '');
             $this->apiKey = config('ipaymu.api_key', '');
             $this->isSandbox = config('ipaymu.sandbox', true);
+            $source = 'env_config';
+        } else {
+            // Use database config for student payments (cart, bulanan, bebas, tabungan)
+            $gateway = \DB::table('setup_gateways')->first();
+            
+            if ($gateway && $gateway->ipaymu_is_active) {
+                $this->va = $gateway->ipaymu_va ?? '';
+                $this->apiKey = $gateway->ipaymu_api_key ?? '';
+                $this->isSandbox = ($gateway->ipaymu_mode ?? 'sandbox') === 'sandbox';
+                $source = 'database';
+            } else {
+                // Fallback to config if database not available or not active
+                $this->va = config('ipaymu.va', '');
+                $this->apiKey = config('ipaymu.api_key', '');
+                $this->isSandbox = config('ipaymu.sandbox', true);
+                $source = 'env_fallback';
+            }
         }
         
         // Set base URL based on mode
@@ -34,11 +53,11 @@ class IpaymuService
             : 'https://my.ipaymu.com/api/v2/';
         
         Log::info('iPaymu Service initialized', [
-            'source' => $gateway && $gateway->ipaymu_is_active ? 'database' : 'config',
+            'source' => $source,
+            'use_env_config' => $useEnvConfig ? 'YES' : 'NO',
             'va_set' => !empty($this->va) ? 'YES' : 'NO',
             'api_key_set' => !empty($this->apiKey) ? 'YES' : 'NO',
             'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
-            'is_active' => $gateway && $gateway->ipaymu_is_active ? 'YES' : 'NO',
             'base_url' => $this->baseUrl
         ]);
     }
