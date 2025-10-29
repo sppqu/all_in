@@ -188,13 +188,13 @@
                                     Pilih Metode Pembayaran
                                 </label>
                                 <div class="payment-methods">
-                                    <!-- QRIS -->
+                                    <!-- QRIS Only -->
                                     <div class="form-check payment-option mb-3">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="qris" value="QRIS" required>
+                                        <input class="form-check-input" type="radio" name="payment_method" id="qris" value="QRIS" required checked>
                                         <label class="form-check-label w-100" for="qris">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <i class="fas fa-qrcode me-2 text-primary"></i>
+                                                    <i class="fas fa-qrcode me-2 text-success"></i>
                                                     <strong>QRIS</strong>
                                                     <br>
                                                     <small class="text-muted">Scan & Pay via E-Wallet</small>
@@ -203,55 +203,26 @@
                                             </div>
                                         </label>
                                     </div>
+                                </div>
 
-                                    <!-- BRI Virtual Account -->
-                                    <div class="form-check payment-option mb-3">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="briva" value="BRIVA">
-                                        <label class="form-check-label w-100" for="briva">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-university me-2 text-primary"></i>
-                                                <strong>BRI Virtual Account</strong>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <!-- BCA Virtual Account -->
-                                    <div class="form-check payment-option mb-3">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="bcava" value="BCAVA">
-                                        <label class="form-check-label w-100" for="bcava">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-university me-2 text-info"></i>
-                                                <strong>BCA Virtual Account</strong>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <!-- Mandiri Virtual Account -->
-                                    <div class="form-check payment-option mb-3">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="mandiriva" value="MANDIRIVA">
-                                        <label class="form-check-label w-100" for="mandiriva">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-university me-2 text-warning"></i>
-                                                <strong>Mandiri Virtual Account</strong>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <!-- BNI Virtual Account -->
-                                    <div class="form-check payment-option mb-3">
-                                        <input class="form-check-input" type="radio" name="payment_method" id="bniva" value="BNIVA">
-                                        <label class="form-check-label w-100" for="bniva">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-university me-2 text-danger"></i>
-                                                <strong>BNI Virtual Account</strong>
-                                            </div>
-                                        </label>
+                                <div class="alert alert-info border-0 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-mobile-alt me-2 text-success" style="font-size: 1.5rem;"></i>
+                                        <div class="small">
+                                            <strong>Cara Pembayaran QRIS:</strong>
+                                            <ol class="mb-0 mt-1 ps-3">
+                                                <li>Buka aplikasi e-wallet (GoPay, OVO, Dana, LinkAja, ShopeePay)</li>
+                                                <li>Pilih menu Scan QR atau QRIS</li>
+                                                <li>Scan QR Code yang muncul</li>
+                                                <li>Konfirmasi pembayaran</li>
+                                            </ol>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="form-text">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Pembayaran aman menggunakan Tripay Payment Gateway
+                                    <i class="fas fa-shield-alt me-1 text-success"></i>
+                                    Pembayaran aman menggunakan iPaymu Payment Gateway
                                 </div>
                             </div>
 
