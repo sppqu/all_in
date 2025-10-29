@@ -1314,12 +1314,14 @@ Route::get('/login', function () {
     Route::patch('/account-codes/{accountCode}/toggle-status', [AccountCodeController::class, 'toggleStatus'])->name('account-codes.toggle-status')->middleware('auth');
     Route::get('/api/account-codes', [AccountCodeController::class, 'getAccountCodes'])->name('account-codes.api')->middleware('auth');
 
-// OTP Routes
+// OTP Routes - REMOVED DUPLICATE (already defined above at line 316)
+/*
 Route::get('/otp/login', [App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
 Route::post('/otp/login', [App\Http\Controllers\OtpController::class, 'requestOtp'])->name('otp.request');
 Route::get('/otp/verify', [App\Http\Controllers\OtpController::class, 'showVerifyForm'])->name('otp.verify');
 Route::post('/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify');
 Route::get('/otp/resend', [App\Http\Controllers\OtpController::class, 'resendOtp'])->name('otp.resend');
+*/
 
 // Student Routes - dengan middleware yang benar
 Route::prefix('student')->name('student.')->group(function () {
