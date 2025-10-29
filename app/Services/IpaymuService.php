@@ -24,11 +24,22 @@ class IpaymuService
         $source = 'config'; // default
         
         if ($useEnvConfig) {
+            Log::info('🚀 STARTING ENV CONFIG LOAD (useEnvConfig=true)', [
+                'method' => 'direct .env file reading',
+                'env_path' => base_path('.env')
+            ]);
+            
             // FORCE load from .env file directly (bypass config cache)
             // This ensures ENV variables are loaded even when config is cached
             $envVa = $this->getEnvValue('IPAYMU_VA');
             $envApiKey = $this->getEnvValue('IPAYMU_API_KEY');
             $envSandbox = $this->getEnvValue('IPAYMU_SANDBOX');
+            
+            Log::info('📊 ENV values retrieved', [
+                'IPAYMU_VA' => $envVa ? 'FOUND' : 'NULL',
+                'IPAYMU_API_KEY' => $envApiKey ? 'FOUND' : 'NULL',
+                'IPAYMU_SANDBOX' => $envSandbox !== null ? $envSandbox : 'NULL'
+            ]);
             
             $this->va = $envVa ?? '';
             $this->apiKey = $envApiKey ?? '';
