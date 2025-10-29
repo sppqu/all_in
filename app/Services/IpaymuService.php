@@ -395,7 +395,16 @@ class IpaymuService
             $phone = preg_replace('/[^0-9]/', '', $phone);
             
             if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
-                throw new \Exception('Production mode requires real customer phone number');
+                Log::error('❌ PRODUCTION ERROR: Cannot use dummy phone number', [
+                    'phone' => $phone,
+                    'user_id' => $data['user_id'] ?? null,
+                    'message' => 'Please update user phone number in database or switch to sandbox mode'
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => 'Tidak dapat melakukan pembayaran. Nomor HP tidak valid untuk mode production. Silakan update nomor HP di profil atau hubungi administrator.'
+                ];
             }
             
             // Production mode requires specific address
@@ -611,8 +620,16 @@ class IpaymuService
             
             // For production, don't use dummy numbers
             if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
-                Log::error('❌ Production mode requires real phone number, not dummy/test number');
-                throw new \Exception('Invalid phone number for production. Please provide real customer phone.');
+                Log::error('❌ PRODUCTION ERROR: Cannot use dummy phone number for SPMB', [
+                    'phone' => $phone,
+                    'registration_id' => $data['registration_id'] ?? null,
+                    'message' => 'Please provide real customer phone or switch to sandbox mode'
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => 'Nomor HP tidak valid untuk mode production. Silakan gunakan nomor HP yang valid atau hubungi administrator.'
+                ];
             }
             
             // Validate email (production requires valid email)
