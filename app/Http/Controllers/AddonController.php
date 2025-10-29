@@ -117,6 +117,9 @@ class AddonController extends Controller
             // Use iPaymu payment gateway with ENV config (for internal system/addon)
             $ipaymu = new \App\Services\IpaymuService(true); // true = use ENV config
             
+            // Get phone number - check multiple possible column names
+            $customerPhone = $user->nomor_wa ?? $user->phone ?? $user->no_hp ?? '08123456789';
+            
             $result = $ipaymu->createAddonPayment([
                 'user_id' => $user->id,
                 'addon_id' => $addon->id,
@@ -125,7 +128,7 @@ class AddonController extends Controller
                 'addon_name' => 'SPPQU Addon - ' . $addon->name,
                 'customer_name' => $user->name,
                 'customer_email' => $user->email,
-                'customer_phone' => $user->phone ?? '08123456789',
+                'customer_phone' => $customerPhone,
                 'return_url' => route('manage.addons.index'),
                 'callback_url' => url('/api/manage/ipaymu/callback')
             ]);
