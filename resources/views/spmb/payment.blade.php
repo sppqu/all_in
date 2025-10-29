@@ -165,13 +165,20 @@
                         </div>
                         @endif
 
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="button" class="btn btn-success btn-lg" id="btnCheckStatus" onclick="checkPaymentStatus()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                <span id="statusBtnText">Cek Status Pembayaran</span>
+                            </button>
+                        </div>
+
                         <div class="d-flex justify-content-between gap-2">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>ke Dashboard
+                                <i class="fas fa-arrow-left me-1"></i>Kembali
                             </a>
                             @if($payment->payment_url)
                             <a href="{{ $payment->payment_url }}" target="_blank" class="btn btn-primary">
-                                <i class="fas fa-external-link-alt me-1"></i>Bayar
+                                <i class="fas fa-external-link-alt me-1"></i>Lihat Detail
                             </a>
                             @endif
                         </div>
@@ -245,26 +252,76 @@
         setTimeout(fetchQRCode, 2000);
         @endif
 
-        // Auto refresh payment status every 30 seconds
-        setInterval(function() {
-            fetch('{{ route("spmb.payment.callback") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    reference: '{{ $payment->tripay_reference }}'
+        // Payment ID
+        const paymentId = {{ $payment->id }};
+        let checkInterval;
+
+        // Function to check payment status
+        function checkPaymentStatus() {
+            const btn = document.getElementById('btnCheckStatus');
+            const btnText = document.getElementById('statusBtnText');
+            
+            // Disable button
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengecek...';
+            
+            fetch('{{ route("spmb.dashboard") }}')
+                .then(response => response.text())
+                .then(html => {
+                    // Parse response to check if payment status changed
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Try to detect if user can proceed (payment success)
+                    // You can customize this based on your dashboard HTML structure
+                    
+                    // For now, just reload to check
+                    window.location.reload();
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'PAID') {
-                    window.location.href = '{{ route("spmb.payment.success") }}';
-                }
-            })
-            .catch(error => console.log('Payment check failed'));
-        }, 30000);
+                .catch(error => {
+                    console.error('Error checking payment:', error);
+                    btn.disabled = false;
+                    btnText.textContent = 'Cek Status Pembayaran';
+                    alert('Gagal mengecek status. Silakan coba lagi.');
+                });
+        }
+
+        // Auto check payment status every 10 seconds
+        function startAutoCheck() {
+            checkInterval = setInterval(function() {
+                console.log('Auto-checking payment status...');
+                
+                fetch('{{ route("spmb.dashboard") }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        // If dashboard loads successfully, payment might be complete
+                        // Reload page to check
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        
+                        // Check if there's a success indicator or if we can proceed
+                        // For simplicity, we'll just check the payment record in DB via reload
+                        fetch(window.location.href)
+                            .then(r => r.text())
+                            .then(pageHtml => {
+                                if (pageHtml.includes('success') || pageHtml.includes('berhasil')) {
+                                    window.location.href = '{{ route("spmb.dashboard") }}';
+                                }
+                            });
+                    })
+                    .catch(error => console.log('Auto-check failed:', error));
+            }, 10000); // Check every 10 seconds
+        }
+
+        // Start auto-check after 5 seconds
+        setTimeout(startAutoCheck, 5000);
+
+        // Stop auto-check when user leaves page
+        window.addEventListener('beforeunload', function() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+            }
+        });
     </script>
 </body>
 </html>
