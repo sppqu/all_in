@@ -88,9 +88,9 @@ class IpaymuService
                 $source = 'database';
             } else {
                 // Fallback to config if database not available or not active
-                $this->va = config('ipaymu.va', '');
-                $this->apiKey = config('ipaymu.api_key', '');
-                $this->isSandbox = config('ipaymu.sandbox', true);
+        $this->va = config('ipaymu.va', '');
+        $this->apiKey = config('ipaymu.api_key', '');
+        $this->isSandbox = config('ipaymu.sandbox', true);
                 $source = 'db_fallback_to_env';
             }
         }
@@ -281,18 +281,24 @@ class IpaymuService
                 'buyerEmail' => $data['customer_email'],
                 'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'va'),
                 'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'va'),
-                'product' => [
-                    $data['plan_name']
-                ],
+                'product' => [substr($data['plan_name'], 0, 100)],
                 'qty' => [1],
                 'price' => [$amount],
+                'description' => ['Subscription - ' . substr($data['plan_name'], 0, 80)],
                 'weight' => [1],
                 'width' => [1],
                 'height' => [1],
                 'length' => [1],
                 'deliveryArea' => '76111',
-                'deliveryAddress' => 'Jl. Payment Gateway'
+                'deliveryAddress' => 'Indonesia'
             ];
+            
+            // Remove null values for production
+            if (!$this->isSandbox) {
+                $bodyParams = array_filter($bodyParams, function($value) {
+                    return $value !== null && $value !== '';
+                });
+            }
 
             $signature = $this->generateSignature($bodyParams);
 
@@ -302,7 +308,7 @@ class IpaymuService
             ]);
 
             $timestamp = now()->timestamp;
-            
+
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
@@ -398,18 +404,24 @@ class IpaymuService
                 'buyerEmail' => $data['customer_email'],
                 'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'va'),
                 'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'va'),
-                'product' => [
-                    $data['addon_name']
-                ],
+                'product' => [substr($data['addon_name'], 0, 100)],
                 'qty' => [1],
                 'price' => [$amount],
+                'description' => ['Addon - ' . substr($data['addon_name'], 0, 80)],
                 'weight' => [1],
                 'width' => [1],
                 'height' => [1],
                 'length' => [1],
                 'deliveryArea' => '76111',
-                'deliveryAddress' => 'Jl. Payment Gateway'
+                'deliveryAddress' => 'Indonesia'
             ];
+            
+            // Remove null values for production
+            if (!$this->isSandbox) {
+                $bodyParams = array_filter($bodyParams, function($value) {
+                    return $value !== null && $value !== '';
+                });
+            }
 
             $signature = $this->generateSignature($bodyParams);
 
@@ -419,7 +431,7 @@ class IpaymuService
             ]);
 
             $timestamp = now()->timestamp;
-            
+
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
@@ -586,8 +598,9 @@ class IpaymuService
                 $email = 'spmb@sppqu.com';
             }
             
+            // Production mode requires stricter data validation
             $bodyParams = [
-                'name' => substr($data['customer_name'], 0, 50), // Max 50 char
+                'name' => substr($data['customer_name'], 0, 50),
                 'phone' => $phone,
                 'email' => $email,
                 'amount' => $amount,
@@ -600,18 +613,24 @@ class IpaymuService
                 'buyerEmail' => $email,
                 'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'qris'),
                 'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'qris'),
-                'product' => [
-                    'SPMB Registration Fee Step 2'
-                ],
+                'product' => ['SPMB Registration Fee'],
                 'qty' => [1],
                 'price' => [$amount],
+                'description' => ['SPMB Registration Fee Step 2'],
                 'weight' => [1],
                 'width' => [1],
                 'height' => [1],
                 'length' => [1],
                 'deliveryArea' => '76111',
-                'deliveryAddress' => 'Jl SPMB Registration'
+                'deliveryAddress' => 'Indonesia'
             ];
+            
+            // Remove null values for production (stricter validation)
+            if (!$this->isSandbox) {
+                $bodyParams = array_filter($bodyParams, function($value) {
+                    return $value !== null && $value !== '';
+                });
+            }
 
             $signature = $this->generateSignature($bodyParams);
 
@@ -628,7 +647,7 @@ class IpaymuService
             ]);
 
             $timestamp = now()->timestamp;
-            
+
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
@@ -637,7 +656,7 @@ class IpaymuService
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             $responseBody = $response->json();
-            
+
             Log::info('iPaymu SPMB Payment Response', [
                 'status' => $response->status(),
                 'body' => $responseBody
@@ -865,7 +884,7 @@ class IpaymuService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+            
             return [
                 'success' => false,
                 'message' => $e->getMessage()
