@@ -602,7 +602,8 @@ class IpaymuService
             Log::info('💳 iPaymu payment response', [
                 'status' => $response->status(),
                 'success' => $result['Status'] ?? null,
-                'session_id' => $result['Data']['SessionID'] ?? null
+                'session_id' => $result['Data']['SessionID'] ?? null,
+                'full_response' => $result // Log full response untuk debug
             ]);
 
             if ($response->successful() && isset($result['Status']) && $result['Status'] == 200) {
