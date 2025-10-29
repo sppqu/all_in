@@ -2032,7 +2032,7 @@ class StudentAuthController extends Controller
                 $product,
                 $qty,
                 $price,
-                route('ipaymu.callback'),
+                route('api.ipaymu.callback'),
                 route('student.tabungan.index')
             );
 
@@ -2239,7 +2239,7 @@ class StudentAuthController extends Controller
                 $product,
                 $qty,
                 $price,
-                route('ipaymu.callback'),
+                route('api.ipaymu.callback'),
                 route('student.payment.history')
             );
 
@@ -3268,7 +3268,7 @@ class StudentAuthController extends Controller
                 $products,
                 $quantities,
                 $prices,
-                route('ipaymu.callback'),
+                route('api.ipaymu.callback'),
                 route('student.payment.history')
             );
 
