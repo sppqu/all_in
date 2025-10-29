@@ -607,7 +607,8 @@ Route::post('/test-student-payment', function() {
     }
 })->name('test.student.payment');
 
-// Route untuk Tripay Cart (temporary)
+// Route untuk Tripay Cart - REMOVED
+/*
 Route::post('/test-tripay-transaction-from-cart', function(Request $request) {
     try {
         // Check if student is logged in
@@ -707,6 +708,7 @@ Route::post('/test-tripay-transaction-from-cart', function(Request $request) {
         ]);
     }
 });
+*/
 
 // Webhook Test Routes
 Route::get('/webhook-test', function() {
@@ -869,12 +871,14 @@ Route::get('/test-outside', function() {
     return 'Test route di luar group manage berhasil!';
 });
 
-// Form Test Routes
+// Form Test Routes - Midtrans REMOVED
+/*
 Route::get('/form', function() {
     $students = \App\Models\Student::all();
     $periods = \App\Models\Period::all();
     return view('online-payment.midtrans-form', compact('students', 'periods'));
 })->name('midtrans.form');
+*/
 
 // Payment Form Routes
 Route::get('/payment-form/{studentId}/{billType}/{billId}', [OnlinePaymentController::class, 'paymentForm'])->name('form');
@@ -1139,7 +1143,8 @@ Route::prefix('online-payment')->name('online-payment.')->middleware('auth')->gr
 // Test route untuk detail tanpa auth (temporary)
 Route::get('/test-detail/{id}', [OnlinePaymentController::class, 'paymentDetail'])->name('test.detail');
 
-// Callback routes tanpa middleware apapun
+// Callback routes tanpa middleware apapun - Tripay REMOVED
+/*
 Route::group(['middleware' => []], function () {
     Route::post('/callback', [CallbackController::class, 'tripayCallback']);
     Route::post('/webhook', [CallbackController::class, 'tripayCallback']);
@@ -1179,6 +1184,7 @@ Route::group(['middleware' => []], function () {
     Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
     Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
 });
+*/
 
 // Logout Routes
 Route::post('/logout', function () {
@@ -1371,10 +1377,7 @@ Route::prefix('student')->name('student.')->group(function () {
         // Tabungan Payment
         Route::post('/tabungan/process', [StudentAuthController::class, 'processTabunganPayment'])->name('tabungan.process');
         
-        // Cart Payment
-        Route::post('/test-midtrans-transaction-from-cart', [StudentAuthController::class, 'processCartPayment'])
-            ->name('cart.payment')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+   
         
         // Cart Payment iPaymu
         Route::post('/cart/payment/ipaymu', [StudentAuthController::class, 'processCartPaymentIpaymu'])
@@ -1389,11 +1392,13 @@ Route::prefix('student')->name('student.')->group(function () {
     });
 });
 
-// Cart Payment without auth for testing (di luar group middleware)
+// Cart Payment without auth for testing - REMOVED
+/*
 Route::post('/student/test-midtrans-transaction-from-cart-no-auth', [StudentAuthController::class, 'processCartPayment'])
     ->name('cart.payment.noauth')
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class, \App\Http\Middleware\StudentAuth::class])
     ->middleware('web');
+*/
 
 
 
@@ -1611,106 +1616,6 @@ Route::post('/test-student-payment', function() {
     }
 })->name('test.student.payment');
 
-// Route untuk Tripay Cart (temporary)
-Route::post('/test-tripay-transaction-from-cart', function(Request $request) {
-    try {
-        // Check if student is logged in
-        if (!session('is_student')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
-
-        $studentId = session('student_id');
-        $cartItems = json_decode($request->input('cart_items'), true);
-        $totalAmount = $request->input('total_amount');
-        $paymentMethod = $request->input('payment_method', 'BRIVA');
-        
-        if (!$cartItems || !$totalAmount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart items atau total amount tidak valid'
-            ]);
-        }
-
-        // Generate merchant reference
-        $merchantRef = 'PG-CART-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-
-        $orderItems = [];
-        foreach ($cartItems as $item) {
-            $orderItems[] = [
-                'name' => $item['name'] ?? 'Tagihan',
-                'price' => isset($item['amount']) ? (int)preg_replace('/[^0-9]/', '', $item['amount']) : (int)$totalAmount,
-                'quantity' => $item['quantity'] ?? 1
-            ];
-        }
-
-        $tripayService = new App\Services\TripayService();
-        $result = $tripayService->createTransaction([
-            'method' => $paymentMethod,
-            'merchant_ref' => $merchantRef,
-            'amount' => (int)$totalAmount,
-            'customer_name' => 'Test User Cart',
-            'customer_email' => 'testcart@sppqu.com',
-            'customer_phone' => '08123456789',
-            'order_items' => $orderItems,
-            'return_url' => route('tripay.return'),
-            'callback_url' => route('online-payment.callback')
-        ]);
-
-        if (!$result || !isset($result['success']) || !$result['success']) {
-            throw new \Exception('Gagal membuat transaksi Tripay: ' . ($result['message'] ?? 'Unknown error'));
-        }
-
-        DB::beginTransaction();
-
-        // Insert to transfer table
-        $transferId = DB::table('transfer')->insertGetId([
-            'student_id' => $studentId,
-            'detail' => 'Pembayaran Cart via Payment Gateway',
-            'status' => 0, // Pending
-            'confirm_pay' => (int)$totalAmount,
-            'reference' => $result['data']['reference'] ?? $merchantRef,
-            'merchantRef' => $merchantRef,
-            'checkout_url' => $result['data']['checkout_url'] ?? null,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-
-        // Insert to transfer_detail table for each cart item
-        foreach ($cartItems as $item) {
-            $amount = (int)str_replace(['Rp ', '.', ','], '', $item['amount']);
-            
-            DB::table('transfer_detail')->insert([
-                'transfer_id' => $transferId,
-                'payment_type' => $item['type'] === 'bulanan' ? 1 : 2,
-                'bulan_id' => $item['type'] === 'bulanan' ? $item['id'] : null,
-                'bebas_id' => $item['type'] === 'bebas' ? $item['id'] : null,
-                'desc' => $item['name'],
-                'subtotal' => $amount,
-                'is_tabungan' => 0 // Default value for cart items
-            ]);
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pembayaran berhasil diproses',
-            'checkout_url' => $result['data']['checkout_url'] ?? null,
-            'data' => $result['data'] ?? [],
-            'reference' => $result['data']['reference'] ?? $merchantRef
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollback();
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ]);
-    }
-});
 
 // Webhook Test Routes
 Route::get('/webhook-test', function() {
@@ -1872,12 +1777,14 @@ Route::get('/test-outside', function() {
     return 'Test route di luar group manage berhasil!';
 });
 
-// Form Test Routes
+// Form Test Routes - Midtrans REMOVED
+/*
 Route::get('/form', function() {
     $students = \App\Models\Student::all();
     $periods = \App\Models\Period::all();
     return view('online-payment.midtrans-form', compact('students', 'periods'));
 })->name('midtrans.form');
+*/
 
 // Payment Form Routes
 Route::get('/payment-form/{studentId}/{billType}/{billId}', [OnlinePaymentController::class, 'paymentForm'])->name('form');
@@ -2097,7 +2004,8 @@ Route::prefix('online-payment')->name('online-payment.')->middleware('auth')->gr
 // Test route untuk detail tanpa auth (temporary)
 Route::get('/test-detail/{id}', [OnlinePaymentController::class, 'paymentDetail'])->name('test.detail');
 
-// Callback routes tanpa middleware apapun
+// Callback routes tanpa middleware apapun - Tripay REMOVED
+/*
 Route::group(['middleware' => []], function () {
     Route::post('/callback', [CallbackController::class, 'tripayCallback']);
     Route::post('/webhook', [CallbackController::class, 'tripayCallback']);
@@ -2137,6 +2045,7 @@ Route::group(['middleware' => []], function () {
     Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
     Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
 });
+*/
 
 // Logout Routes
 Route::post('/logout', function () {
