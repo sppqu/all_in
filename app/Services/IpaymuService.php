@@ -394,18 +394,26 @@ class IpaymuService
             $phone = $data['customer_phone'] ?? '08123456789';
             $phone = preg_replace('/[^0-9]/', '', $phone);
             
-            if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
-                Log::error('❌ PRODUCTION ERROR: Cannot use dummy phone number', [
+            // For production, validate phone length only (allow any valid format phone)
+            if (!$this->isSandbox && strlen($phone) < 10) {
+                Log::error('❌ PRODUCTION ERROR: Phone number too short for Addon', [
                     'phone' => $phone,
                     'user_id' => $data['user_id'] ?? null,
-                    'message' => 'Please update user phone number in database or switch to sandbox mode'
+                    'message' => 'Phone must be at least 10 digits'
                 ]);
                 
                 return [
                     'success' => false,
-                    'message' => 'Tidak dapat melakukan pembayaran. Nomor HP tidak valid untuk mode production. Silakan update nomor HP di profil atau hubungi administrator.'
+                    'message' => 'Nomor HP terlalu pendek. Minimal 10 digit.'
                 ];
             }
+            
+            // Log phone info for debugging
+            Log::info('Addon Payment Phone Info', [
+                'original_phone' => $data['customer_phone'] ?? 'NULL',
+                'cleaned_phone' => $phone,
+                'is_sandbox' => $this->isSandbox
+            ]);
             
             // Production mode requires specific address
             $deliveryAddress = $this->isSandbox 
