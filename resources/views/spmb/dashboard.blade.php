@@ -664,7 +664,7 @@
         <div class="row g-3">
             <!-- Step 1 -->
             <div class="col-md-6 col-lg-4">
-                <div class="step-detail-card {{ $registration->step > 1 ? 'completed' : ($registration->step == 1 ? 'current' : '') }}">
+                <div class="step-detail-card {{ $registration->step > 1 ? 'completed' : ($registration->step == 1 ? 'current' : '') }}" data-step="1">
                     <div class="step-header">
                         <div class="step-number-badge {{ $registration->step > 1 ? 'completed' : ($registration->step == 1 ? 'current' : '') }}">
                             @if($registration->step > 1)
@@ -686,7 +686,7 @@
 
             <!-- Step 2 -->
             <div class="col-md-6 col-lg-4">
-                <div class="step-detail-card {{ $registration->step > 2 ? 'completed' : ($registration->step == 2 ? 'current' : '') }}">
+                <div class="step-detail-card {{ $registration->step > 2 ? 'completed' : ($registration->step == 2 ? 'current' : '') }}" data-step="2">
                     <div class="step-header">
                         <div class="step-number-badge {{ $registration->step > 2 ? 'completed' : ($registration->step == 2 ? 'current' : '') }}">
                             @if($registration->step > 2)
@@ -747,7 +747,7 @@
 
             <!-- Step 3 -->
             <div class="col-md-6 col-lg-4">
-                <div class="step-detail-card {{ $registration->step > 3 ? 'completed' : ($registration->step == 3 ? 'current' : '') }}">
+                <div class="step-detail-card {{ $registration->step > 3 ? 'completed' : ($registration->step == 3 ? 'current' : '') }}" data-step="3">
                     <div class="step-header">
                         <div class="step-number-badge {{ $registration->step > 3 ? 'completed' : ($registration->step == 3 ? 'current' : '') }}">
                             @if($registration->step > 3)
@@ -773,7 +773,7 @@
 
             <!-- Step 4 -->
             <div class="col-md-6 col-lg-4">
-                <div class="step-detail-card {{ $registration->step > 4 ? 'completed' : ($registration->step == 4 ? 'current' : '') }}">
+                <div class="step-detail-card {{ $registration->step > 4 ? 'completed' : ($registration->step == 4 ? 'current' : '') }}" data-step="4">
                     <div class="step-header">
                         <div class="step-number-badge {{ $registration->step > 4 ? 'completed' : ($registration->step == 4 ? 'current' : '') }}">
                             @if($registration->step > 4)
@@ -816,7 +816,7 @@
 
             <!-- Step 5 -->
             <div class="col-md-6 col-lg-4">
-                <div class="step-detail-card {{ $registration->step > 5 ? 'completed' : ($registration->step == 5 ? 'current' : '') }}">
+                <div class="step-detail-card {{ $registration->step > 5 ? 'completed' : ($registration->step == 5 ? 'current' : '') }}" data-step="5">
                     <div class="step-header">
                         <div class="step-number-badge {{ $registration->step > 5 ? 'completed' : ($registration->step == 5 ? 'current' : '') }}">
                             @if($registration->step > 5)
