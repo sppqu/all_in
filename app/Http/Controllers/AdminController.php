@@ -491,7 +491,7 @@ class AdminController extends Controller
         if ($activeSubscription) {
             $expiresAt = \Carbon\Carbon::parse($activeSubscription->expires_at);
             $subscriptionDaysLeft = $currentDate->diffInDays($expiresAt, false); // false = bisa negatif jika sudah expired
-            $subscriptionDaysLeft = $subscriptionDaysLeft > 0 ? $subscriptionDaysLeft : 0;
+            $subscriptionDaysLeft = $subscriptionDaysLeft > 0 ? floor($subscriptionDaysLeft) : 0; // Pembulatan ke bawah, tanpa desimal
             $subscriptionExpiresAt = $expiresAt->format('d M Y');
         } else {
             $subscriptionDaysLeft = 0;

@@ -157,19 +157,19 @@
                                             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);"></div>
                             </div>
                         @elseif($subscriptionDaysLeft >= 7)
-                            <h2 class="fw-bold mb-2" style="color: #f59e0b;">{{ $subscriptionDaysLeft }} Hari</h2>
+                            <h2 class="fw-bold mb-2" style="color: #f59e0b;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h2>
                             <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
                                 <div class="progress-bar" role="progressbar" 
-                                     style="width: {{ ($subscriptionDaysLeft / 30) * 100 }}%; 
+                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; 
                                             background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
                                             border-radius: 10px;
                                             box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);"></div>
                             </div>
                         @else
-                            <h2 class="fw-bold mb-2" style="color: #dc2626;">{{ $subscriptionDaysLeft }} Hari</h2>
+                            <h2 class="fw-bold mb-2" style="color: #dc2626;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h2>
                             <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
                                 <div class="progress-bar" role="progressbar" 
-                                     style="width: {{ ($subscriptionDaysLeft / 30) * 100 }}%; 
+                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; 
                                             background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
                                             border-radius: 10px;
                                             box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);"></div>
