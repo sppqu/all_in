@@ -79,20 +79,46 @@ class IpaymuService
     }
 
     /**
-     * Generate signature for iPaymu
-     * Signature = HMAC_SHA256(VA + ApiKey + RequestBody)
+     * Generate signature for iPaymu POST requests
+     * Signature = HMAC_SHA256(VA + ApiKey + RequestBody, ApiKey)
+     * 
+     * According to iPaymu documentation:
+     * - For POST: hash_hmac('sha256', VA + ApiKey + JSON_BODY, ApiKey)
+     * - For GET: hash_hmac('sha256', VA + ApiKey, ApiKey)
      */
     private function generateSignature($bodyParams)
     {
         $jsonBody = json_encode($bodyParams, JSON_UNESCAPED_SLASHES);
-        $requestBody = strtolower(hash('sha256', $jsonBody));
-        $stringToSign = 'POST:' . $this->va . ':' . $requestBody . ':' . $this->apiKey;
         
+        // Correct signature format for iPaymu POST
+        $stringToSign = $this->va . $this->apiKey . $jsonBody;
         $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
         
-        Log::info('iPaymu Signature Generated', [
-            'va' => $this->va,
-            'body_hash' => $requestBody,
+        Log::info('iPaymu Signature Generated (POST)', [
+            'va_length' => strlen($this->va),
+            'api_key_length' => strlen($this->apiKey),
+            'body_length' => strlen($jsonBody),
+            'string_to_sign_length' => strlen($stringToSign),
+            'signature' => $signature
+        ]);
+        
+        return $signature;
+    }
+
+    /**
+     * Generate signature for iPaymu GET requests
+     * For GET requests, no body is included
+     */
+    private function generateSignatureGet()
+    {
+        // Correct signature format for iPaymu GET
+        $stringToSign = $this->va . $this->apiKey;
+        $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
+        
+        Log::info('iPaymu Signature Generated (GET)', [
+            'va_length' => strlen($this->va),
+            'api_key_length' => strlen($this->apiKey),
+            'string_to_sign_length' => strlen($stringToSign),
             'signature' => $signature
         ]);
         
