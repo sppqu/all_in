@@ -543,6 +543,97 @@ class IpaymuService
     }
 
     /**
+     * Create generic payment (for cart, bulanan, bebas, tabungan)
+     */
+    public function createPayment($referenceId, $description, $totalAmount, $customerName, $customerPhone, $customerEmail, $products, $quantities, $prices, $callbackUrl, $returnUrl)
+    {
+        try {
+            Log::info('💳 Creating iPaymu payment', [
+                'reference_id' => $referenceId,
+                'amount' => $totalAmount,
+                'products_count' => count($products)
+            ]);
+
+            $body = [
+                'name' => $customerName,
+                'phone' => $customerPhone,
+                'email' => $customerEmail,
+                'amount' => (int) $totalAmount,
+                'notifyUrl' => $callbackUrl,
+                'expired' => 24, // 24 hours
+                'expiredType' => 'hours',
+                'comments' => $description,
+                'referenceId' => $referenceId,
+                'paymentMethod' => 'va', // Virtual Account
+                'paymentChannel' => 'bca', // Default BCA, user can change
+                'product' => $products,
+                'qty' => $quantities,
+                'price' => $prices,
+                'returnUrl' => $returnUrl,
+                'cancelUrl' => $returnUrl,
+                'continueUrl' => $returnUrl
+            ];
+
+            $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
+            $bodyHash = strtolower(hash('sha256', $jsonBody));
+            $stringToSign = 'POST:' . $this->va . ':' . $bodyHash . ':' . $this->apiKey;
+            $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
+
+            $timestamp = now()->timestamp;
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'signature' => $signature,
+                'va' => $this->va,
+                'timestamp' => $timestamp
+            ])->post($this->baseUrl . 'payment/direct', $body);
+
+            $result = $response->json();
+
+            Log::info('💳 iPaymu payment response', [
+                'status' => $response->status(),
+                'success' => $result['Status'] ?? null,
+                'session_id' => $result['Data']['SessionID'] ?? null
+            ]);
+
+            if ($response->successful() && isset($result['Status']) && $result['Status'] == 200) {
+                return [
+                    'success' => true,
+                    'data' => [
+                        'payment_url' => $result['Data']['Url'] ?? null,
+                        'session_id' => $result['Data']['SessionID'] ?? null,
+                        'transaction_id' => $result['Data']['TransactionId'] ?? null,
+                        'reference_id' => $referenceId,
+                        'expired_time' => $result['Data']['Expired'] ?? null
+                    ],
+                    'message' => 'Payment created successfully'
+                ];
+            }
+
+            Log::error('💳 iPaymu payment failed', [
+                'response' => $result
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $result['Message'] ?? 'Failed to create payment',
+                'data' => $result
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('💳 iPaymu payment exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Verify callback signature
      */
     public function verifyCallbackSignature($data, $receivedSignature)
