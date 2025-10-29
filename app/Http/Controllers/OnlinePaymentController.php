@@ -894,14 +894,14 @@ class OnlinePaymentController extends Controller
     public function paymentCallback(Request $request)
     {
         Log::info('🔵 Payment callback received - redirecting to IpaymuCallbackController', [
-            'method' => $request->method(),
+                'method' => $request->method(),
             'data' => $request->all()
         ]);
 
         // Callback untuk iPaymu sudah dihandle di IpaymuCallbackController
         // Method ini hanya untuk backward compatibility
-        return response()->json([
-            'success' => true,
+                return response()->json([
+                    'success' => true,
             'message' => 'Callback should be handled by IpaymuCallbackController',
             'note' => 'Please ensure your payment gateway callback URL is set to /api/ipaymu/callback'
         ]);

@@ -249,28 +249,28 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="row mb-3">
-                                        <label class="col-sm-4 col-form-label">Mode</label>
-                                        <div class="col-sm-8">
+                                            <div class="row mb-3">
+                                                <label class="col-sm-4 col-form-label">Mode</label>
+                                                <div class="col-sm-8">
                                             <select class="form-select" name="ipaymu_mode">
                                                 <option value="sandbox" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
                                                 <option value="production" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'production' ? 'selected' : '' }}>Production</option>
-                                            </select>
+                                                    </select>
                                             <small class="text-muted">Pilih Sandbox untuk testing atau Production untuk live</small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row mb-3">
+                                                </div>
+                                            </div>
+                                            
+                                                <div class="row mb-3">
                                         <label class="col-sm-4 col-form-label">VA Key</label>
-                                        <div class="col-sm-8">
+                                                    <div class="col-sm-8">
                                             <input type="text" class="form-control" name="ipaymu_va" value="{{ old('ipaymu_va', $gateway->ipaymu_va ?? '') }}" placeholder="Masukkan VA Key dari iPaymu">
                                             <small class="text-muted">VA Key bisa didapatkan dari dashboard iPaymu</small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row mb-3">
+                                                </div>
+                                            </div>
+                                            
+                                                <div class="row mb-3">
                                         <label class="col-sm-4 col-form-label">API Key</label>
-                                        <div class="col-sm-8">
+                                                    <div class="col-sm-8">
                                             <input type="text" class="form-control" name="ipaymu_api_key" value="{{ old('ipaymu_api_key', $gateway->ipaymu_api_key ?? '') }}" placeholder="Masukkan API Key dari iPaymu">
                                             <small class="text-muted">API Key bisa didapatkan dari dashboard iPaymu</small>
                                         </div>

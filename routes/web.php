@@ -871,14 +871,7 @@ Route::get('/test-outside', function() {
     return 'Test route di luar group manage berhasil!';
 });
 
-// Form Test Routes - Midtrans REMOVED
-/*
-Route::get('/form', function() {
-    $students = \App\Models\Student::all();
-    $periods = \App\Models\Period::all();
-    return view('online-payment.midtrans-form', compact('students', 'periods'));
-})->name('midtrans.form');
-*/
+
 
 // Payment Form Routes
 Route::get('/payment-form/{studentId}/{billType}/{billId}', [OnlinePaymentController::class, 'paymentForm'])->name('form');
