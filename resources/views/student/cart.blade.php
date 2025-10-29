@@ -777,8 +777,11 @@
         });
         event.currentTarget.classList.add('selected');
         
-        // Update radio button
-        document.getElementById(method).checked = true;
+        // Update radio button with null check
+        const radioButton = document.getElementById(method);
+        if (radioButton) {
+            radioButton.checked = true;
+        }
         
         console.log('Payment method selected:', method);
     }
@@ -975,10 +978,14 @@
             return;
         }
         
-        // Set payment method to transfer (default, Midtrans is disabled)
+        // Set payment method to transfer (default)
         selectedPaymentMethod = 'transfer';
-        document.getElementById('transfer').checked = true;
-        document.getElementById('gateway').checked = false;
+        
+        // Update radio button and visual selection
+        const transferRadio = document.getElementById('transfer');
+        if (transferRadio) {
+            transferRadio.checked = true;
+        }
         
         // Update visual selection
         document.querySelectorAll('.payment-method').forEach(el => {
@@ -1538,15 +1545,18 @@
         loadCart();
         updateCartBadge();
         
-        // Set default payment method to transfer (Midtrans is disabled)
-        const paymentMethodSection = document.getElementById('paymentMethodSection');
-        if (paymentMethodSection && paymentMethodSection.style.display !== 'none') {
-            const transferPaymentMethod = document.querySelector('.payment-method[onclick*="transfer"]');
-            if (transferPaymentMethod) {
-                transferPaymentMethod.classList.add('selected');
-                selectedPaymentMethod = 'transfer';
-                document.getElementById('transfer').checked = true;
-            }
+        // Set default payment method to transfer
+        selectedPaymentMethod = 'transfer';
+        
+        // Wait for modal to be shown before setting checked state
+        const paymentMethodModal = document.getElementById('paymentMethodModal');
+        if (paymentMethodModal) {
+            paymentMethodModal.addEventListener('shown.bs.modal', function () {
+                const transferRadio = document.getElementById('transfer');
+                if (transferRadio) {
+                    transferRadio.checked = true;
+                }
+            });
         }
         
         // Add event listeners for bank transfer modal form validation
