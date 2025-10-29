@@ -306,11 +306,71 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
-// Form submission with loading state
+// Form submission with loading state and error handling
 document.getElementById('subscriptionForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default first
+    
+    const form = this;
     const submitBtn = this.querySelector('button[type="submit"]');
+    const originalHTML = submitBtn.innerHTML;
+    
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
     submitBtn.disabled = true;
+    
+    // Get form data
+    const formData = new FormData(form);
+    
+    // Submit via fetch to catch errors
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json, text/html, application/xhtml+xml'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            // Log error details
+            return response.text().then(text => {
+                console.error('Error response:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            });
+        }
+        
+        // Check if JSON or redirect
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If HTML, it's probably a redirect - follow it
+            return response.text().then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            });
+        }
+    })
+    .then(data => {
+        if (data && data.error) {
+            alert('Error: ' + data.error);
+            submitBtn.innerHTML = originalHTML;
+            submitBtn.disabled = false;
+        } else if (data && data.redirect) {
+            window.location.href = data.redirect;
+        }
+        // Otherwise, page will be replaced by HTML response
+    })
+    .catch(error => {
+        console.error('Subscription error:', error);
+        alert('Gagal membuat pembayaran: ' + error.message + '\n\nCheck browser console (F12) for details.');
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.disabled = false;
+    });
 });
 </script>
 @endsection
