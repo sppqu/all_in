@@ -125,106 +125,36 @@
                     <input type="hidden" name="plan_id" id="selectedPlanId">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Metode Pembayaran Tripay</label>
-                            <p class="text-muted small mb-3">Pilih metode pembayaran yang Anda inginkan</p>
+                            <label class="form-label fw-bold">Metode Pembayaran iPaymu</label>
+                            <p class="text-muted small mb-3">Pembayaran menggunakan QRIS</p>
                             
-                            <!-- QRIS -->
+                            <!-- QRIS Only -->
                             <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
+                                <div class="form-check p-3 border rounded bg-light">
                                     <input class="form-check-input" type="radio" name="payment_method" value="QRIS" id="qris" checked>
                                     <label class="form-check-label w-100" for="qris">
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-qrcode text-primary me-3" style="font-size: 1.5rem;"></i>
+                                            <i class="fas fa-qrcode text-primary me-3" style="font-size: 2rem;"></i>
                                             <div>
-                                                <strong>QRIS</strong>
-                                                <div class="small text-muted">Scan QR - Semua E-Wallet</div>
+                                                <strong class="text-dark">QRIS</strong>
+                                                <div class="small text-muted">Scan QR Code - Semua E-Wallet & Mobile Banking</div>
+                                                <div class="mt-1">
+                                                    <span class="badge bg-success me-1">GoPay</span>
+                                                    <span class="badge bg-info me-1">OVO</span>
+                                                    <span class="badge bg-primary me-1">DANA</span>
+                                                    <span class="badge bg-warning text-dark me-1">ShopeePay</span>
+                                                    <span class="badge bg-secondary">Bank</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </label>
                                 </div>
                             </div>
                             
-                            <!-- Virtual Account -->
-                            <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="BRIVA" id="briva">
-                                    <label class="form-check-label w-100" for="briva">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-university text-success me-3" style="font-size: 1.5rem;"></i>
-                                            <div>
-                                                <strong>BRI Virtual Account</strong>
-                                                <div class="small text-muted">Transfer via BRI</div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="BCAVA" id="bcava">
-                                    <label class="form-check-label w-100" for="bcava">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-university text-primary me-3" style="font-size: 1.5rem;"></i>
-                                            <div>
-                                                <strong>BCA Virtual Account</strong>
-                                                <div class="small text-muted">Transfer via BCA</div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="BNIVA" id="bniva">
-                                    <label class="form-check-label w-100" for="bniva">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-university text-warning me-3" style="font-size: 1.5rem;"></i>
-                                            <div>
-                                                <strong>BNI Virtual Account</strong>
-                                                <div class="small text-muted">Transfer via BNI</div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- E-Wallet -->
-                            <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="OVO" id="ovo">
-                                    <label class="form-check-label w-100" for="ovo">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-wallet text-info me-3" style="font-size: 1.5rem;"></i>
-                                            <div>
-                                                <strong>OVO</strong>
-                                                <div class="small text-muted">E-Wallet OVO</div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-2">
-                                <div class="form-check p-3 border rounded">
-                                    <input class="form-check-input" type="radio" name="payment_method" value="DANA" id="dana">
-                                    <label class="form-check-label w-100" for="dana">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-wallet text-primary me-3" style="font-size: 1.5rem;"></i>
-                                            <div>
-                                                <strong>DANA</strong>
-                                                <div class="small text-muted">E-Wallet DANA</div>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="alert alert-info mt-3 mb-0">
+                            <div class="alert alert-success mt-3 mb-0">
                                 <small>
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Pembayaran aman</strong> melalui Tripay Payment Gateway
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    <strong>Pembayaran aman</strong> melalui iPaymu Payment Gateway
                                 </small>
                             </div>
                         </div>
