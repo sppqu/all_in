@@ -25,9 +25,16 @@ class IpaymuService
         
         if ($useEnvConfig) {
             // Try ENV config first for internal system (addon, subscription, SPMB Step 2)
-            $this->va = config('ipaymu.va', '');
-            $this->apiKey = config('ipaymu.api_key', '');
-            $this->isSandbox = config('ipaymu.sandbox', true);
+            $this->va = env('IPAYMU_VA', config('ipaymu.va', ''));
+            $this->apiKey = env('IPAYMU_API_KEY', config('ipaymu.api_key', ''));
+            $this->isSandbox = env('IPAYMU_SANDBOX', config('ipaymu.sandbox', true));
+            
+            Log::info('🔍 Attempting to load ENV config', [
+                'va_from_env' => env('IPAYMU_VA') ? 'SET' : 'EMPTY',
+                'api_key_from_env' => env('IPAYMU_API_KEY') ? 'SET' : 'EMPTY',
+                'va_loaded' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : 'NO',
+                'api_key_loaded' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO'
+            ]);
             
             // If ENV is empty, fallback to database
             if (empty($this->va) || empty($this->apiKey)) {
@@ -39,8 +46,14 @@ class IpaymuService
                     $this->apiKey = $gateway->ipaymu_api_key ?? '';
                     $this->isSandbox = ($gateway->ipaymu_mode ?? 'sandbox') === 'sandbox';
                     $source = 'env_fallback_to_db';
+                    
+                    Log::info('✅ Fallback to database successful', [
+                        'va_from_db' => !empty($this->va) ? 'SET (len:'.strlen($this->va).')' : 'EMPTY',
+                        'api_key_from_db' => !empty($this->apiKey) ? 'SET (len:'.strlen($this->apiKey).')' : 'EMPTY'
+                    ]);
                 } else {
-                    $source = 'env_empty';
+                    $source = 'env_empty_no_db';
+                    Log::error('❌ Both ENV and Database config are empty!');
                 }
             } else {
                 $source = 'env_config';
@@ -94,25 +107,25 @@ class IpaymuService
 
     /**
      * Generate signature for iPaymu POST requests
-     * Signature = HMAC_SHA256(VA + ApiKey + RequestBody, ApiKey)
      * 
-     * According to iPaymu documentation:
-     * - For POST: hash_hmac('sha256', VA + ApiKey + JSON_BODY, ApiKey)
-     * - For GET: hash_hmac('sha256', VA + ApiKey, ApiKey)
+     * NOTE: There are TWO possible signature formats for iPaymu:
+     * Format 1 (Simple): hash_hmac('sha256', VA + ApiKey + JSON_BODY, ApiKey)
+     * Format 2 (Complex): hash_hmac('sha256', 'POST:' + VA + ':' + HASH(JSON) + ':' + ApiKey, ApiKey)
+     * 
+     * Use the format that works with your iPaymu account version.
      */
     private function generateSignature($bodyParams)
     {
         $jsonBody = json_encode($bodyParams, JSON_UNESCAPED_SLASHES);
         
-        // Correct signature format for iPaymu POST
+        // Try simple format first (newer API version)
         $stringToSign = $this->va . $this->apiKey . $jsonBody;
         $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
         
-        Log::info('iPaymu Signature Generated (POST)', [
+        Log::info('iPaymu Signature Generated (Simple Format)', [
             'va_length' => strlen($this->va),
             'api_key_length' => strlen($this->apiKey),
             'body_length' => strlen($jsonBody),
-            'string_to_sign_length' => strlen($stringToSign),
             'signature' => $signature
         ]);
         

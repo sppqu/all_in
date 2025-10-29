@@ -114,8 +114,9 @@ class AddonController extends Controller
         ]);
 
         try {
-            // Use iPaymu payment gateway with ENV config (for internal system/addon)
-            $ipaymu = new \App\Services\IpaymuService(true); // true = use ENV config
+            // Use iPaymu payment gateway with database config (same as student payments)
+            // This ensures consistency - all payments use the same credentials from Admin Panel
+            $ipaymu = new \App\Services\IpaymuService(false); // false = use database config
             
             $result = $ipaymu->createAddonPayment([
                 'user_id' => $user->id,
