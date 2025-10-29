@@ -1,9 +1,24 @@
 <?php
 /**
- * Script untuk cek dan fix masalah dropdown kas di VPS
+ * Script untuk cek dan fix masalah di VPS
  * Upload file ini ke root folder VPS, lalu jalankan via browser atau terminal
  */
 
+// Determine action
+$action = $_GET['action'] ?? 'kas';
+
+if ($action === 'clear_cache') {
+    clearCacheAction();
+    exit;
+} elseif ($action === 'check_error') {
+    checkErrorAction();
+    exit;
+} elseif ($action === 'test_cart') {
+    testCartAction();
+    exit;
+}
+
+// Default: KAS check
 require __DIR__.'/vendor/autoload.php';
 
 $app = require_once __DIR__.'/bootstrap/app.php';
@@ -13,6 +28,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 echo "<pre>";
+echo "=======================================================\n";
+echo "   CHECK & FIX VPS - Multi Action Tool\n";
+echo "=======================================================\n\n";
+
+echo "📋 Available Actions:\n";
+echo "1. <a href='?action=clear_cache'>Clear Cache & Fix Routes</a>\n";
+echo "2. <a href='?action=check_error'>Check Error Log</a>\n";
+echo "3. <a href='?action=test_cart'>Test Cart Payment Endpoint</a>\n";
+echo "4. <a href='?action=kas'>Check KAS Dropdown (default)</a>\n\n";
+
 echo "=======================================================\n";
 echo "   CHECK & FIX DROPDOWN KAS DI VPS\n";
 echo "=======================================================\n\n";
