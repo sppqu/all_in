@@ -73,6 +73,10 @@ class IpaymuCallbackController extends Controller
                 $this->handleBulananCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'BEBAS-')) {
                 $this->handleBebasCallback($referenceId, $status, $statusCode, $transactionId, $amount);
+            } elseif (str_starts_with($referenceId, 'CART-')) {
+                $this->handleCartCallback($referenceId, $status, $statusCode, $transactionId, $amount);
+            } elseif (str_starts_with($referenceId, 'TABUNGAN-')) {
+                $this->handleTabunganCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'SPMB-STEP2-')) {
                 $this->handleSPMBCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } else {
@@ -630,6 +634,215 @@ class IpaymuCallbackController extends Controller
                 'reference_id' => $referenceId
             ]);
         }
+    }
+
+    /**
+     * Handle cart payment callback
+     */
+    private function handleCartCallback($referenceId, $status, $statusCode, $transactionId, $amount)
+    {
+        Log::info('🛒 === Processing Cart Payment Callback (iPaymu) ===', [
+            'reference_id' => $referenceId,
+            'status' => $status,
+            'status_code' => $statusCode,
+            'transaction_id' => $transactionId,
+            'amount' => $amount
+        ]);
+
+        // Check if payment is successful
+        if (strtolower($status) !== 'berhasil' && $statusCode != 1) {
+            Log::warning('Cart payment not successful', [
+                'status' => $status,
+                'status_code' => $statusCode
+            ]);
+            return;
+        }
+
+        // Find transfer by reference_id
+        $transfer = DB::table('transfer')
+            ->where('reference', $referenceId)
+            ->orWhere('merchantRef', $referenceId)
+            ->first();
+
+        if (!$transfer) {
+            Log::error('Transfer not found for cart payment', ['reference_id' => $referenceId]);
+            return;
+        }
+
+        // Update transfer status
+        DB::table('transfer')
+            ->where('transfer_id', $transfer->transfer_id)
+            ->update([
+                'status' => 1, // Success
+                'paid_at' => now(),
+                'gateway_transaction_id' => $transactionId,
+                'updated_at' => now()
+            ]);
+
+        // Get all transfer details (cart items)
+        $transferDetails = DB::table('transfer_detail')
+            ->where('transfer_id', $transfer->transfer_id)
+            ->get();
+
+        // Update each cart item (bulan or bebas)
+        foreach ($transferDetails as $detail) {
+            if ($detail->payment_type == 1 && $detail->bulan_id) {
+                // Update bulan
+                DB::table('bulan')
+                    ->where('bulan_id', $detail->bulan_id)
+                    ->update([
+                        'bulan_date_pay' => now(),
+                        'bulan_number_pay' => 'PAY-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                        'bulan_status' => 1,
+                        'bulan_last_update' => now()
+                    ]);
+
+                // Insert to log_trx
+                DB::table('log_trx')->insert([
+                    'student_student_id' => $transfer->student_id,
+                    'bulan_bulan_id' => $detail->bulan_id,
+                    'bebas_pay_bebas_pay_id' => null,
+                    'log_trx_input_date' => now(),
+                    'log_trx_last_update' => now()
+                ]);
+
+            } elseif ($detail->payment_type == 2 && $detail->bebas_id) {
+                // Get bebas data
+                $bebas = DB::table('bebas')->where('bebas_id', $detail->bebas_id)->first();
+                
+                if ($bebas) {
+                    // Insert to bebas_pay
+                    $bebasPayId = DB::table('bebas_pay')->insertGetId([
+                        'bebas_bebas_id' => $detail->bebas_id,
+                        'bebas_pay_bill' => $detail->subtotal,
+                        'bebas_pay_number' => 'PAY-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                        'bebas_pay_desc' => 'Pembayaran Cart via iPaymu',
+                        'user_user_id' => 1,
+                        'bebas_pay_input_date' => now(),
+                        'bebas_pay_last_update' => now()
+                    ]);
+
+                    // Update bebas
+                    DB::table('bebas')
+                        ->where('bebas_id', $detail->bebas_id)
+                        ->update([
+                            'bebas_total_pay' => $bebas->bebas_total_pay + $detail->subtotal,
+                            'bebas_date_pay' => now(),
+                            'bebas_number_pay' => 'PAY-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                            'bebas_last_update' => now()
+                        ]);
+
+                    // Insert to log_trx
+                    DB::table('log_trx')->insert([
+                        'student_student_id' => $transfer->student_id,
+                        'bulan_bulan_id' => null,
+                        'bebas_pay_bebas_pay_id' => $bebasPayId,
+                        'log_trx_input_date' => now(),
+                        'log_trx_last_update' => now()
+                    ]);
+                }
+            }
+        }
+
+        Log::info('✅ Cart payment processed successfully', [
+            'transfer_id' => $transfer->transfer_id,
+            'items_processed' => $transferDetails->count(),
+            'reference_id' => $referenceId
+        ]);
+    }
+
+    /**
+     * Handle tabungan (savings) payment callback
+     */
+    private function handleTabunganCallback($referenceId, $status, $statusCode, $transactionId, $amount)
+    {
+        Log::info('💰 === Processing Tabungan Callback (iPaymu) ===', [
+            'reference_id' => $referenceId,
+            'status' => $status,
+            'status_code' => $statusCode,
+            'transaction_id' => $transactionId,
+            'amount' => $amount
+        ]);
+
+        // Check if payment is successful
+        if (strtolower($status) !== 'berhasil' && $statusCode != 1) {
+            Log::warning('Tabungan payment not successful', [
+                'status' => $status,
+                'status_code' => $statusCode
+            ]);
+            return;
+        }
+
+        // Find transfer by reference_id
+        $transfer = DB::table('transfer')
+            ->where('reference', $referenceId)
+            ->orWhere('merchantRef', $referenceId)
+            ->first();
+
+        if (!$transfer) {
+            Log::error('Transfer not found for tabungan', ['reference_id' => $referenceId]);
+            return;
+        }
+
+        // Update transfer status
+        DB::table('transfer')
+            ->where('transfer_id', $transfer->transfer_id)
+            ->update([
+                'status' => 1, // Success
+                'paid_at' => now(),
+                'gateway_transaction_id' => $transactionId,
+                'updated_at' => now()
+            ]);
+
+        // Check if student already has tabungan record
+        $existingTabungan = DB::table('tabungan')
+            ->where('student_student_id', $transfer->student_id)
+            ->first();
+
+        if ($existingTabungan) {
+            // Update existing tabungan
+            DB::table('tabungan')
+                ->where('student_student_id', $transfer->student_id)
+                ->update([
+                    'saldo' => DB::raw('saldo + ' . $amount),
+                    'tabungan_last_update' => now()
+                ]);
+            
+            $tabunganId = $existingTabungan->tabungan_id;
+        } else {
+            // Insert new tabungan record
+            $tabunganId = DB::table('tabungan')->insertGetId([
+                'student_student_id' => $transfer->student_id,
+                'user_user_id' => 1,
+                'saldo' => $amount,
+                'tabungan_input_date' => now(),
+                'tabungan_last_update' => now()
+            ]);
+        }
+
+        // Get current saldo for log_tabungan
+        $currentSaldo = DB::table('tabungan')
+            ->where('tabungan_id', $tabunganId)
+            ->value('saldo');
+
+        // Insert to log_tabungan
+        DB::table('log_tabungan')->insert([
+            'tabungan_tabungan_id' => $tabunganId,
+            'student_student_id' => $transfer->student_id,
+            'kredit' => $amount,
+            'debit' => 0,
+            'saldo' => $currentSaldo,
+            'keterangan' => 'Setoran Tabungan via iPaymu - ' . $referenceId,
+            'log_tabungan_input_date' => now(),
+            'log_tabungan_last_update' => now()
+        ]);
+
+        Log::info('✅ Tabungan payment processed successfully', [
+            'transfer_id' => $transfer->transfer_id,
+            'tabungan_id' => $tabunganId,
+            'amount' => $amount,
+            'new_saldo' => $currentSaldo
+        ]);
     }
 }
 

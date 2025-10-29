@@ -369,12 +369,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Midtrans Payment Gateway - DISABLED -->
-                    <div class="payment-method" onclick="selectPaymentMethod('gateway')" style="display:none;">
-                        <input type="radio" name="paymentMethod" value="gateway" id="gateway">
-                        <label for="gateway" class="mb-0" style="font-size: 0.85rem;">
+                    <div class="payment-method" onclick="selectPaymentMethod('ipaymu')">
+                        <input type="radio" name="paymentMethod" value="ipaymu" id="ipaymu">
+                        <label for="ipaymu" class="mb-0" style="font-size: 0.85rem;">
                             <i class="fas fa-credit-card me-2 text-success"></i>
-                            Midtrans Payment Gateway
+                            Transfer Otomatis
                         </label>
                     </div>
                     
@@ -1061,7 +1060,8 @@
     function getPaymentMethodName(method) {
         const methods = {
             'transfer': 'Transfer Bank Manual (Bebas Biaya Admin)',
-            'gateway': 'Midtrans Payment Gateway (Real-time)'
+            'ipaymu': 'Pembayaran Otomatis (iPaymu)',
+            'gateway': 'Payment Gateway (Real-time)'
         };
         return methods[method] || method;
     }
@@ -1136,9 +1136,61 @@
                     showAlert('Terjadi kesalahan saat memproses pembayaran: ' + error.message, 'error');
                 }
             });
+        } else if (selectedPaymentMethod === 'ipaymu') {
+            // Payment Gateway (iPaymu) - proses real time
+            showAlert('Memproses pembayaran via iPaymu...', 'info');
+
+            const formData = new FormData();
+            formData.append('cart_items', JSON.stringify(regularItems));
+            formData.append('total_amount', totalAmount);
+            formData.append('payment_method', 'ipaymu');
+            formData.append('_token', '{{ csrf_token() }}');
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+            fetch('{{ route("student.cart.payment.ipaymu") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                signal: controller.signal,
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('iPaymu response:', data);
+                
+                if (data.success && data.payment_url) {
+                    // Clear cart from localStorage before redirecting
+                    localStorage.removeItem('studentCart');
+                    updateCartBadge();
+                    
+                    // Redirect to iPaymu payment page
+                    window.location.href = data.payment_url;
+                } else {
+                    showAlert('Gagal membuat pembayaran: ' + (data.message || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.error('Error:', error);
+                if (error.name === 'AbortError') {
+                    showAlert('Timeout - Koneksi terlalu lama. Silakan coba lagi.', 'error');
+                } else {
+                    showAlert('Terjadi kesalahan: ' + error.message, 'error');
+                }
+            });
         } else if (selectedPaymentMethod === 'gateway') {
-            // Payment Gateway (Midtrans) - proses real time
-            showAlert('Memproses pembayaran...', 'info');
+            // Payment Gateway (Midtrans) - DISABLED
+            showAlert('Metode pembayaran tidak tersedia', 'warning');
 
             const requestData = {
                 cart_items: JSON.stringify(cart),

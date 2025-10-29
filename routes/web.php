@@ -1405,6 +1405,10 @@ Route::prefix('student')->name('student.')->group(function () {
             ->name('cart.payment')
             ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         
+        // Cart Payment iPaymu
+        Route::post('/cart/payment/ipaymu', [StudentAuthController::class, 'processCartPaymentIpaymu'])
+            ->name('cart.payment.ipaymu');
+        
         // Test route for debugging
         Route::get('/test-cart-route', function() {
             return response()->json(['message' => 'Cart route is working']);

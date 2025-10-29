@@ -3201,4 +3201,148 @@ class StudentAuthController extends Controller
 
         return view('student.bk.show-pelanggaran', compact('pelanggaran'));
     }
+
+    /**
+     * Process cart payment via iPaymu
+     */
+    public function processCartPaymentIpaymu(Request $request)
+    {
+        try {
+            $studentId = session('student_id');
+            if (!$studentId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sesi expired. Silakan login kembali.'
+                ], 401);
+            }
+
+            // Get student data
+            $student = Student::findOrFail($studentId);
+
+            // Parse cart items
+            $cartItems = json_decode($request->cart_items, true);
+            if (!$cartItems || count($cartItems) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Keranjang kosong'
+                ], 400);
+            }
+
+            $totalAmount = (int) $request->total_amount;
+
+            // Initialize iPaymu service
+            $ipaymuService = new IpaymuService();
+
+            // Generate reference ID for cart payment
+            $referenceId = 'CART-' . $studentId . '-' . time();
+
+            Log::info('🛒 Processing cart payment via iPaymu', [
+                'reference_id' => $referenceId,
+                'student_id' => $studentId,
+                'total_amount' => $totalAmount,
+                'items_count' => count($cartItems)
+            ]);
+
+            // Prepare product data from cart items
+            $products = [];
+            $quantities = [];
+            $prices = [];
+            
+            foreach ($cartItems as $item) {
+                $itemName = $item['bill_name'] ?? 'Item Pembayaran';
+                $itemPrice = (int) ($item['amount'] ?? 0);
+                
+                $products[] = $itemName;
+                $quantities[] = 1;
+                $prices[] = $itemPrice;
+            }
+
+            // Create iPaymu payment
+            $ipaymuResponse = $ipaymuService->createPayment(
+                $referenceId,
+                'Pembayaran Keranjang - ' . count($cartItems) . ' item',
+                $totalAmount,
+                $student->student_full_name,
+                $student->student_parent_phone ?? '08123456789',
+                'student@sppqu.com',
+                $products,
+                $quantities,
+                $prices,
+                route('ipaymu.callback'),
+                route('student.payment.history')
+            );
+
+            Log::info('🔵 iPaymu cart payment response', [
+                'success' => $ipaymuResponse['success'] ?? false,
+                'reference_id' => $referenceId
+            ]);
+
+            if (!$ipaymuResponse['success']) {
+                throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
+            }
+
+            DB::beginTransaction();
+
+            // Create transfer record for cart payment
+            $transferId = DB::table('transfer')->insertGetId([
+                'student_id' => $studentId,
+                'detail' => 'Pembayaran Keranjang - ' . count($cartItems) . ' item',
+                'status' => 0, // Pending
+                'confirm_pay' => $totalAmount,
+                'reference' => $referenceId,
+                'merchantRef' => $referenceId,
+                'gateway_transaction_id' => $ipaymuResponse['data']['transaction_id'] ?? null,
+                'payment_number' => $referenceId,
+                'payment_method' => 'ipaymu',
+                'bill_type' => 'cart',
+                'bill_id' => 0,
+                'payment_details' => json_encode([
+                    'cart_items' => $cartItems,
+                    'ipaymu_response' => $ipaymuResponse['data'] ?? []
+                ]),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Insert transfer details for each cart item
+            foreach ($cartItems as $item) {
+                DB::table('transfer_detail')->insert([
+                    'transfer_id' => $transferId,
+                    'payment_type' => $item['type'] === 'bulanan' ? 1 : 2,
+                    'bulan_id' => $item['type'] === 'bulanan' ? $item['id'] : null,
+                    'bebas_id' => $item['type'] === 'bebas' ? $item['id'] : null,
+                    'desc' => $item['bill_name'] ?? 'Pembayaran',
+                    'subtotal' => $item['amount'] ?? 0,
+                    'is_tabungan' => 0
+                ]);
+            }
+
+            DB::commit();
+
+            Log::info('✅ Cart payment transfer created', [
+                'transfer_id' => $transferId,
+                'reference_id' => $referenceId
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran berhasil diproses',
+                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'reference_id' => $referenceId,
+                'transfer_id' => $transferId
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('❌ Cart payment iPaymu error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 } 
