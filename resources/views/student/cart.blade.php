@@ -3,8 +3,6 @@
 @section('title', 'Keranjang Pembayaran')
 
 @section('content')
-<!-- Midtrans Snap JavaScript -->
-<script type="text/javascript" src="{{ \App\Helpers\MidtransHelper::getSnapJsUrl() }}" data-client-key="{{ \App\Helpers\MidtransHelper::getClientKey() }}"></script>
 <style>
     .bill-item {
         background: white;

@@ -3,8 +3,6 @@
 @section('title', 'Form Pembayaran Online')
 
 @section('content')
-<!-- Midtrans Snap JavaScript -->
-<script type="text/javascript" src="{{ \App\Helpers\MidtransHelper::getSnapJsUrl() }}" data-client-key="{{ \App\Helpers\MidtransHelper::getClientKey() }}"></script>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
