@@ -3280,7 +3280,14 @@ class StudentAuthController extends Controller
             
             foreach ($cartItems as $item) {
                 $itemName = $item['bill_name'] ?? 'Item Pembayaran';
-                $itemPrice = (int) ($item['amount'] ?? 0);
+                
+                // Clean amount: remove "Rp", spaces, dots, and convert to integer
+                $itemPrice = $item['amount'] ?? 0;
+                if (is_string($itemPrice)) {
+                    $itemPrice = (int) preg_replace('/[^0-9]/', '', $itemPrice);
+                } else {
+                    $itemPrice = (int) $itemPrice;
+                }
                 
                 $products[] = $itemName;
                 $quantities[] = 1;
@@ -3349,13 +3356,19 @@ class StudentAuthController extends Controller
 
             // Insert transfer details for each cart item
             foreach ($cartItems as $item) {
+                // Clean amount: remove "Rp", spaces, dots, and convert to integer
+                $cleanAmount = $item['amount'] ?? 0;
+                if (is_string($cleanAmount)) {
+                    $cleanAmount = (int) preg_replace('/[^0-9]/', '', $cleanAmount);
+                }
+                
                 DB::table('transfer_detail')->insert([
                     'transfer_id' => $transferId,
                     'payment_type' => $item['type'] === 'bulanan' ? 1 : 2,
                     'bulan_id' => $item['type'] === 'bulanan' ? $item['id'] : null,
                     'bebas_id' => $item['type'] === 'bebas' ? $item['id'] : null,
                     'desc' => $item['bill_name'] ?? 'Pembayaran',
-                    'subtotal' => $item['amount'] ?? 0,
+                    'subtotal' => $cleanAmount,
                     'is_tabungan' => 0
                 ]);
             }
