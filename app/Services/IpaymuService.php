@@ -68,14 +68,28 @@ class IpaymuService
             ? 'https://sandbox.ipaymu.com/api/v2/'
             : 'https://my.ipaymu.com/api/v2/';
         
+        // Validate credentials are set
+        $credentialsValid = !empty($this->va) && !empty($this->apiKey);
+        
         Log::info('iPaymu Service initialized', [
             'source' => $source,
             'use_env_config' => $useEnvConfig ? 'YES' : 'NO',
-            'va_set' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : 'NO',
-            'api_key_set' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO',
+            'va_set' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : '❌ NO - EMPTY!',
+            'api_key_set' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : '❌ NO - EMPTY!',
+            'credentials_valid' => $credentialsValid ? '✅ VALID' : '❌ INVALID',
             'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
             'base_url' => $this->baseUrl
         ]);
+        
+        // Warn if credentials are empty
+        if (!$credentialsValid) {
+            Log::warning('⚠️ iPaymu credentials are EMPTY! Payment will fail!', [
+                'requested_source' => $useEnvConfig ? 'ENV' : 'DATABASE',
+                'actual_source' => $source,
+                'va_empty' => empty($this->va),
+                'api_key_empty' => empty($this->apiKey)
+            ]);
+        }
     }
 
     /**
@@ -508,21 +522,24 @@ class IpaymuService
             ];
 
             $signature = $this->generateSignature($bodyParams);
-            $timestamp = time();
 
             Log::info('iPaymu SPMB Payment Request', [
                 'body_params' => $bodyParams,
                 'reference_id' => $referenceId,
                 'signature' => $signature,
-                'timestamp' => $timestamp,
-                'va' => $this->va
+                'timestamp' => now()->timestamp,
+                'va' => $this->va,
+                'va_length' => strlen($this->va),
+                'api_key_length' => strlen($this->apiKey),
+                'base_url' => $this->baseUrl,
+                'is_sandbox' => $this->isSandbox
             ]);
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
-                'timestamp' => $timestamp
+                'timestamp' => now()->timestamp  // Use same format as addon payment
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             $responseBody = $response->json();
