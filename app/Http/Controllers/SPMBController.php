@@ -17,13 +17,18 @@ use App\Helpers\WaveHelper;
 
 class SPMBController extends Controller
 {
-    protected $ipaymuService;
+    protected $ipaymuServiceEnv;    // For Step 2 (internal system - QRIS)
+    protected $ipaymuServiceDb;     // For Step 5 (student payment - registration fee)
     protected $whatsappService;
 
     public function __construct()
     {
-        // SPMB uses database config (for student registration payments)
-        $this->ipaymuService = new IpaymuService(false);
+        // Step 2 uses ENV config (QRIS - internal system)
+        $this->ipaymuServiceEnv = new IpaymuService(true);
+        
+        // Step 5 uses database config (registration fee - student payment)
+        $this->ipaymuServiceDb = new IpaymuService(false);
+        
         $this->whatsappService = new WhatsAppService();
     }
 
@@ -279,12 +284,10 @@ class SPMBController extends Controller
         }
 
         try {
-            \Log::info('Creating iPaymu SPMB payment...');
+            \Log::info('Creating iPaymu SPMB payment (Step 2 - using ENV config)...');
             
-            // Use iPaymu for SPMB payment
-            $ipaymu = new \App\Services\IpaymuService();
-            
-            $ipaymuResponse = $ipaymu->createSPMBPayment([
+            // Use iPaymu with ENV config for Step 2 (internal system QRIS)
+            $ipaymuResponse = $this->ipaymuServiceEnv->createSPMBPayment([
                 'registration_id' => $registration->id,
                 'amount' => WaveHelper::getStep2QrisFee(),
                 'method' => 'qris', // Default QRIS for Step 2
@@ -522,8 +525,8 @@ class SPMBController extends Controller
             return redirect()->route('spmb.step', ['step' => $registration->step]);
         }
 
-        // Create payment for SPMB fee via iPaymu
-        $ipaymuResponse = $this->ipaymuService->createSPMBPayment([
+        // Create payment for SPMB fee via iPaymu (Step 5 - using Database config)
+        $ipaymuResponse = $this->ipaymuServiceDb->createSPMBPayment([
             'registration_id' => $registration->id,
             'amount' => WaveHelper::getSpmbFee($registration),
             'customer_name' => $registration->full_name,
