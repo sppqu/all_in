@@ -314,9 +314,9 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
 
 // OTP Routes
 Route::get('/otp/login', [App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
-Route::post('/otp/login', [App\Http\Controllers\OtpController::class, 'requestOtp'])->name('otp.request');
+Route::post('/otp/login', [App\Http\Controllers\OtpController::class, 'requestOtp'])->name('otp.send');
 Route::get('/otp/verify', [App\Http\Controllers\OtpController::class, 'showVerifyForm'])->name('otp.verify');
-Route::post('/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify');
+Route::post('/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify.submit');
 Route::get('/otp/resend', [App\Http\Controllers\OtpController::class, 'resendOtp'])->name('otp.resend');
 
 // Student Routes - dengan middleware yang benar
