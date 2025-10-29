@@ -590,12 +590,14 @@ class IpaymuService
 
             $timestamp = now()->timestamp;
 
+            // Use 'payment' endpoint (redirect) instead of 'payment/direct'
+            // This shows iPaymu payment page with ALL payment methods available
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
                 'timestamp' => $timestamp
-            ])->post($this->baseUrl . 'payment/direct', $body);
+            ])->post($this->baseUrl . 'payment', $body);
 
             $result = $response->json();
 
