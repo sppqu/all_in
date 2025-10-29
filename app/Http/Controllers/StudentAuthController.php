@@ -3334,6 +3334,7 @@ class StudentAuthController extends Controller
             DB::beginTransaction();
 
             // Create transfer record for cart payment
+            // Note: transfer table uses 'transfer_id' as primary key
             $transferId = DB::table('transfer')->insertGetId([
                 'student_id' => $studentId,
                 'detail' => 'Pembayaran Keranjang - ' . count($cartItems) . ' item',
@@ -3422,37 +3423,61 @@ class StudentAuthController extends Controller
      */
     public function showVaInstructions(Request $request)
     {
-        $transferId = $request->get('transfer_id');
-        $reference = $request->get('reference');
-        
-        if (!$transferId || !$reference) {
+        try {
+            $transferId = $request->get('transfer_id');
+            $reference = $request->get('reference');
+            
+            Log::info('🔍 VA Instructions requested', [
+                'transfer_id' => $transferId,
+                'reference' => $reference
+            ]);
+            
+            if (!$transferId || !$reference) {
+                return redirect()->route('student.payment.history')
+                    ->with('error', 'Data pembayaran tidak valid');
+            }
+
+            // Get transfer data - use parameterized query
+            // Note: transfer table uses 'transfer_id' as primary key, not 'id'
+            $transfer = DB::table('transfer')
+                ->where('transfer_id', '=', (int) $transferId)
+                ->where('reference', '=', $reference)
+                ->first();
+
+            Log::info('🔍 Transfer query result', [
+                'found' => $transfer ? 'YES' : 'NO',
+                'transfer_id' => $transferId
+            ]);
+
+            if (!$transfer) {
+                return redirect()->route('student.payment.history')
+                    ->with('error', 'Pembayaran tidak ditemukan');
+            }
+
+            // Parse payment details
+            $paymentDetails = json_decode($transfer->payment_details, true);
+            $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
+
+            return view('student.va-instructions', [
+                'transfer' => $transfer,
+                'paymentNo' => $ipaymuData['payment_no'] ?? '-',
+                'channel' => $ipaymuData['channel'] ?? 'BCA',
+                'total' => $ipaymuData['total'] ?? $transfer->confirm_pay,
+                'fee' => $ipaymuData['fee'] ?? 0,
+                'expired' => $ipaymuData['expired_time'] ?? null,
+                'reference' => $reference
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ VA Instructions error', [
+                'message' => $e->getMessage(),
+                'transfer_id' => $request->get('transfer_id'),
+                'reference' => $request->get('reference'),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('student.payment.history')
-                ->with('error', 'Data pembayaran tidak valid');
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Get transfer data
-        $transfer = DB::table('transfer')
-            ->where('id', $transferId)
-            ->where('reference', $reference)
-            ->first();
-
-        if (!$transfer) {
-            return redirect()->route('student.payment.history')
-                ->with('error', 'Pembayaran tidak ditemukan');
-        }
-
-        // Parse payment details
-        $paymentDetails = json_decode($transfer->payment_details, true);
-        $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
-
-        return view('student.va-instructions', [
-            'transfer' => $transfer,
-            'paymentNo' => $ipaymuData['payment_no'] ?? '-',
-            'channel' => $ipaymuData['channel'] ?? 'BCA',
-            'total' => $ipaymuData['total'] ?? $transfer->confirm_pay,
-            'fee' => $ipaymuData['fee'] ?? 0,
-            'expired' => $ipaymuData['expired_time'] ?? null,
-            'reference' => $reference
-        ]);
     }
 } 
