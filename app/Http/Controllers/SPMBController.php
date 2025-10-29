@@ -11,18 +11,19 @@ use App\Models\SPMBRegistration;
 use App\Models\SPMBDocument;
 use App\Models\SPMBPayment;
 use App\Models\SchoolProfile;
-use App\Services\SPMBTripayService;
+use App\Services\IpaymuService;
 use App\Services\WhatsAppService;
 use App\Helpers\WaveHelper;
 
 class SPMBController extends Controller
 {
-    protected $tripayService;
+    protected $ipaymuService;
     protected $whatsappService;
 
     public function __construct()
     {
-        $this->tripayService = new SPMBTripayService();
+        // SPMB uses database config (for student registration payments)
+        $this->ipaymuService = new IpaymuService(false);
         $this->whatsappService = new WhatsAppService();
     }
 
@@ -521,10 +522,19 @@ class SPMBController extends Controller
             return redirect()->route('spmb.step', ['step' => $registration->step]);
         }
 
-        // Create payment for SPMB fee
-        $tripayResponse = $this->tripayService->createSPMBFeePayment($registration);
+        // Create payment for SPMB fee via iPaymu
+        $ipaymuResponse = $this->ipaymuService->createSPMBPayment([
+            'registration_id' => $registration->id,
+            'amount' => WaveHelper::getSpmbFee($registration),
+            'customer_name' => $registration->full_name,
+            'customer_phone' => $registration->phone_number,
+            'customer_email' => $registration->email,
+            'method' => 'qris', // Default QRIS for SPMB
+            'callback_url' => route('api.ipaymu.callback'),
+            'return_url' => route('spmb.payment.status', ['registration_id' => $registration->id])
+        ]);
 
-        if (!$tripayResponse || !$tripayResponse['success']) {
+        if (!$ipaymuResponse || !$ipaymuResponse['success']) {
             return back()->withErrors(['error' => 'Gagal membuat pembayaran. Silakan coba lagi.']);
         }
 
@@ -533,13 +543,13 @@ class SPMBController extends Controller
             'registration_id' => $registration->id,
             'type' => 'spmb_fee',
             'amount' => WaveHelper::getSpmbFee($registration),
-            'payment_method' => 'QRIS',
-            'payment_reference' => $tripayResponse['data']['merchant_ref'],
-            'tripay_reference' => $tripayResponse['data']['reference'],
+            'payment_method' => 'iPaymu',
+            'payment_reference' => $ipaymuResponse['reference_id'],
+            'tripay_reference' => $ipaymuResponse['reference_id'], // Keep field name for compatibility
             'status' => 'pending',
-            'payment_url' => $tripayResponse['data']['checkout_url'],
-            'qr_code' => $tripayResponse['data']['qr_code'] ?? null,
-            'expired_at' => now()->addHours(24)
+            'payment_url' => $ipaymuResponse['payment_url'] ?? null,
+            'qr_code' => $ipaymuResponse['qr_code'] ?? null,
+            'expired_at' => isset($ipaymuResponse['expired_time']) ? \Carbon\Carbon::parse($ipaymuResponse['expired_time']) : now()->addHours(24)
         ]);
 
         return redirect()->route('spmb.payment', ['id' => $payment->id]);
