@@ -168,25 +168,30 @@ class IpaymuService
     /**
      * Generate signature for iPaymu POST requests
      * 
-     * NOTE: There are TWO possible signature formats for iPaymu:
-     * Format 1 (Simple): hash_hmac('sha256', VA + ApiKey + JSON_BODY, ApiKey)
-     * Format 2 (Complex): hash_hmac('sha256', 'POST:' + VA + ':' + HASH(JSON) + ':' + ApiKey, ApiKey)
-     * 
-     * Use the format that works with your iPaymu account version.
+     * Correct format according to iPaymu documentation:
+     * POST: hash_hmac('sha256', 'POST:' + VA + ':' + lowercase(hash('sha256', BODY)) + ':' + ApiKey, ApiKey)
      */
     private function generateSignature($bodyParams)
     {
         $jsonBody = json_encode($bodyParams, JSON_UNESCAPED_SLASHES);
         
-        // Try simple format first (newer API version)
-        $stringToSign = $this->va . $this->apiKey . $jsonBody;
+        // Hash the body content with SHA256 and convert to lowercase
+        $bodyHash = strtolower(hash('sha256', $jsonBody));
+        
+        // Create signature string: POST:VA:BODYHASH:APIKEY
+        $stringToSign = 'POST:' . $this->va . ':' . $bodyHash . ':' . $this->apiKey;
+        
+        // Generate HMAC signature
         $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
         
-        Log::info('iPaymu Signature Generated (Simple Format)', [
+        Log::info('iPaymu Signature Generated (Correct Format)', [
+            'method' => 'POST',
             'va_length' => strlen($this->va),
             'api_key_length' => strlen($this->apiKey),
             'body_length' => strlen($jsonBody),
-            'signature' => $signature
+            'body_hash' => substr($bodyHash, 0, 20) . '...',
+            'string_to_sign_length' => strlen($stringToSign),
+            'signature' => substr($signature, 0, 20) . '...'
         ]);
         
         return $signature;
@@ -194,19 +199,29 @@ class IpaymuService
 
     /**
      * Generate signature for iPaymu GET requests
-     * For GET requests, no body is included
+     * 
+     * Correct format for GET according to iPaymu documentation:
+     * GET: hash_hmac('sha256', 'GET:' + VA + ':' + lowercase(hash('sha256', BODY)) + ':' + ApiKey, ApiKey)
+     * For GET with no body, BODY = empty string
      */
     private function generateSignatureGet()
     {
-        // Correct signature format for iPaymu GET
-        $stringToSign = $this->va . $this->apiKey;
+        // For GET requests, body is empty
+        $bodyHash = strtolower(hash('sha256', ''));
+        
+        // Create signature string: GET:VA:BODYHASH:APIKEY
+        $stringToSign = 'GET:' . $this->va . ':' . $bodyHash . ':' . $this->apiKey;
+        
+        // Generate HMAC signature
         $signature = hash_hmac('sha256', $stringToSign, $this->apiKey);
         
-        Log::info('iPaymu Signature Generated (GET)', [
+        Log::info('iPaymu Signature Generated (GET - Correct Format)', [
+            'method' => 'GET',
             'va_length' => strlen($this->va),
             'api_key_length' => strlen($this->apiKey),
+            'body_hash' => $bodyHash,
             'string_to_sign_length' => strlen($stringToSign),
-            'signature' => $signature
+            'signature' => substr($signature, 0, 20) . '...'
         ]);
         
         return $signature;

@@ -53,8 +53,11 @@ echo "────────────────────────�
 try {
     $timestamp = time();
     
-    // For GET requests, signature is just VA + ApiKey (no body)
-    $signature = hash_hmac('sha256', $va . $apiKey, $apiKey);
+    // For GET requests, signature format: GET:VA:BODYHASH:APIKEY
+    // Body is empty for GET
+    $bodyHash = strtolower(hash('sha256', ''));
+    $stringToSign = 'GET:' . $va . ':' . $bodyHash . ':' . $apiKey;
+    $signature = hash_hmac('sha256', $stringToSign, $apiKey);
     
     echo "Timestamp: " . $timestamp . "\n";
     echo "Signature: " . substr($signature, 0, 20) . "...\n";
@@ -122,11 +125,12 @@ try {
     echo "Body JSON:\n";
     echo $bodyJson . "\n\n";
     
-    // Signature = HMAC_SHA256(VA + ApiKey + RequestBody, ApiKey)
-    $signatureString = $va . $apiKey . $bodyJson;
-    $signature = hash_hmac('sha256', $signatureString, $apiKey);
+    // Signature format: POST:VA:BODYHASH:APIKEY
+    $bodyHash = strtolower(hash('sha256', $bodyJson));
+    $stringToSign = 'POST:' . $va . ':' . $bodyHash . ':' . $apiKey;
+    $signature = hash_hmac('sha256', $stringToSign, $apiKey);
     
-    echo "Signature String Length: " . strlen($signatureString) . "\n";
+    echo "Signature String Length: " . strlen($stringToSign) . "\n";
     echo "Signature: " . substr($signature, 0, 20) . "...\n";
     echo "\n";
     
