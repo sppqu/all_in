@@ -301,11 +301,13 @@ class IpaymuService
                 'reference_id' => $referenceId
             ]);
 
+            $timestamp = now()->timestamp;
+            
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
-                'timestamp' => now()->timestamp
+                'timestamp' => (string) $timestamp
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             Log::info('iPaymu Subscription Payment Response', [
@@ -416,11 +418,13 @@ class IpaymuService
                 'reference_id' => $referenceId
             ]);
 
+            $timestamp = now()->timestamp;
+            
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
-                'timestamp' => now()->timestamp
+                'timestamp' => (string) $timestamp
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             Log::info('iPaymu Addon Payment Response', [
@@ -623,11 +627,13 @@ class IpaymuService
                 'is_sandbox' => $this->isSandbox
             ]);
 
+            $timestamp = now()->timestamp;
+            
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'signature' => $signature,
                 'va' => $this->va,
-                'timestamp' => now()->timestamp  // Use same format as addon payment
+                'timestamp' => (string) $timestamp  // Ensure string format
             ])->post($this->baseUrl . 'payment/direct', $bodyParams);
 
             $responseBody = $response->json();

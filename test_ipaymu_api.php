@@ -67,7 +67,7 @@ try {
         'Content-Type' => 'application/json',
         'signature' => $signature,
         'va' => $va,
-        'timestamp' => $timestamp
+        'timestamp' => (string) $timestamp
     ])->get($baseUrl . 'balance');
     
     echo "Status Code: " . $response->status() . "\n";
@@ -138,7 +138,7 @@ try {
         'Content-Type' => 'application/json',
         'signature' => $signature,
         'va' => $va,
-        'timestamp' => $timestamp
+        'timestamp' => (string) $timestamp
     ])->post($baseUrl . 'payment/direct', $bodyParams);
     
     echo "Status Code: " . $response->status() . "\n";
