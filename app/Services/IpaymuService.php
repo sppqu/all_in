@@ -25,15 +25,22 @@ class IpaymuService
         
         if ($useEnvConfig) {
             // Try ENV config first for internal system (addon, subscription, SPMB Step 2)
-            $this->va = env('IPAYMU_VA', config('ipaymu.va', ''));
-            $this->apiKey = env('IPAYMU_API_KEY', config('ipaymu.api_key', ''));
-            $this->isSandbox = env('IPAYMU_SANDBOX', config('ipaymu.sandbox', true));
+            // Use env() directly to bypass config cache
+            $envVa = env('IPAYMU_VA');
+            $envApiKey = env('IPAYMU_API_KEY');
+            $envSandbox = env('IPAYMU_SANDBOX');
+            
+            $this->va = $envVa ?? config('ipaymu.va', '');
+            $this->apiKey = $envApiKey ?? config('ipaymu.api_key', '');
+            $this->isSandbox = $envSandbox !== null ? filter_var($envSandbox, FILTER_VALIDATE_BOOLEAN) : config('ipaymu.sandbox', true);
             
             Log::info('🔍 Attempting to load ENV config', [
-                'va_from_env' => env('IPAYMU_VA') ? 'SET' : 'EMPTY',
-                'api_key_from_env' => env('IPAYMU_API_KEY') ? 'SET' : 'EMPTY',
+                'env_va_raw' => $envVa ? substr($envVa, 0, 10).'...'.substr($envVa, -5) : 'NULL',
+                'env_api_key_raw' => $envApiKey ? substr($envApiKey, 0, 15).'...' : 'NULL',
+                'env_sandbox_raw' => $envSandbox !== null ? $envSandbox : 'NULL',
                 'va_loaded' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : 'NO',
-                'api_key_loaded' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO'
+                'api_key_loaded' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO',
+                'sandbox_loaded' => $this->isSandbox ? 'true' : 'false'
             ]);
             
             // If ENV is empty, fallback to database

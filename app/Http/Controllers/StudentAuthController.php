@@ -2062,7 +2062,7 @@ class StudentAuthController extends Controller
             if (!$ipaymuResponse['success']) {
                 throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
             }
-
+            
             // Store payment data in transfer table
             $transferId = DB::table('transfer')->insertGetId([
                 'student_id' => $studentId,
