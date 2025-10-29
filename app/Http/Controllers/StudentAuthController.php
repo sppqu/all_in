@@ -2069,7 +2069,11 @@ class StudentAuthController extends Controller
                 'bill_type' => 'tabungan',
                 'bill_id' => 0, // Use 0 for tabungan (no specific bill)
                 'payment_number' => $referenceId,
-                'payment_details' => json_encode($ipaymuResponse['data'] ?? []),
+                'payment_details' => json_encode([
+                    'description' => $request->description ?? 'Setor Tabungan',
+                    'amount' => $request->amount,
+                    'ipaymu_response' => $ipaymuResponse['data'] ?? []
+                ]),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -2087,13 +2091,30 @@ class StudentAuthController extends Controller
 
             Log::info('✅ Tabungan transfer record created', [
                 'transfer_id' => $transferId,
-                'reference_id' => $referenceId
+                'reference_id' => $referenceId,
+                'is_va_payment' => $ipaymuResponse['data']['is_va_payment'] ?? false
             ]);
+
+            // Handle VA payment vs redirect URL
+            $isVaPayment = $ipaymuResponse['data']['is_va_payment'] ?? false;
+            $paymentUrl = $ipaymuResponse['data']['payment_url'] ?? null;
+            
+            // If VA payment without URL, create instruction page link
+            if ($isVaPayment && !$paymentUrl) {
+                $paymentUrl = route('student.payment.va-instructions', [
+                    'transfer_id' => $transferId,
+                    'reference' => $referenceId
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
-                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
-                'reference_id' => $referenceId
+                'message' => 'Pembayaran tabungan berhasil diproses',
+                'payment_url' => $paymentUrl,
+                'is_va_payment' => $isVaPayment,
+                'payment_data' => $ipaymuResponse['data'] ?? [],
+                'reference_id' => $referenceId,
+                'transfer_id' => $transferId
             ]);
 
         } catch (\Exception $e) {
@@ -2289,7 +2310,10 @@ class StudentAuthController extends Controller
                 'payment_method' => 'ipaymu',
                 'bill_type' => $request->bill_type,
                 'bill_id' => $request->bill_id,
-                'payment_details' => json_encode($ipaymuResponse['data'] ?? []),
+                'payment_details' => json_encode([
+                    'bill_details' => $billDetails,
+                    'ipaymu_response' => $ipaymuResponse['data'] ?? []
+                ]),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -2309,7 +2333,8 @@ class StudentAuthController extends Controller
 
             Log::info('✅ Transfer record created successfully', [
                 'transfer_id' => $transferId,
-                'reference_id' => $referenceId
+                'reference_id' => $referenceId,
+                'is_va_payment' => $ipaymuResponse['data']['is_va_payment'] ?? false
             ]);
 
             // Kirim notifikasi WhatsApp jika diaktifkan
@@ -2325,11 +2350,26 @@ class StudentAuthController extends Controller
                 // Jangan gagalkan proses pembayaran jika notifikasi gagal
             }
 
+            // Handle VA payment vs redirect URL
+            $isVaPayment = $ipaymuResponse['data']['is_va_payment'] ?? false;
+            $paymentUrl = $ipaymuResponse['data']['payment_url'] ?? null;
+            
+            // If VA payment without URL, create instruction page link
+            if ($isVaPayment && !$paymentUrl) {
+                $paymentUrl = route('student.payment.va-instructions', [
+                    'transfer_id' => $transferId,
+                    'reference' => $referenceId
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pembayaran berhasil diproses',
-                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'payment_url' => $paymentUrl,
+                'is_va_payment' => $isVaPayment,
+                'payment_data' => $ipaymuResponse['data'] ?? [],
                 'reference_id' => $referenceId,
+                'transfer_id' => $transferId,
                 'payment_method' => 'ipaymu'
             ]);
 
