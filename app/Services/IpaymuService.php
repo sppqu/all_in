@@ -607,26 +607,57 @@ class IpaymuService
             ]);
 
             if ($response->successful() && isset($result['Status']) && $result['Status'] == 200) {
+                // Try multiple possible response structures
+                $paymentUrl = $result['Data']['Url'] 
+                    ?? $result['Data']['url'] 
+                    ?? $result['data']['url'] 
+                    ?? $result['data']['Url']
+                    ?? null;
+                
+                $sessionId = $result['Data']['SessionID'] 
+                    ?? $result['Data']['session_id'] 
+                    ?? $result['data']['session_id']
+                    ?? $result['data']['SessionID']
+                    ?? null;
+                
+                $transactionId = $result['Data']['TransactionId'] 
+                    ?? $result['Data']['transaction_id'] 
+                    ?? $result['data']['transaction_id']
+                    ?? $result['data']['TransactionId']
+                    ?? null;
+                
+                // Log if payment_url is null
+                if (!$paymentUrl) {
+                    Log::warning('⚠️ iPaymu payment URL is NULL!', [
+                        'result_keys' => array_keys($result),
+                        'data_keys' => isset($result['Data']) ? array_keys($result['Data']) : 'NO_DATA_KEY',
+                        'full_result' => $result
+                    ]);
+                }
+                
                 return [
                     'success' => true,
                     'data' => [
-                        'payment_url' => $result['Data']['Url'] ?? null,
-                        'session_id' => $result['Data']['SessionID'] ?? null,
-                        'transaction_id' => $result['Data']['TransactionId'] ?? null,
+                        'payment_url' => $paymentUrl,
+                        'session_id' => $sessionId,
+                        'transaction_id' => $transactionId,
                         'reference_id' => $referenceId,
-                        'expired_time' => $result['Data']['Expired'] ?? null
+                        'expired_time' => $result['Data']['Expired'] ?? $result['data']['expired'] ?? null
                     ],
                     'message' => 'Payment created successfully'
                 ];
             }
 
             Log::error('💳 iPaymu payment failed', [
+                'status' => $response->status(),
+                'result_status' => $result['Status'] ?? 'NO_STATUS',
+                'message' => $result['Message'] ?? $result['message'] ?? 'No message',
                 'response' => $result
             ]);
 
             return [
                 'success' => false,
-                'message' => $result['Message'] ?? 'Failed to create payment',
+                'message' => $result['Message'] ?? $result['message'] ?? 'Failed to create payment',
                 'data' => $result
             ];
 
