@@ -291,8 +291,8 @@ class SPMBController extends Controller
                 'amount' => WaveHelper::getStep2QrisFee(),
                 'method' => 'qris', // Default QRIS for Step 2
                 'product_name' => 'Step 2 Registration Fee',
-                'customer_name' => $registration->nama_lengkap,
-                'customer_phone' => $registration->no_hp,
+                'customer_name' => $registration->name, // Fixed: use 'name' column
+                'customer_phone' => $registration->phone, // Fixed: use 'phone' column
                 'customer_email' => $registration->email ?? 'spmb@sppqu.com',
                 'return_url' => route('spmb.payment.success'),
                 'callback_url' => url('/api/manage/ipaymu/callback')
@@ -537,8 +537,8 @@ class SPMBController extends Controller
         $ipaymuResponse = $this->ipaymuServiceDb->createSPMBPayment([
             'registration_id' => $registration->id,
             'amount' => WaveHelper::getSpmbFee($registration),
-            'customer_name' => $registration->full_name,
-            'customer_phone' => $registration->phone_number,
+            'customer_name' => $registration->name, // Fixed: use 'name' column
+            'customer_phone' => $registration->phone, // Fixed: use 'phone' column
             'customer_email' => $registration->email,
             'method' => 'qris', // Default QRIS for SPMB
             'callback_url' => route('api.ipaymu.callback'),
