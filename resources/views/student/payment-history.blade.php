@@ -122,7 +122,29 @@
                                     </div>
                                     <div class="mt-2">
                                         @if($payment->status == 0)
-                                            <!-- Pembayaran pending - status sudah ditampilkan di atas -->
+                                            <!-- Pembayaran pending - tampilkan tombol Bayar Sekarang untuk iPaymu -->
+                                            @if(isset($payment->payment_method) && $payment->payment_method === 'ipaymu')
+                                                @php
+                                                    $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
+                                                    $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
+                                                    $paymentUrl = $ipaymuData['payment_url'] ?? null;
+                                                    $paymentNo = $ipaymuData['payment_no'] ?? null;
+                                                    
+                                                    // If no payment URL but has VA number, create instruction page link
+                                                    if (!$paymentUrl && $paymentNo) {
+                                                        $paymentUrl = route('student.payment.va-instructions', [
+                                                            'transfer_id' => $payment->transfer_id ?? $payment->id,
+                                                            'reference' => $payment->reference
+                                                        ]);
+                                                    }
+                                                @endphp
+                                                
+                                                @if($paymentUrl)
+                                                    <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                        <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                    </a>
+                                                @endif
+                                            @endif
                                         @else
                                             <!-- Pembayaran sukses - tampilkan "Detail" -->
                                             @if(isset($payment->receipt_id) && $payment->receipt_id)
@@ -206,7 +228,31 @@
                                     </div>
                                     @if($viewType == 'kuitansi')
                                         @if($payment->status == 0)
-                                            <!-- Pembayaran pending - tidak perlu tampilkan status lagi karena sudah ada di atas -->
+                                            <!-- Pembayaran pending - tampilkan tombol Bayar Sekarang untuk iPaymu -->
+                                            @if(isset($payment->payment_method) && $payment->payment_method === 'ipaymu')
+                                                @php
+                                                    $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
+                                                    $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
+                                                    $paymentUrl = $ipaymuData['payment_url'] ?? null;
+                                                    $paymentNo = $ipaymuData['payment_no'] ?? null;
+                                                    
+                                                    // If no payment URL but has VA number, create instruction page link
+                                                    if (!$paymentUrl && $paymentNo) {
+                                                        $paymentUrl = route('student.payment.va-instructions', [
+                                                            'transfer_id' => $payment->transfer_id ?? $payment->id,
+                                                            'reference' => $payment->reference
+                                                        ]);
+                                                    }
+                                                @endphp
+                                                
+                                                @if($paymentUrl)
+                                                    <div class="mt-2">
+                                                        <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                            <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                        </a>
+                                                    </div>
+                                                @endif
+                                            @endif
                                         @else
                                             <!-- Pembayaran sukses - tampilkan "Detail" -->
                                             <div class="mt-2">
@@ -216,8 +262,33 @@
                                             </div>
                                         @endif
                                     @else
-                                        <!-- Per Item view - hanya tampilkan pembayaran sukses -->
-                                        @if($payment->status == 1 || $payment->transaction_type === 'CASH_BULANAN' || $payment->transaction_type === 'CASH_BEBAS')
+                                        <!-- Per Item view - tampilkan untuk pending (ipaymu) dan sukses -->
+                                        @if($payment->status == 0 && isset($payment->payment_method) && $payment->payment_method === 'ipaymu')
+                                            <!-- Pembayaran pending iPaymu -->
+                                            @php
+                                                $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
+                                                $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
+                                                $paymentUrl = $ipaymuData['payment_url'] ?? null;
+                                                $paymentNo = $ipaymuData['payment_no'] ?? null;
+                                                
+                                                // If no payment URL but has VA number, create instruction page link
+                                                if (!$paymentUrl && $paymentNo) {
+                                                    $paymentUrl = route('student.payment.va-instructions', [
+                                                        'transfer_id' => $payment->transfer_id ?? $payment->id,
+                                                        'reference' => $payment->reference
+                                                    ]);
+                                                }
+                                            @endphp
+                                            
+                                            @if($paymentUrl)
+                                                <div class="mt-2">
+                                                    <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                        <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        @elseif($payment->status == 1 || $payment->transaction_type === 'CASH_BULANAN' || $payment->transaction_type === 'CASH_BEBAS')
+                                            <!-- Pembayaran sukses -->
                                             <div class="mt-2">
                                                 @if(isset($payment->receipt_id) && $payment->receipt_id)
                                                     <a href="{{ route('student.receipt.detail', ['id' => $payment->receipt_id, 'type' => 'cash']) }}" class="btn btn-success btn-sm">Detail</a>
