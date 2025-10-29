@@ -55,6 +55,19 @@ class TripayCallbackController extends Controller
             $status = $request->status; // UNPAID, PAID, EXPIRED, FAILED
             $amount = $request->total_amount;
 
+            // Validasi data yang diperlukan
+            if (!$reference || !$merchantRef) {
+                Log::error('Missing required fields in Tripay callback', [
+                    'reference' => $reference,
+                    'merchant_ref' => $merchantRef,
+                    'all_data' => $request->all()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reference ID and Merchant Ref are required'
+                ], 400);
+            }
+
             Log::info('Processing Tripay Callback', [
                 'reference' => $reference,
                 'merchant_ref' => $merchantRef,
@@ -243,10 +256,35 @@ class TripayCallbackController extends Controller
 
         Log::info('Extracted Data', ['user_id' => $userId, 'addon_id' => $addonId]);
 
-        // Find user addon by transaction_id
+        // Find user addon by transaction_id first
         $userAddon = DB::table('user_addons')
             ->where('transaction_id', $merchantRef)
             ->first();
+
+        // Fallback: Find by user_id, addon_id, and pending status if not found
+        if (!$userAddon) {
+            Log::info('User addon not found by transaction_id, trying fallback query');
+            $userAddon = DB::table('user_addons')
+                ->where('user_id', $userId)
+                ->where('addon_id', $addonId)
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            // Update transaction_id if found via fallback
+            if ($userAddon) {
+                DB::table('user_addons')
+                    ->where('id', $userAddon->id)
+                    ->update([
+                        'transaction_id' => $merchantRef,
+                        'payment_reference' => $reference,
+                        'updated_at' => now()
+                    ]);
+                Log::info('Updated user addon with transaction_id via fallback', [
+                    'user_addon_id' => $userAddon->id
+                ]);
+            }
+        }
 
         Log::info('User Addon Query Result', [
             'found' => $userAddon ? 'YES' : 'NO',
@@ -263,28 +301,46 @@ class TripayCallbackController extends Controller
                     'purchased_at' => now(),
                     'amount_paid' => $amount,
                     'payment_method' => 'tripay',
+                    'payment_reference' => $reference,
+                    'transaction_id' => $merchantRef,
                     'updated_at' => now()
                 ];
 
                 // Set expires_at based on addon type
                 if ($addon && $addon->type === 'one_time') {
                     $updateData['expires_at'] = null; // Lifetime
+                    Log::info('Setting addon as one_time (lifetime)', ['addon_id' => $addonId]);
                 } elseif ($addon && $addon->type === 'recurring') {
                     // Set expiry based on duration (default 30 days)
+                    $duration = $addon->duration ?? 30;
+                    $updateData['expires_at'] = now()->addDays($duration);
+                    Log::info('Setting addon as recurring', [
+                        'addon_id' => $addonId,
+                        'duration_days' => $duration,
+                        'expires_at' => $updateData['expires_at']
+                    ]);
+                } else {
+                    Log::warning('Addon type unknown, defaulting to 30 days', ['addon' => $addon]);
                     $updateData['expires_at'] = now()->addDays(30);
                 }
+
+                Log::info('Updating user addon to active', [
+                    'user_addon_id' => $userAddon->id,
+                    'update_data' => $updateData
+                ]);
 
                 $updated = DB::table('user_addons')
                     ->where('id', $userAddon->id)
                     ->update($updateData);
 
-                Log::info('Addon Activated via Tripay', [
+                Log::info('✓ Addon Activated via Tripay Successfully', [
                     'user_addon_id' => $userAddon->id,
                     'user_id' => $userId,
                     'addon_id' => $addonId,
                     'addon_type' => $addon->type ?? 'unknown',
                     'expires_at' => $updateData['expires_at'],
                     'merchant_ref' => $merchantRef,
+                    'reference' => $reference,
                     'rows_affected' => $updated
                 ]);
             } else {

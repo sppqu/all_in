@@ -171,21 +171,80 @@ class IpaymuCallbackController extends Controller
      */
     private function handleAddonCallback($referenceId, $status, $statusCode, $transactionId, $amount)
     {
-        Log::info('Processing Addon Callback', [
+        Log::info('=== Processing Addon Callback (iPaymu) ===', [
             'reference_id' => $referenceId,
             'status' => $status,
-            'status_code' => $statusCode
+            'status_code' => $statusCode,
+            'transaction_id' => $transactionId,
+            'amount' => $amount
         ]);
 
-        // Find user addon by transaction_id (reference_id)
+        // Extract user_id and addon_id from reference_id (format: ADDON-{user_id}-{addon_id}-{timestamp})
+        $parts = explode('-', $referenceId);
+        $userId = $parts[1] ?? null;
+        $addonId = $parts[2] ?? null;
+
+        Log::info('Extracted from reference_id', [
+            'user_id' => $userId,
+            'addon_id' => $addonId,
+            'parts' => $parts
+        ]);
+
+        // Find user addon by transaction_id (reference_id) first
         $userAddon = DB::table('user_addons')
             ->where('transaction_id', $referenceId)
             ->first();
 
+        // Fallback: Find by user_id, addon_id, and pending status if not found
+        if (!$userAddon && $userId && $addonId) {
+            Log::info('User addon not found by transaction_id, trying fallback query');
+            
+            $userAddon = DB::table('user_addons')
+                ->where('user_id', $userId)
+                ->where('addon_id', $addonId)
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            // Update transaction_id if found via fallback
+            if ($userAddon) {
+                DB::table('user_addons')
+                    ->where('id', $userAddon->id)
+                    ->update([
+                        'transaction_id' => $referenceId,
+                        'payment_reference' => $transactionId,
+                        'updated_at' => now()
+                    ]);
+                
+                Log::info('✓ Found user addon via fallback and updated transaction_id', [
+                    'user_addon_id' => $userAddon->id,
+                    'user_id' => $userId,
+                    'addon_id' => $addonId
+                ]);
+            }
+        }
+
         if (!$userAddon) {
-            Log::error('User addon not found for reference_id: ' . $referenceId);
+            Log::error('❌ User addon not found even after fallback', [
+                'reference_id' => $referenceId,
+                'user_id' => $userId,
+                'addon_id' => $addonId,
+                'all_pending_addons' => DB::table('user_addons')
+                    ->select('id', 'user_id', 'addon_id', 'transaction_id', 'status', 'created_at')
+                    ->where('status', 'pending')
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get()
+            ]);
             return;
         }
+
+        Log::info('✓ User addon found', [
+            'user_addon_id' => $userAddon->id,
+            'user_id' => $userAddon->user_id,
+            'addon_id' => $userAddon->addon_id,
+            'current_status' => $userAddon->status
+        ]);
 
         // Map iPaymu status to our status
         $newStatus = 'pending';
@@ -197,26 +256,25 @@ class IpaymuCallbackController extends Controller
             $newStatus = 'expired';
         }
 
-        Log::info('Updating user addon status', [
-            'user_addon_id' => $userAddon->id,
-            'old_status' => $userAddon->status,
-            'new_status' => $newStatus
+        Log::info('Status mapping', [
+            'ipaymu_status' => $status,
+            'ipaymu_status_code' => $statusCode,
+            'mapped_status' => $newStatus
         ]);
 
-        // Update user addon
-        DB::table('user_addons')
-            ->where('id', $userAddon->id)
-            ->update([
-                'status' => $newStatus,
-                'payment_reference' => $transactionId,
-                'updated_at' => now()
-            ]);
+        // Get addon details for expiry calculation
+        $addon = DB::table('addons')->where('id', $userAddon->addon_id)->first();
+
+        // Prepare update data
+        $updateData = [
+            'status' => $newStatus,
+            'payment_reference' => $transactionId,
+            'transaction_id' => $referenceId,
+            'updated_at' => now()
+        ];
 
         // If active (paid), set purchase date and expiry
         if ($newStatus === 'active') {
-            // Get addon details
-            $addon = DB::table('addons')->where('id', $userAddon->addon_id)->first();
-            
             $purchasedAt = now();
             $expiresAt = null;
             
@@ -224,22 +282,53 @@ class IpaymuCallbackController extends Controller
             if ($addon && $addon->type === 'recurring') {
                 $duration = $addon->duration ?? 30;
                 $expiresAt = $purchasedAt->copy()->addDays($duration);
+                
+                Log::info('Setting recurring addon expiry', [
+                    'addon_id' => $userAddon->addon_id,
+                    'addon_type' => $addon->type,
+                    'duration_days' => $duration,
+                    'expires_at' => $expiresAt
+                ]);
+            } elseif ($addon && $addon->type === 'one_time') {
+                Log::info('Setting one-time addon (lifetime)', [
+                    'addon_id' => $userAddon->addon_id,
+                    'addon_type' => $addon->type
+                ]);
+            } else {
+                Log::warning('Addon type unknown or addon not found', [
+                    'addon_id' => $userAddon->addon_id,
+                    'addon' => $addon
+                ]);
             }
 
-            DB::table('user_addons')
-                ->where('id', $userAddon->id)
-                ->update([
-                    'purchased_at' => $purchasedAt,
-                    'expires_at' => $expiresAt,
-                    'updated_at' => now()
-                ]);
-
-            Log::info('User addon activated', [
-                'user_addon_id' => $userAddon->id,
-                'purchased_at' => $purchasedAt,
-                'expires_at' => $expiresAt
-            ]);
+            $updateData['purchased_at'] = $purchasedAt;
+            $updateData['expires_at'] = $expiresAt;
+            $updateData['amount_paid'] = $amount;
+            $updateData['payment_method'] = 'ipaymu';
         }
+
+        Log::info('Updating user addon with data', [
+            'user_addon_id' => $userAddon->id,
+            'old_status' => $userAddon->status,
+            'update_data' => $updateData
+        ]);
+
+        // Update user addon
+        $updated = DB::table('user_addons')
+            ->where('id', $userAddon->id)
+            ->update($updateData);
+
+        Log::info('✓✓✓ User Addon Updated Successfully via iPaymu Callback', [
+            'user_addon_id' => $userAddon->id,
+            'user_id' => $userAddon->user_id,
+            'addon_id' => $userAddon->addon_id,
+            'final_status' => $newStatus,
+            'purchased_at' => $updateData['purchased_at'] ?? null,
+            'expires_at' => $updateData['expires_at'] ?? null,
+            'rows_affected' => $updated,
+            'reference_id' => $referenceId,
+            'transaction_id' => $transactionId
+        ]);
     }
 
     /**
