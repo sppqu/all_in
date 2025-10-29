@@ -3377,13 +3377,28 @@ class StudentAuthController extends Controller
 
             Log::info('✅ Cart payment transfer created', [
                 'transfer_id' => $transferId,
-                'reference_id' => $referenceId
+                'reference_id' => $referenceId,
+                'is_va_payment' => $ipaymuResponse['data']['is_va_payment'] ?? false
             ]);
+
+            // For VA payments, redirect to instruction page instead of payment URL
+            $isVaPayment = $ipaymuResponse['data']['is_va_payment'] ?? false;
+            $paymentUrl = $ipaymuResponse['data']['payment_url'] ?? null;
+            
+            // If VA payment, create instruction URL
+            if ($isVaPayment && !$paymentUrl) {
+                $paymentUrl = route('student.payment.va-instructions', [
+                    'transfer_id' => $transferId,
+                    'reference' => $referenceId
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pembayaran berhasil diproses',
-                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'payment_url' => $paymentUrl,
+                'is_va_payment' => $isVaPayment,
+                'payment_data' => $ipaymuResponse['data'] ?? [],
                 'reference_id' => $referenceId,
                 'transfer_id' => $transferId
             ]);
@@ -3400,5 +3415,44 @@ class StudentAuthController extends Controller
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Show VA payment instructions
+     */
+    public function showVaInstructions(Request $request)
+    {
+        $transferId = $request->get('transfer_id');
+        $reference = $request->get('reference');
+        
+        if (!$transferId || !$reference) {
+            return redirect()->route('student.payment.history')
+                ->with('error', 'Data pembayaran tidak valid');
+        }
+
+        // Get transfer data
+        $transfer = DB::table('transfer')
+            ->where('id', $transferId)
+            ->where('reference', $reference)
+            ->first();
+
+        if (!$transfer) {
+            return redirect()->route('student.payment.history')
+                ->with('error', 'Pembayaran tidak ditemukan');
+        }
+
+        // Parse payment details
+        $paymentDetails = json_decode($transfer->payment_details, true);
+        $ipaymuData = $paymentDetails['ipaymu_response'] ?? [];
+
+        return view('student.va-instructions', [
+            'transfer' => $transfer,
+            'paymentNo' => $ipaymuData['payment_no'] ?? '-',
+            'channel' => $ipaymuData['channel'] ?? 'BCA',
+            'total' => $ipaymuData['total'] ?? $transfer->confirm_pay,
+            'fee' => $ipaymuData['fee'] ?? 0,
+            'expired' => $ipaymuData['expired_time'] ?? null,
+            'reference' => $reference
+        ]);
     }
 } 

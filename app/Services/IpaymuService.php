@@ -607,42 +607,46 @@ class IpaymuService
             ]);
 
             if ($response->successful() && isset($result['Status']) && $result['Status'] == 200) {
-                // Try multiple possible response structures
-                $paymentUrl = $result['Data']['Url'] 
-                    ?? $result['Data']['url'] 
-                    ?? $result['data']['url'] 
-                    ?? $result['data']['Url']
-                    ?? null;
+                $data = $result['Data'] ?? $result['data'] ?? [];
                 
-                $sessionId = $result['Data']['SessionID'] 
-                    ?? $result['Data']['session_id'] 
-                    ?? $result['data']['session_id']
-                    ?? $result['data']['SessionID']
-                    ?? null;
+                // iPaymu response fields (case-sensitive)
+                $sessionId = $data['SessionId'] ?? $data['SessionID'] ?? $data['session_id'] ?? null;
+                $transactionId = $data['TransactionId'] ?? $data['transaction_id'] ?? null;
+                $paymentNo = $data['PaymentNo'] ?? $data['payment_no'] ?? null;
+                $channel = $data['Channel'] ?? $data['channel'] ?? null;
+                $via = $data['Via'] ?? $data['via'] ?? null;
+                $expired = $data['Expired'] ?? $data['expired'] ?? null;
+                $total = $data['Total'] ?? $data['total'] ?? null;
+                $fee = $data['Fee'] ?? $data['fee'] ?? null;
                 
-                $transactionId = $result['Data']['TransactionId'] 
-                    ?? $result['Data']['transaction_id'] 
-                    ?? $result['data']['transaction_id']
-                    ?? $result['data']['TransactionId']
-                    ?? null;
+                // For VA payments, there's no redirect URL
+                // PaymentNo is the VA number that customer needs to pay to
+                $paymentUrl = $data['Url'] ?? $data['url'] ?? null;
                 
-                // Log if payment_url is null
-                if (!$paymentUrl) {
-                    Log::warning('⚠️ iPaymu payment URL is NULL!', [
-                        'result_keys' => array_keys($result),
-                        'data_keys' => isset($result['Data']) ? array_keys($result['Data']) : 'NO_DATA_KEY',
-                        'full_result' => $result
-                    ]);
-                }
+                // If no URL (VA payment), we'll redirect to instruction page instead
+                $isVaPayment = ($via === 'VA' || $via === 'va') && !$paymentUrl;
+                
+                Log::info('💳 iPaymu payment parsed', [
+                    'is_va_payment' => $isVaPayment,
+                    'payment_no' => $paymentNo,
+                    'channel' => $channel,
+                    'via' => $via
+                ]);
                 
                 return [
                     'success' => true,
                     'data' => [
                         'payment_url' => $paymentUrl,
+                        'payment_no' => $paymentNo,
+                        'channel' => $channel,
+                        'via' => $via,
                         'session_id' => $sessionId,
                         'transaction_id' => $transactionId,
                         'reference_id' => $referenceId,
-                        'expired_time' => $result['Data']['Expired'] ?? $result['data']['expired'] ?? null
+                        'expired_time' => $expired,
+                        'total' => $total,
+                        'fee' => $fee,
+                        'is_va_payment' => $isVaPayment
                     ],
                     'message' => 'Payment created successfully'
                 ];

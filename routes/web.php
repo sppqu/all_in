@@ -358,6 +358,7 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::get('/payment/history', [StudentAuthController::class, 'paymentHistory'])->name('payment.history');
         Route::get('/payment/detail/{id}', [StudentAuthController::class, 'paymentDetail'])->name('payment.detail');
         Route::get('/payment/receipt/{id}', [StudentAuthController::class, 'downloadReceipt'])->name('payment.receipt');
+        Route::get('/payment/va-instructions', [StudentAuthController::class, 'showVaInstructions'])->name('payment.va-instructions');
         Route::get('/receipt/detail/{id}/{type}', [StudentAuthController::class, 'receiptDetail'])->name('receipt.detail');
 
         // E-Jurnal Harian 7KAIH
