@@ -65,17 +65,18 @@ class IpaymuCallbackController extends Controller
             ]);
 
             // Determine transaction type from reference ID
+            // Support both old format (CART-) and new format (PG-CART-)
             if (str_starts_with($referenceId, 'SUB-')) {
                 $this->handleSubscriptionCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'ADDON-')) {
                 $this->handleAddonCallback($referenceId, $status, $statusCode, $transactionId, $amount);
-            } elseif (str_starts_with($referenceId, 'BULANAN-')) {
+            } elseif (str_starts_with($referenceId, 'PG-BULANAN-') || str_starts_with($referenceId, 'BULANAN-')) {
                 $this->handleBulananCallback($referenceId, $status, $statusCode, $transactionId, $amount);
-            } elseif (str_starts_with($referenceId, 'BEBAS-')) {
+            } elseif (str_starts_with($referenceId, 'PG-BEBAS-') || str_starts_with($referenceId, 'BEBAS-')) {
                 $this->handleBebasCallback($referenceId, $status, $statusCode, $transactionId, $amount);
-            } elseif (str_starts_with($referenceId, 'CART-')) {
+            } elseif (str_starts_with($referenceId, 'PG-CART-') || str_starts_with($referenceId, 'CART-')) {
                 $this->handleCartCallback($referenceId, $status, $statusCode, $transactionId, $amount);
-            } elseif (str_starts_with($referenceId, 'TABUNGAN-')) {
+            } elseif (str_starts_with($referenceId, 'PG-TABUNGAN-') || str_starts_with($referenceId, 'TABUNGAN-')) {
                 $this->handleTabunganCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'SPMB-STEP2-')) {
                 $this->handleSPMBCallback($referenceId, $status, $statusCode, $transactionId, $amount);

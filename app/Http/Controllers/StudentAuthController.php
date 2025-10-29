@@ -1112,21 +1112,28 @@ class StudentAuthController extends Controller
                 't.status',
                 't.checkout_url',
                 't.reference',
+                't.merchantRef',
+                't.payment_details',
                 DB::raw('NULL as payment_type'),
                 't.confirm_pay as subtotal',
                 DB::raw('CASE 
-                    WHEN t.payment_method = "bank_transfer" OR (t.payment_method IS NULL AND t.detail LIKE "%Transfer Bank%") THEN "Bank Transfer"
+                    WHEN t.payment_method = "ipaymu" THEN "Payment Gateway - iPaymu"
+                    WHEN t.payment_method = "bank_transfer" OR (t.payment_method IS NULL AND t.detail LIKE "%Transfer Bank%") THEN "Transfer Bank Manual"
+                    WHEN t.payment_method = "midtrans" THEN "Payment Gateway - Midtrans"
+                    WHEN t.payment_method = "tripay" THEN "Payment Gateway - Tripay"
+                    WHEN t.payment_method = "duitku" THEN "Payment Gateway - Duitku"
+                    WHEN t.payment_method = "gateway" THEN "Payment Gateway"
                     ELSE "Online Payment"
                 END as pos_name'),
                 't.detail as desc',
                 DB::raw('CASE 
-                    WHEN t.payment_method = "midtrans" THEN "ONLINE"
+                    WHEN t.payment_method IN ("ipaymu", "midtrans", "tripay", "duitku", "gateway") THEN "ONLINE"
                     WHEN t.payment_method = "bank_transfer" OR (t.payment_method IS NULL AND t.detail LIKE "%Transfer Bank%") THEN "BANK_TRANSFER"
                     ELSE "ONLINE"
                 END as transaction_type'),
                 DB::raw('CASE 
                     WHEN t.payment_method = "bank_transfer" OR (t.payment_method IS NULL AND t.detail LIKE "%Transfer Bank%") THEN COALESCE(t.detail, "Transfer Bank")
-                    ELSE COALESCE(t.detail, "Pembayaran Cart via Midtrans")
+                    ELSE COALESCE(t.detail, "Pembayaran via Payment Gateway")
                 END as display_name'),
                 't.payment_method',
                 't.gateway_transaction_id'
@@ -2007,8 +2014,8 @@ class StudentAuthController extends Controller
             // Initialize iPaymu service
             $ipaymuService = new IpaymuService();
 
-            // Generate reference ID for tabungan
-            $referenceId = 'TABUNGAN-' . $studentId . '-' . time();
+            // Generate reference ID for tabungan with PG (Payment Gateway) prefix
+            $referenceId = 'PG-TABUNGAN-' . $studentId . '-' . time();
 
             Log::info('🔵 Processing iPaymu tabungan payment', [
                 'reference_id' => $referenceId,
@@ -2233,11 +2240,11 @@ class StudentAuthController extends Controller
             // Initialize iPaymu service
             $ipaymuService = new IpaymuService();
 
-            // Generate reference ID
-            $referenceId = 'BULANAN-' . $studentId . '-' . $request->bill_id . '-' . time();
+            // Generate reference ID with PG (Payment Gateway) prefix
+            $referenceId = 'PG-BULANAN-' . $studentId . '-' . $request->bill_id . '-' . time();
             
             if ($request->bill_type === 'bebas') {
-                $referenceId = 'BEBAS-' . $studentId . '-' . $request->bill_id . '-' . time();
+                $referenceId = 'PG-BEBAS-' . $studentId . '-' . $request->bill_id . '-' . time();
             }
 
             Log::info('🔵 Processing iPaymu payment from student portal', [
@@ -3303,8 +3310,8 @@ class StudentAuthController extends Controller
             // Initialize iPaymu service
             $ipaymuService = new IpaymuService();
 
-            // Generate reference ID for cart payment
-            $referenceId = 'CART-' . $studentId . '-' . time();
+            // Generate reference ID for cart payment with PG (Payment Gateway) prefix
+            $referenceId = 'PG-CART-' . $studentId . '-' . time();
 
             Log::info('🛒 Processing cart payment via iPaymu', [
                 'reference_id' => $referenceId,
