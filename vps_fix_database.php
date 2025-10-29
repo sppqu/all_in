@@ -41,16 +41,25 @@ echo "🔧 Fix Database Configuration\n";
 echo "-----------------------------\n";
 echo "Enter new values (press Enter to keep current):\n\n";
 
+// Function to read input (compatible with all PHP versions)
+function readInput($prompt) {
+    echo $prompt;
+    $handle = fopen("php://stdin", "r");
+    $line = fgets($handle);
+    fclose($handle);
+    return trim($line);
+}
+
 // Get new values
-$newDatabase = readline("Database Name [{$database[1]}]: ");
+$newDatabase = readInput("Database Name [{$database[1]}]: ");
 $newDatabase = $newDatabase ?: ($database[1] ?? '');
 
-$newUsername = readline("Database Username [{$username[1]}]: ");
+$newUsername = readInput("Database Username [{$username[1]}]: ");
 $newUsername = $newUsername ?: ($username[1] ?? '');
 
-$newPassword = readline("Database Password: ");
+$newPassword = readInput("Database Password: ");
 if (empty($newPassword) && !empty($password[1])) {
-    $keepPassword = readline("Keep current password? (y/n): ");
+    $keepPassword = readInput("Keep current password? (y/n): ");
     if (strtolower($keepPassword) === 'y') {
         $newPassword = $password[1];
     }
@@ -111,7 +120,7 @@ try {
     echo "\n";
     
     // Ask to run migrations
-    $runMigrate = readline("Run migrations now? (y/n): ");
+    $runMigrate = readInput("Run migrations now? (y/n): ");
     if (strtolower($runMigrate) === 'y') {
         echo "\n🚀 Running migrations...\n";
         echo "-----------------------------\n";
