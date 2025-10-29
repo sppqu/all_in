@@ -486,15 +486,22 @@ class AddonController extends Controller
         try {
             $reference = $request->input('reference');
             $addonId = $request->input('addon_id');
+            $userAddonId = $request->input('user_addon_id');
             
+            // Check by user_addon_id if provided (for iPaymu or direct DB check)
+            if ($userAddonId) {
+                return $this->checkStatusByUserAddonId($userAddonId);
+            }
+            
+            // Check by reference and addon_id (for Tripay)
             if (!$reference || !$addonId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Reference ID and Addon ID are required'
+                    'message' => 'Reference ID and Addon ID, or User Addon ID are required'
                 ], 400);
             }
 
-            Log::info('Checking addon payment status from Tripay', [
+            Log::info('Checking addon payment status', [
                 'reference' => $reference,
                 'addon_id' => $addonId
             ]);
@@ -585,6 +592,83 @@ class AddonController extends Controller
                 'message' => 'Error checking payment status: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Check status by user_addon_id (for iPaymu or direct DB check)
+     */
+    private function checkStatusByUserAddonId($userAddonId)
+    {
+        Log::info('Checking addon status by user_addon_id', ['user_addon_id' => $userAddonId]);
+        
+        $userAddon = DB::table('user_addons')
+            ->where('id', $userAddonId)
+            ->first();
+        
+        if (!$userAddon) {
+            Log::error('User addon not found', ['user_addon_id' => $userAddonId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Addon tidak ditemukan'
+            ], 404);
+        }
+        
+        // Get addon details
+        $addon = DB::table('addons')->where('id', $userAddon->addon_id)->first();
+        
+        // Determine response based on current status
+        $success = true;
+        $statusResponse = $userAddon->status;
+        $message = '';
+        
+        switch ($userAddon->status) {
+            case 'active':
+                $statusResponse = 'active';
+                $message = 'Add-on berhasil diaktifkan! Pembayaran telah dikonfirmasi.';
+                break;
+            case 'pending':
+                $statusResponse = 'pending';
+                $message = 'Menunggu konfirmasi pembayaran...';
+                $success = true;
+                break;
+            case 'expired':
+                $statusResponse = 'expired';
+                $message = 'Pembayaran kadaluarsa';
+                break;
+            case 'cancelled':
+                $statusResponse = 'failed';
+                $message = 'Pembayaran dibatalkan';
+                break;
+            default:
+                $statusResponse = 'pending';
+                $message = 'Status: ' . ucfirst($userAddon->status);
+        }
+        
+        Log::info('✓ User addon status checked', [
+            'user_addon_id' => $userAddonId,
+            'db_status' => $userAddon->status,
+            'response_status' => $statusResponse,
+            'message' => $message
+        ]);
+        
+        return response()->json([
+            'success' => $success,
+            'status' => $statusResponse,
+            'message' => $message,
+            'data' => [
+                'user_addon_id' => $userAddon->id,
+                'addon_name' => $addon->name ?? 'Unknown',
+                'addon_id' => $userAddon->addon_id,
+                'user_id' => $userAddon->user_id,
+                'db_status' => $userAddon->status,
+                'purchased_at' => $userAddon->purchased_at,
+                'expires_at' => $userAddon->expires_at,
+                'payment_method' => $userAddon->payment_method ?? 'ipaymu',
+                'transaction_id' => $userAddon->transaction_id,
+                'payment_reference' => $userAddon->payment_reference,
+                'updated_at' => $userAddon->updated_at
+            ]
+        ]);
     }
 
     /**
