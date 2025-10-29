@@ -168,25 +168,25 @@ class GeneralSettingController extends Controller
             'request_data' => $request->all()
         ]);
         
-        // Handle Midtrans settings based on mode
-        if ($request->has('midtrans_mode')) {
-            $gateway->midtrans_mode = $request->midtrans_mode;
-            
-            if ($request->midtrans_mode === 'sandbox') {
-                $gateway->midtrans_server_key_sandbox = $request->midtrans_server_key_sandbox;
-                $gateway->midtrans_client_key_sandbox = $request->midtrans_client_key_sandbox;
-                $gateway->midtrans_merchant_id_sandbox = $request->midtrans_merchant_id_sandbox;
-            } else {
-                $gateway->midtrans_server_key_production = $request->midtrans_server_key_production;
-                $gateway->midtrans_client_key_production = $request->midtrans_client_key_production;
-                $gateway->midtrans_merchant_id_production = $request->midtrans_merchant_id_production;
-            }
+        // Handle iPaymu settings
+        if ($request->has('ipaymu_va')) {
+            $gateway->ipaymu_va = $request->ipaymu_va;
         }
+        if ($request->has('ipaymu_api_key')) {
+            $gateway->ipaymu_api_key = $request->ipaymu_api_key;
+        }
+        if ($request->has('ipaymu_mode')) {
+            $gateway->ipaymu_mode = $request->ipaymu_mode;
+        }
+        // Handle iPaymu active status
+        $gateway->ipaymu_is_active = $request->has('ipaymu_is_active') ? 1 : 0;
         
-        // Handle Midtrans active status
-        if ($request->has('midtrans_is_active')) {
-            $gateway->midtrans_is_active = $request->has('midtrans_is_active') ? 1 : 0;
-        }
+        \Log::info('iPaymu settings updated', [
+            'ipaymu_mode' => $gateway->ipaymu_mode,
+            'ipaymu_is_active' => $gateway->ipaymu_is_active,
+            'ipaymu_va_set' => !empty($gateway->ipaymu_va),
+            'ipaymu_api_key_set' => !empty($gateway->ipaymu_api_key)
+        ]);
         
         // Handle WhatsApp settings
         $gateway->fill($request->only([

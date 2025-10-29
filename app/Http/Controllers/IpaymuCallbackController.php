@@ -69,6 +69,10 @@ class IpaymuCallbackController extends Controller
                 $this->handleSubscriptionCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'ADDON-')) {
                 $this->handleAddonCallback($referenceId, $status, $statusCode, $transactionId, $amount);
+            } elseif (str_starts_with($referenceId, 'BULANAN-')) {
+                $this->handleBulananCallback($referenceId, $status, $statusCode, $transactionId, $amount);
+            } elseif (str_starts_with($referenceId, 'BEBAS-')) {
+                $this->handleBebasCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } elseif (str_starts_with($referenceId, 'SPMB-STEP2-')) {
                 $this->handleSPMBCallback($referenceId, $status, $statusCode, $transactionId, $amount);
             } else {
@@ -403,6 +407,229 @@ class IpaymuCallbackController extends Controller
             'payment_id' => $payment->id,
             'final_status' => $newStatus
         ]);
+    }
+
+    /**
+     * Handle pembayaran bulanan callback
+     * Format: BULANAN-{student_id}-{bulan_id}-{timestamp}
+     */
+    private function handleBulananCallback($referenceId, $status, $statusCode, $transactionId, $amount)
+    {
+        Log::info('=== Processing Bulanan Payment Callback (iPaymu) ===', [
+            'reference_id' => $referenceId,
+            'status' => $status,
+            'status_code' => $statusCode,
+            'transaction_id' => $transactionId,
+            'amount' => $amount
+        ]);
+
+        // Extract student_id and bulan_id from reference_id
+        // Format: BULANAN-{student_id}-{bulan_id}-{timestamp}
+        $parts = explode('-', $referenceId);
+        $studentId = $parts[1] ?? null;
+        $bulanId = $parts[2] ?? null;
+
+        if (!$studentId || !$bulanId) {
+            Log::error('Invalid BULANAN reference_id format', ['reference_id' => $referenceId]);
+            return;
+        }
+
+        Log::info('Extracted bulanan data', [
+            'student_id' => $studentId,
+            'bulan_id' => $bulanId
+        ]);
+
+        // Find bulan record
+        $bulan = DB::table('bulan')->where('bulan_id', $bulanId)->first();
+
+        if (!$bulan) {
+            Log::error('Bulan record not found', ['bulan_id' => $bulanId]);
+            return;
+        }
+
+        // Check payment status
+        if (strtolower($status) === 'berhasil' || $statusCode == 1) {
+            // Payment success
+            Log::info('Processing successful bulanan payment');
+
+            // Update bulan payment status
+            DB::table('bulan')
+                ->where('bulan_id', $bulanId)
+                ->update([
+                    'bulan_date_pay' => now(),
+                    'bulan_last_update' => now()
+                ]);
+
+            // Create transfer record
+            $transferId = DB::table('transfer')->insertGetId([
+                'student_id' => $studentId,
+                'bill_type' => 'bulanan',
+                'bill_id' => $bulanId,
+                'confirm_pay' => $amount,
+                'payment_method' => 'ipaymu',
+                'reference' => $referenceId,
+                'merchantRef' => $transactionId,
+                'status' => 1, // Success
+                'paid_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Create transfer_detail record
+            DB::table('transfer_detail')->insert([
+                'transfer_id' => $transferId,
+                'payment_type' => 1, // 1 for bulanan payment
+                'bulan_id' => $bulanId,
+                'bebas_id' => null,
+                'desc' => 'Pembayaran Bulanan via iPaymu',
+                'subtotal' => $amount,
+                'is_tabungan' => 0
+            ]);
+
+            // Create log_trx record
+            DB::table('log_trx')->insert([
+                'student_student_id' => $studentId,
+                'bulan_bulan_id' => $bulanId,
+                'bebas_pay_bebas_pay_id' => null,
+                'log_trx_input_date' => now(),
+                'log_trx_last_update' => now()
+            ]);
+
+            Log::info('✓✓✓ Bulanan payment processed successfully via iPaymu', [
+                'student_id' => $studentId,
+                'bulan_id' => $bulanId,
+                'amount' => $amount,
+                'transfer_id' => $transferId,
+                'reference_id' => $referenceId,
+                'transaction_id' => $transactionId
+            ]);
+        } else {
+            Log::warning('Bulanan payment not successful', [
+                'status' => $status,
+                'status_code' => $statusCode,
+                'reference_id' => $referenceId
+            ]);
+        }
+    }
+
+    /**
+     * Handle pembayaran bebas callback
+     * Format: BEBAS-{student_id}-{bebas_id}-{timestamp}
+     */
+    private function handleBebasCallback($referenceId, $status, $statusCode, $transactionId, $amount)
+    {
+        Log::info('=== Processing Bebas Payment Callback (iPaymu) ===', [
+            'reference_id' => $referenceId,
+            'status' => $status,
+            'status_code' => $statusCode,
+            'transaction_id' => $transactionId,
+            'amount' => $amount
+        ]);
+
+        // Extract student_id and bebas_id from reference_id
+        // Format: BEBAS-{student_id}-{bebas_id}-{timestamp}
+        $parts = explode('-', $referenceId);
+        $studentId = $parts[1] ?? null;
+        $bebasId = $parts[2] ?? null;
+
+        if (!$studentId || !$bebasId) {
+            Log::error('Invalid BEBAS reference_id format', ['reference_id' => $referenceId]);
+            return;
+        }
+
+        Log::info('Extracted bebas data', [
+            'student_id' => $studentId,
+            'bebas_id' => $bebasId
+        ]);
+
+        // Find bebas record
+        $bebas = DB::table('bebas')->where('bebas_id', $bebasId)->first();
+
+        if (!$bebas) {
+            Log::error('Bebas record not found', ['bebas_id' => $bebasId]);
+            return;
+        }
+
+        // Check payment status
+        if (strtolower($status) === 'berhasil' || $statusCode == 1) {
+            // Payment success
+            Log::info('Processing successful bebas payment');
+
+            // Calculate new total payment
+            $newTotalPay = $bebas->bebas_total_pay + $amount;
+
+            // Update bebas payment
+            DB::table('bebas')
+                ->where('bebas_id', $bebasId)
+                ->update([
+                    'bebas_total_pay' => $newTotalPay,
+                    'bebas_date_pay' => now(),
+                    'bebas_last_update' => now()
+                ]);
+
+            // Insert to bebas_pay
+            $bebasPayId = DB::table('bebas_pay')->insertGetId([
+                'bebas_bebas_id' => $bebasId,
+                'bebas_pay_bill' => $amount,
+                'bebas_pay_number' => 'PAY-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'bebas_pay_desc' => 'Pembayaran Online via iPaymu',
+                'user_user_id' => 1,
+                'bebas_pay_input_date' => now(),
+                'bebas_pay_last_update' => now()
+            ]);
+
+            // Create transfer record
+            $transferId = DB::table('transfer')->insertGetId([
+                'student_id' => $studentId,
+                'bill_type' => 'bebas',
+                'bill_id' => $bebasId,
+                'confirm_pay' => $amount,
+                'payment_method' => 'ipaymu',
+                'reference' => $referenceId,
+                'merchantRef' => $transactionId,
+                'status' => 1, // Success
+                'paid_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Create transfer_detail record
+            DB::table('transfer_detail')->insert([
+                'transfer_id' => $transferId,
+                'payment_type' => 2, // 2 for bebas payment
+                'bulan_id' => null,
+                'bebas_id' => $bebasId,
+                'desc' => 'Pembayaran Bebas via iPaymu',
+                'subtotal' => $amount,
+                'is_tabungan' => 0
+            ]);
+
+            // Create log_trx record
+            DB::table('log_trx')->insert([
+                'student_student_id' => $studentId,
+                'bulan_bulan_id' => null,
+                'bebas_pay_bebas_pay_id' => $bebasPayId,
+                'log_trx_input_date' => now(),
+                'log_trx_last_update' => now()
+            ]);
+
+            Log::info('✓✓✓ Bebas payment processed successfully via iPaymu', [
+                'student_id' => $studentId,
+                'bebas_id' => $bebasId,
+                'amount' => $amount,
+                'new_total_pay' => $newTotalPay,
+                'transfer_id' => $transferId,
+                'bebas_pay_id' => $bebasPayId,
+                'reference_id' => $referenceId,
+                'transaction_id' => $transactionId
+            ]);
+        } else {
+            Log::warning('Bebas payment not successful', [
+                'status' => $status,
+                'status_code' => $statusCode,
+                'reference_id' => $referenceId
+            ]);
+        }
     }
 }
 

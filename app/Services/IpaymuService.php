@@ -14,16 +14,31 @@ class IpaymuService
 
     public function __construct()
     {
-        // Ambil kredensial dari config (bukan env langsung)
-        $this->va = config('ipaymu.va', '');
-        $this->apiKey = config('ipaymu.api_key', '');
-        $this->isSandbox = config('ipaymu.sandbox', true);
-        $this->baseUrl = config('ipaymu.base_url');
+        // Ambil kredensial dari database (setup_gateways table)
+        $gateway = \DB::table('setup_gateways')->first();
+        
+        if ($gateway && $gateway->ipaymu_is_active) {
+            $this->va = $gateway->ipaymu_va ?? '';
+            $this->apiKey = $gateway->ipaymu_api_key ?? '';
+            $this->isSandbox = ($gateway->ipaymu_mode ?? 'sandbox') === 'sandbox';
+        } else {
+            // Fallback to config if database not available or not active
+            $this->va = config('ipaymu.va', '');
+            $this->apiKey = config('ipaymu.api_key', '');
+            $this->isSandbox = config('ipaymu.sandbox', true);
+        }
+        
+        // Set base URL based on mode
+        $this->baseUrl = $this->isSandbox 
+            ? 'https://sandbox.ipaymu.com/api/v2/'
+            : 'https://my.ipaymu.com/api/v2/';
         
         Log::info('iPaymu Service initialized', [
+            'source' => $gateway && $gateway->ipaymu_is_active ? 'database' : 'config',
             'va_set' => !empty($this->va) ? 'YES' : 'NO',
             'api_key_set' => !empty($this->apiKey) ? 'YES' : 'NO',
             'is_sandbox' => $this->isSandbox ? 'YES' : 'NO',
+            'is_active' => $gateway && $gateway->ipaymu_is_active ? 'YES' : 'NO',
             'base_url' => $this->baseUrl
         ]);
     }

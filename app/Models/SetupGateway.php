@@ -15,7 +15,9 @@ class SetupGateway extends Model
         'payment_gateway',
         'url_wagateway', 'apikey_wagateway', 'sender_wagateway', 'wa_gateway',
         'norek_bank', 'nama_bank', 'nama_rekening',
-        // Midtrans fields
+        // iPaymu fields
+        'ipaymu_va', 'ipaymu_api_key', 'ipaymu_mode', 'ipaymu_is_active',
+        // Midtrans fields (deprecated - will be removed)
         'midtrans_mode', 'midtrans_is_active',
         'midtrans_server_key_sandbox', 'midtrans_client_key_sandbox', 'midtrans_merchant_id_sandbox',
         'midtrans_server_key_production', 'midtrans_client_key_production', 'midtrans_merchant_id_production',
