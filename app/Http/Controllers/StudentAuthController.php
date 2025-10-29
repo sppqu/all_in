@@ -2021,14 +2021,25 @@ class StudentAuthController extends Controller
             $qty = [1];
             $price = [(int) $request->amount];
 
+            // Prepare customer data for iPaymu
+            $customerName = $student->student_full_name ?? 'Student';
+            $customerPhone = $student->student_parent_phone ?? $student->student_phone ?? '081234567890';
+            $studentNis = $student->student_nis ?? $studentId;
+            $customerEmail = 'student' . $studentNis . '@sppqu.id';
+            
+            // Ensure phone format is valid
+            if (!preg_match('/^(08|62)\d{8,}$/', $customerPhone)) {
+                $customerPhone = '081234567890';
+            }
+
             // Create iPaymu payment
             $ipaymuResponse = $ipaymuService->createPayment(
                 $referenceId,
                 'Setor Tabungan',
                 (int) $request->amount,
-                $student->student_full_name,
-                $student->student_parent_phone ?? '08123456789',
-                'student@sppqu.com',
+                $customerName,
+                $customerPhone,
+                $customerEmail,
                 $product,
                 $qty,
                 $price,
@@ -2228,14 +2239,25 @@ class StudentAuthController extends Controller
             $qty = [1];
             $price = [(int) $request->amount];
 
+            // Prepare customer data for iPaymu
+            $customerName = $student->student_full_name ?? 'Student';
+            $customerPhone = $student->student_parent_phone ?? $student->student_phone ?? '081234567890';
+            $studentNis = $student->student_nis ?? $studentId;
+            $customerEmail = 'student' . $studentNis . '@sppqu.id';
+            
+            // Ensure phone format is valid
+            if (!preg_match('/^(08|62)\d{8,}$/', $customerPhone)) {
+                $customerPhone = '081234567890';
+            }
+
             // Create iPaymu payment
             $ipaymuResponse = $ipaymuService->createPayment(
                 $referenceId,
                 $billDetails['name'],
                 (int) $request->amount,
-                $student->student_full_name,
-                $student->student_parent_phone ?? '08123456789',
-                'student@sppqu.com',
+                $customerName,
+                $customerPhone,
+                $customerEmail,
                 $product,
                 $qty,
                 $price,
@@ -3265,14 +3287,27 @@ class StudentAuthController extends Controller
                 $prices[] = $itemPrice;
             }
 
+            // Prepare customer data for iPaymu
+            $customerName = $student->student_full_name ?? 'Student';
+            $customerPhone = $student->student_parent_phone ?? $student->student_phone ?? '081234567890';
+            
+            // Generate valid email (iPaymu doesn't like generic emails)
+            $studentNis = $student->student_nis ?? $studentId;
+            $customerEmail = 'student' . $studentNis . '@sppqu.id';
+            
+            // Ensure phone format is valid (starts with 08 or 62, min 10 digits)
+            if (!preg_match('/^(08|62)\d{8,}$/', $customerPhone)) {
+                $customerPhone = '081234567890'; // Fallback to valid format
+            }
+
             // Create iPaymu payment
             $ipaymuResponse = $ipaymuService->createPayment(
                 $referenceId,
                 'Pembayaran Keranjang - ' . count($cartItems) . ' item',
                 $totalAmount,
-                $student->student_full_name,
-                $student->student_parent_phone ?? '08123456789',
-                'student@sppqu.com',
+                $customerName,
+                $customerPhone,
+                $customerEmail,
                 $products,
                 $quantities,
                 $prices,
