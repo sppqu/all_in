@@ -24,19 +24,20 @@ class IpaymuService
         $source = 'config'; // default
         
         if ($useEnvConfig) {
-            // Try ENV config first for internal system (addon, subscription, SPMB Step 2)
-            // Use env() directly to bypass config cache
-            $envVa = env('IPAYMU_VA');
-            $envApiKey = env('IPAYMU_API_KEY');
-            $envSandbox = env('IPAYMU_SANDBOX');
+            // FORCE load from .env file directly (bypass config cache)
+            // This ensures ENV variables are loaded even when config is cached
+            $envVa = $this->getEnvValue('IPAYMU_VA');
+            $envApiKey = $this->getEnvValue('IPAYMU_API_KEY');
+            $envSandbox = $this->getEnvValue('IPAYMU_SANDBOX');
             
-            $this->va = $envVa ?? config('ipaymu.va', '');
-            $this->apiKey = $envApiKey ?? config('ipaymu.api_key', '');
-            $this->isSandbox = $envSandbox !== null ? filter_var($envSandbox, FILTER_VALIDATE_BOOLEAN) : config('ipaymu.sandbox', true);
+            $this->va = $envVa ?? '';
+            $this->apiKey = $envApiKey ?? '';
+            $this->isSandbox = $envSandbox !== null ? filter_var($envSandbox, FILTER_VALIDATE_BOOLEAN) : true;
             
-            Log::info('🔍 Attempting to load ENV config', [
-                'env_va_raw' => $envVa ? substr($envVa, 0, 10).'...'.substr($envVa, -5) : 'NULL',
-                'env_api_key_raw' => $envApiKey ? substr($envApiKey, 0, 15).'...' : 'NULL',
+            Log::info('🔍 FORCE Loading ENV config from .env file', [
+                'env_file_exists' => file_exists(base_path('.env')) ? 'YES' : 'NO',
+                'env_va_raw' => $envVa ? substr($envVa, 0, 10).'...'.substr($envVa, -5) : 'NULL/EMPTY',
+                'env_api_key_raw' => $envApiKey ? substr($envApiKey, 0, 15).'...' : 'NULL/EMPTY',
                 'env_sandbox_raw' => $envSandbox !== null ? $envSandbox : 'NULL',
                 'va_loaded' => !empty($this->va) ? 'YES (len:'.strlen($this->va).')' : 'NO',
                 'api_key_loaded' => !empty($this->apiKey) ? 'YES (len:'.strlen($this->apiKey).')' : 'NO',
@@ -110,6 +111,47 @@ class IpaymuService
                 'api_key_empty' => empty($this->apiKey)
             ]);
         }
+    }
+
+    /**
+     * Get ENV value directly from .env file (bypass config cache)
+     * 
+     * This is needed because env() returns NULL when config is cached
+     */
+    private function getEnvValue($key)
+    {
+        $envPath = base_path('.env');
+        
+        if (!file_exists($envPath)) {
+            Log::warning("⚠️ .env file not found at: {$envPath}");
+            return null;
+        }
+        
+        $envContent = file_get_contents($envPath);
+        
+        // Match the key with optional quotes
+        // Supports: KEY=value, KEY="value", KEY='value'
+        $pattern = '/^' . preg_quote($key, '/') . '=(.*)$/m';
+        
+        if (preg_match($pattern, $envContent, $matches)) {
+            $value = trim($matches[1]);
+            
+            // Remove quotes if present
+            if ((substr($value, 0, 1) === '"' && substr($value, -1) === '"') ||
+                (substr($value, 0, 1) === "'" && substr($value, -1) === "'")) {
+                $value = substr($value, 1, -1);
+            }
+            
+            Log::info("✅ Found {$key} in .env file", [
+                'length' => strlen($value),
+                'preview' => strlen($value) > 20 ? substr($value, 0, 15).'...' : $value
+            ]);
+            
+            return $value;
+        }
+        
+        Log::warning("⚠️ {$key} not found in .env file");
+        return null;
     }
 
     /**
