@@ -33,6 +33,22 @@
             font-size: 1.1rem;
         }
 
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                font-size: 13px;
+            }
+
+            .navbar-brand {
+                font-size: 1rem;
+            }
+
+            .container {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+        }
+
         .card {
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -47,6 +63,26 @@
 
         .card-text {
             font-size: 0.9rem;
+        }
+
+        /* Card Mobile Responsive */
+        @media (max-width: 768px) {
+            .card {
+                border-radius: 10px;
+                margin-bottom: 1rem;
+            }
+
+            .card-title {
+                font-size: 1.1rem;
+            }
+
+            .card-text {
+                font-size: 0.85rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
         }
 
         /* Stat Cards */
@@ -76,6 +112,28 @@
             color: white;
             font-size: 1rem;
             flex-shrink: 0;
+        }
+
+        /* Stat Cards Mobile Responsive */
+        @media (max-width: 768px) {
+            .stat-card {
+                padding: 0.85rem;
+                gap: 0.6rem;
+            }
+
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 0.9rem;
+            }
+
+            .stat-value {
+                font-size: 1rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
         }
 
         .stat-content {
@@ -178,6 +236,65 @@
         .step-number-badge.current {
             background: linear-gradient(135deg, #008060, #006d52);
             color: white;
+        }
+
+        /* Step 2 (Payment) - Green Theme */
+        .step-detail-card[data-step="2"] {
+            border-left: 4px solid #28a745 !important;
+            background: linear-gradient(to right, rgba(40, 167, 69, 0.05), #ffffff);
+        }
+
+        .step-detail-card[data-step="2"] .step-number-badge {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+            color: white !important;
+        }
+
+        .step-detail-card[data-step="2"] .btn-primary {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+            border: none !important;
+        }
+
+        .step-detail-card[data-step="2"] .btn-primary:hover {
+            background: linear-gradient(135deg, #20c997, #28a745) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Step Cards Mobile Responsive */
+        @media (max-width: 768px) {
+            .step-detail-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .step-header {
+                gap: 0.6rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .step-number-badge {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
+            .step-title {
+                font-size: 0.95rem !important;
+            }
+
+            .step-description {
+                font-size: 0.75rem !important;
+            }
+
+            .btn {
+                font-size: 0.85rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .btn-sm {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
         }
 
         .step-title {

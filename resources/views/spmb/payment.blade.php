@@ -11,7 +11,7 @@
             background: #f8f9fa;
         }
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
         .payment-card {
             background: white;
@@ -19,10 +19,41 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .payment-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px 15px 0 0;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .payment-header {
+                padding: 1.5rem 1rem;
+            }
+
+            .payment-header h3 {
+                font-size: 1.25rem;
+            }
+
+            .payment-header .fa-3x {
+                font-size: 2rem !important;
+            }
+
+            .payment-body {
+                padding: 1.25rem;
+            }
+
+            .amount-display {
+                font-size: 1.5rem;
+            }
+
+            .qr-code-container {
+                padding: 15px;
+            }
+
+            .qr-code {
+                max-width: 200px;
+            }
         }
         .payment-body {
             padding: 2rem;
@@ -45,10 +76,26 @@
             color: #28a745;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             border: none;
             border-radius: 10px;
             padding: 12px 24px;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+            transform: translateY(-1px);
         }
         .btn-outline-secondary {
             border-radius: 10px;
