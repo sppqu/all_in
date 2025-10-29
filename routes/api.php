@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CallbackController;
-use App\Http\Controllers\TripayCallbackController;
 use App\Http\Controllers\IpaymuCallbackController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -15,10 +14,8 @@ Route::any('/manage/ipaymu/callback', [IpaymuCallbackController::class, 'handle'
     ->name('api.ipaymu.callback');
 
 // ============================================================================
-// TRIPAY SUBSCRIPTION CALLBACK - NO CSRF, NO AUTH
+// TRIPAY CALLBACK REMOVED - Now using iPaymu only
 // ============================================================================
-Route::any('/manage/tripay/callback', [TripayCallbackController::class, 'handle'])
-    ->name('api.tripay.callback');
 
 // Legacy Tripay routes
 Route::post('/tripay/callback', [CallbackController::class, 'tripayCallback']);

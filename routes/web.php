@@ -34,7 +34,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\OnlinePaymentController;
 use App\Http\Controllers\StudentAuthController;
 use App\Http\Controllers\CallbackController;
-use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TabunganController;
 use App\Http\Controllers\AccountCodeController;
@@ -230,9 +229,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::post('/bulk-whatsapp/send-mass-message', [BulkWhatsAppController::class, 'sendMassMessage'])->name('bulk-whatsapp.send-mass-message')->middleware('auth');
     Route::post('/bulk-whatsapp/send-consolidated', [BulkWhatsAppController::class, 'sendConsolidatedBills'])->name('bulk-whatsapp.send-consolidated')->middleware('auth');
     
-    // Manage Midtrans
-    Route::get('/midtrans/callback', [MidtransController::class, 'callback'])->name('midtrans.callback');
-    Route::post('/midtrans/callback', [MidtransController::class, 'callback'])->name('midtrans.callback.post');
+    // Midtrans removed - using iPaymu now
     
     // Routes untuk Akuntansi Baru
     Route::prefix('accounting')->name('accounting.')->middleware('auth')->group(function () {
@@ -506,39 +503,7 @@ Route::get('/tripay-return', function(Request $request) {
         ->with('info', 'Kembali dari halaman pembayaran.');
 });
 
-// Midtrans Payment Routes
-Route::prefix('midtrans')->group(function () {
-    // Show payment form
-    Route::get('/form', function() {
-        $students = \App\Models\Student::all();
-        $periods = \App\Models\Period::all();
-        return view('online-payment.midtrans-form', compact('students', 'periods'));
-    })->name('midtrans.form');
-    
-    // Create payment
-    Route::post('/create-payment', [MidtransController::class, 'createPayment'])->name('midtrans.create');
-    
-    // Callback routes (tanpa middleware CSRF) - support both GET and POST
-    Route::match(['GET', 'POST'], '/finish', [MidtransController::class, 'finish'])->name('midtrans.finish');
-    Route::match(['GET', 'POST'], '/error', [MidtransController::class, 'error'])->name('midtrans.error');
-    Route::match(['GET', 'POST'], '/pending', [MidtransController::class, 'pending'])->name('midtrans.pending');
-    Route::match(['GET', 'POST'], '/unfinish', [MidtransController::class, 'unfinish'])->name('midtrans.unfinish');
-    // Webhook route untuk Midtrans (tanpa middleware CSRF) - support both GET and POST
-    Route::match(['GET', 'POST'], '/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
-    
-    // Test webhook endpoint
-    Route::get('/webhook-test', function() {
-        return response()->json([
-            'success' => true,
-            'message' => 'Midtrans webhook endpoint is accessible',
-            'timestamp' => now(),
-            'url' => request()->fullUrl()
-        ]);
-    })->name('midtrans.webhook.test');
-    
-    // Check payment status
-    Route::get('/status/{orderId}', [MidtransController::class, 'checkStatus'])->name('midtrans.status');
-});
+// Midtrans Payment Routes - REMOVED (using iPaymu now)
 
 Route::get('/test-payment-gateway', function() {
     return view('test-payment-gateway');
@@ -1536,39 +1501,7 @@ Route::get('/tripay-return', function(Request $request) {
         ->with('info', 'Kembali dari halaman pembayaran.');
 });
 
-// Midtrans Payment Routes
-Route::prefix('midtrans')->group(function () {
-    // Show payment form
-    Route::get('/form', function() {
-        $students = \App\Models\Student::all();
-        $periods = \App\Models\Period::all();
-        return view('online-payment.midtrans-form', compact('students', 'periods'));
-    })->name('midtrans.form');
-    
-    // Create payment
-    Route::post('/create-payment', [MidtransController::class, 'createPayment'])->name('midtrans.create');
-    
-    // Callback routes (tanpa middleware CSRF) - support both GET and POST
-    Route::match(['GET', 'POST'], '/finish', [MidtransController::class, 'finish'])->name('midtrans.finish');
-    Route::match(['GET', 'POST'], '/error', [MidtransController::class, 'error'])->name('midtrans.error');
-    Route::match(['GET', 'POST'], '/pending', [MidtransController::class, 'pending'])->name('midtrans.pending');
-    Route::match(['GET', 'POST'], '/unfinish', [MidtransController::class, 'unfinish'])->name('midtrans.unfinish');
-    // Webhook route untuk Midtrans (tanpa middleware CSRF) - support both GET and POST
-    Route::match(['GET', 'POST'], '/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
-    
-    // Test webhook endpoint
-    Route::get('/webhook-test', function() {
-        return response()->json([
-            'success' => true,
-            'message' => 'Midtrans webhook endpoint is accessible',
-            'timestamp' => now(),
-            'url' => request()->fullUrl()
-        ]);
-    })->name('midtrans.webhook.test');
-    
-    // Check payment status
-    Route::get('/status/{orderId}', [MidtransController::class, 'checkStatus'])->name('midtrans.status');
-});
+// Midtrans Payment Routes - REMOVED (using iPaymu now)
 
 Route::get('/test-payment-gateway', function() {
     return view('test-payment-gateway');
