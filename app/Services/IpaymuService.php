@@ -390,9 +390,22 @@ class IpaymuService
             $referenceId = 'ADDON-' . $data['user_id'] . '-' . $data['addon_id'] . '-' . time();
             $amount = (int) $data['amount'];
             
+            // Validate phone for production
+            $phone = $data['customer_phone'] ?? '08123456789';
+            $phone = preg_replace('/[^0-9]/', '', $phone);
+            
+            if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
+                throw new \Exception('Production mode requires real customer phone number');
+            }
+            
+            // Production mode requires specific address
+            $deliveryAddress = $this->isSandbox 
+                ? 'Indonesia' 
+                : 'Jl. Pembelian Addon SPPQU, Jakarta, Indonesia';
+            
             $bodyParams = [
                 'name' => $data['customer_name'],
-                'phone' => $data['customer_phone'] ?? '08123456789',
+                'phone' => $phone,
                 'email' => $data['customer_email'],
                 'amount' => $amount,
                 'notifyUrl' => $data['callback_url'],
@@ -400,20 +413,20 @@ class IpaymuService
                 'cancelUrl' => $data['return_url'],
                 'referenceId' => $referenceId,
                 'buyerName' => $data['customer_name'],
-                'buyerPhone' => $data['customer_phone'] ?? '08123456789',
+                'buyerPhone' => $phone,
                 'buyerEmail' => $data['customer_email'],
                 'paymentMethod' => $this->mapPaymentMethod($data['method'] ?? 'va'),
                 'paymentChannel' => $this->mapPaymentChannel($data['method'] ?? 'va'),
                 'product' => [substr($data['addon_name'], 0, 100)],
                 'qty' => [1],
                 'price' => [$amount],
-                'description' => ['Addon - ' . substr($data['addon_name'], 0, 80)],
+                'description' => ['Pembelian ' . substr($data['addon_name'], 0, 80)],
                 'weight' => [1],
                 'width' => [1],
                 'height' => [1],
                 'length' => [1],
-                'deliveryArea' => '76111',
-                'deliveryAddress' => 'Indonesia'
+                'deliveryArea' => $this->isSandbox ? '76111' : '10110',
+                'deliveryAddress' => $deliveryAddress
             ];
             
             // Remove null values for production
@@ -586,17 +599,41 @@ class IpaymuService
             $referenceId = 'SPMB-STEP2-' . $data['registration_id'] . '-' . time();
             $amount = (int) $data['amount'];
             
-            // Ensure phone number starts with 08 or 62
+            // Validate phone number (production requires real phone)
             $phone = $data['customer_phone'] ?? '08123456789';
+            
+            // Clean phone number
+            $phone = preg_replace('/[^0-9]/', '', $phone);
+            
             if (!str_starts_with($phone, '08') && !str_starts_with($phone, '62')) {
                 $phone = '08' . ltrim($phone, '0');
             }
             
-            // Ensure email is valid
-            $email = $data['customer_email'] ?? 'spmb@sppqu.com';
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $email = 'spmb@sppqu.com';
+            // For production, don't use dummy numbers
+            if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
+                Log::error('❌ Production mode requires real phone number, not dummy/test number');
+                throw new \Exception('Invalid phone number for production. Please provide real customer phone.');
             }
+            
+            // Validate email (production requires valid email)
+            $email = $data['customer_email'] ?? 'customer@sppqu.com';
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $email = 'customer@sppqu.com';
+            }
+            
+            // For production, avoid generic emails
+            if (!$this->isSandbox && (strpos($email, 'test@') === 0 || strpos($email, 'admin@') === 0)) {
+                Log::warning('⚠️ Using generic email in production mode');
+            }
+            
+            // Production mode requires real/specific address
+            $deliveryAddress = $this->isSandbox 
+                ? 'Indonesia' 
+                : ($data['delivery_address'] ?? 'Jl. Pendaftaran SPMB No. 1, Jakarta, Indonesia');
+            
+            $deliveryArea = $this->isSandbox 
+                ? '76111' 
+                : ($data['delivery_area'] ?? '10110');
             
             // Production mode requires stricter data validation
             $bodyParams = [
@@ -616,13 +653,13 @@ class IpaymuService
                 'product' => ['SPMB Registration Fee'],
                 'qty' => [1],
                 'price' => [$amount],
-                'description' => ['SPMB Registration Fee Step 2'],
+                'description' => ['Biaya Pendaftaran SPMB'],
                 'weight' => [1],
                 'width' => [1],
                 'height' => [1],
                 'length' => [1],
-                'deliveryArea' => '76111',
-                'deliveryAddress' => 'Indonesia'
+                'deliveryArea' => $deliveryArea,
+                'deliveryAddress' => $deliveryAddress
             ];
             
             // Remove null values for production (stricter validation)
