@@ -44,7 +44,7 @@ use App\Http\Controllers\ArusKasController;
 use App\Http\Controllers\RealisasiPosController;
 
 use App\Http\Controllers\LaporanTunggakanSiswaController;
-use App\Services\TripayService;
+// TripayService removed - using iPaymu now
 
 
 use Illuminate\Http\Request;
@@ -393,10 +393,10 @@ Route::prefix('student')->name('student.')->group(function () {
     });
 });
 
-// Callback Routes
+// Callback Routes - Tripay & Midtrans REMOVED (using iPaymu now)
 Route::prefix('callback')->name('callback.')->group(function () {
-    Route::post('/tripay', [CallbackController::class, 'tripayCallback'])->name('tripay');
-    Route::post('/midtrans', [CallbackController::class, 'midtransCallback'])->name('midtrans');
+    // Route::post('/tripay', [CallbackController::class, 'tripayCallback'])->name('tripay');
+    // Route::post('/midtrans', [CallbackController::class, 'midtransCallback'])->name('midtrans');
     Route::post('/payment', [CallbackController::class, 'paymentCallback'])->name('payment');
 });
 
@@ -461,6 +461,8 @@ Route::get('/debug/payment-structure', function() {
 });
 
 // Payment Gateway Test Routes
+// Test Tripay Route - REMOVED
+/*
 Route::get('/test-tripay', function() {
     try {
         $tripayService = new \App\Services\TripayService();
@@ -479,6 +481,7 @@ Route::get('/test-tripay', function() {
         ]);
     }
 })->name('test.tripay');
+*/
 
 Route::get('/tripay-return', function(Request $request) {
     $reference = $request->get('reference');
@@ -529,6 +532,8 @@ Route::get('/test-payment-channels-cart', function() {
 // Test route untuk process payment tanpa auth
 Route::post('/test-process-payment', [App\Http\Controllers\OnlinePaymentController::class, 'processPayment']);
 
+// Test Tripay Transaction Route - REMOVED
+/*
 Route::post('/test-tripay-transaction', function() {
     try {
         $tripayService = new TripayService();
@@ -558,6 +563,7 @@ Route::post('/test-tripay-transaction', function() {
         ]);
     }
 });
+*/
 
 // Test route untuk StudentAuthController processPayment
 Route::post('/test-student-payment', function() {
@@ -1391,10 +1397,10 @@ Route::post('/student/test-midtrans-transaction-from-cart-no-auth', [StudentAuth
 
 
 
-// Callback Routes
+// Callback Routes - Tripay & Midtrans REMOVED (using iPaymu now)
 Route::prefix('callback')->name('callback.')->group(function () {
-    Route::post('/tripay', [CallbackController::class, 'tripayCallback'])->name('tripay');
-    Route::post('/midtrans', [CallbackController::class, 'midtransCallback'])->name('midtrans');
+    // Route::post('/tripay', [CallbackController::class, 'tripayCallback'])->name('tripay');
+    // Route::post('/midtrans', [CallbackController::class, 'midtransCallback'])->name('midtrans');
     Route::post('/payment', [CallbackController::class, 'paymentCallback'])->name('payment');
 });
 
@@ -1459,6 +1465,8 @@ Route::get('/debug/payment-structure', function() {
 });
 
 // Payment Gateway Test Routes
+// Test Tripay Route - REMOVED
+/*
 Route::get('/test-tripay', function() {
     try {
         $tripayService = new \App\Services\TripayService();
@@ -1477,6 +1485,7 @@ Route::get('/test-tripay', function() {
         ]);
     }
 })->name('test.tripay');
+*/
 
 Route::get('/tripay-return', function(Request $request) {
     $reference = $request->get('reference');
@@ -1527,6 +1536,8 @@ Route::get('/test-payment-channels-cart', function() {
 // Test route untuk process payment tanpa auth
 Route::post('/test-process-payment', [App\Http\Controllers\OnlinePaymentController::class, 'processPayment']);
 
+// Test Tripay Transaction Route - REMOVED
+/*
 Route::post('/test-tripay-transaction', function() {
     try {
         $tripayService = new TripayService();
@@ -1556,6 +1567,7 @@ Route::post('/test-tripay-transaction', function() {
         ]);
     }
 });
+*/
 
 // Test route untuk StudentAuthController processPayment
 Route::post('/test-student-payment', function() {

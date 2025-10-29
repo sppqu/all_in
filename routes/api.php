@@ -33,7 +33,8 @@ Route::get('/test', function() {
 
 Route::post('/test', [CallbackController::class, 'testCallback']);
 
-// Tabungan payment test route
+// Midtrans tabungan test route - REMOVED
+/*
 Route::post('/midtrans/tabungan-test', function(Request $request) {
     try {
         return response()->json([
@@ -50,6 +51,7 @@ Route::post('/midtrans/tabungan-test', function(Request $request) {
         ], 500);
     }
 });
+*/
 
 // Ultra simple callback routes
 Route::post('/ultra-callback', function() {
@@ -69,33 +71,10 @@ Route::post('/api-webhook', function() {
     return 'API-WEBHOOK-OK';
 });
 
-// Midtrans webhook routes - consolidated and simplified
-// Webhook harus bisa diakses tanpa middleware apapun
-Route::match(['GET', 'POST'], '/midtrans/webhook', [CallbackController::class, 'midtransCallback']);
+// Midtrans routes REMOVED - using iPaymu now
+// All Midtrans test routes have been commented out
 
-// Simple webhook test route
-Route::post('/midtrans/webhook-simple', function() {
-    return response()->json([
-        'success' => true,
-        'message' => 'Webhook endpoint accessible',
-        'timestamp' => now()
-    ]);
-});
-
-// Ultra simple webhook test
-Route::post('/midtrans/webhook-ultra', function() {
-    return 'WEBHOOK-OK';
-});
-
-// Test route untuk Midtrans webhook
-Route::post('/midtrans-webhook-test', function() {
-    return response()->json([
-        'success' => true,
-        'message' => 'Midtrans webhook endpoint accessible',
-        'timestamp' => now()
-    ]);
-});
-
+/*
 // Test route untuk Midtrans configuration
 Route::get('/midtrans/config-test', function() {
     try {
@@ -312,4 +291,5 @@ Route::post('/midtrans/cart-payment-test', function(Request $request) {
             'message' => 'Terjadi kesalahan saat memproses pembayaran: ' . $e->getMessage()
         ], 500);
     }
-}); 
+});
+*/ 
