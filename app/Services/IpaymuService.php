@@ -567,8 +567,8 @@ class IpaymuService
                 'expiredType' => 'hours',
                 'comments' => $description,
                 'referenceId' => $referenceId,
-                'paymentMethod' => 'va', // Virtual Account
-                'paymentChannel' => 'bca', // Default BCA, user can change
+                // Don't set paymentMethod & paymentChannel to let user choose on iPaymu page
+                // This will show all available payment options: VA (all banks), QRIS, E-Wallet, Retail, etc.
                 'product' => $products,
                 'qty' => $quantities,
                 'price' => $prices,
@@ -619,12 +619,13 @@ class IpaymuService
                 $total = $data['Total'] ?? $data['total'] ?? null;
                 $fee = $data['Fee'] ?? $data['fee'] ?? null;
                 
-                // For VA payments, there's no redirect URL
-                // PaymentNo is the VA number that customer needs to pay to
+                // iPaymu will return 'Url' for payment page with all available methods
+                // If paymentMethod was set to 'va' specifically, it returns PaymentNo instead
                 $paymentUrl = $data['Url'] ?? $data['url'] ?? null;
                 
-                // If no URL (VA payment), we'll redirect to instruction page instead
-                $isVaPayment = ($via === 'VA' || $via === 'va') && !$paymentUrl;
+                // If no URL but has PaymentNo (direct VA), we'll show instruction page
+                // If has URL, user will choose payment method on iPaymu page
+                $isVaPayment = !empty($paymentNo) && !$paymentUrl;
                 
                 Log::info('💳 iPaymu payment parsed', [
                     'is_va_payment' => $isVaPayment,
