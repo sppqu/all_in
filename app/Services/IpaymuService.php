@@ -618,19 +618,26 @@ class IpaymuService
                 $phone = '08' . ltrim($phone, '0');
             }
             
-            // For production, don't use dummy numbers
-            if (!$this->isSandbox && ($phone === '08123456789' || strlen($phone) < 10)) {
-                Log::error('❌ PRODUCTION ERROR: Cannot use dummy phone number for SPMB', [
+            // For production, validate phone length only (allow any valid format phone)
+            if (!$this->isSandbox && strlen($phone) < 10) {
+                Log::error('❌ PRODUCTION ERROR: Phone number too short for SPMB', [
                     'phone' => $phone,
                     'registration_id' => $data['registration_id'] ?? null,
-                    'message' => 'Please provide real customer phone or switch to sandbox mode'
+                    'message' => 'Phone must be at least 10 digits'
                 ]);
                 
                 return [
                     'success' => false,
-                    'message' => 'Nomor HP tidak valid untuk mode production. Silakan gunakan nomor HP yang valid atau hubungi administrator.'
+                    'message' => 'Nomor HP terlalu pendek. Minimal 10 digit.'
                 ];
             }
+            
+            // Log phone info for debugging
+            Log::info('SPMB Payment Phone Info', [
+                'original_phone' => $data['customer_phone'] ?? 'NULL',
+                'cleaned_phone' => $phone,
+                'is_sandbox' => $this->isSandbox
+            ]);
             
             // Validate email (production requires valid email)
             $email = $data['customer_email'] ?? 'customer@sppqu.com';
