@@ -13,7 +13,7 @@ use App\Models\Period;
 use App\Models\SetupGateway;
 use App\Services\WhatsAppService;
 use App\Services\NotificationService;
-use App\Helpers\MidtransHelper;
+use App\Services\IpaymuService;
 
 class OnlinePaymentController extends Controller
 {
@@ -247,8 +247,8 @@ class OnlinePaymentController extends Controller
             }
 
             if ($request->payment_type === 'realtime') {
-                // Real-time payment via Midtrans
-                return $this->processMidtransPayment($request, $student);
+                // Real-time payment via iPaymu
+                return $this->processIpaymuPayment($request, $student);
             } else {
                 // Manual payment processing
                 return $this->processManualPayment($request, $student);
@@ -269,83 +269,66 @@ class OnlinePaymentController extends Controller
     }
 
     /**
-     * Process Midtrans payment
+     * Process iPaymu payment
      */
-    private function processMidtransPayment(Request $request, $student)
+    private function processIpaymuPayment(Request $request, $student)
     {
         try {
-            // Initialize Midtrans helper
-            $midtransHelper = new MidtransHelper();
+            // Initialize iPaymu service
+            $ipaymuService = new IpaymuService();
 
-            // Log Midtrans configuration
-            $config = MidtransHelper::getConfig();
-            Log::info('Midtrans Configuration:', $config);
-            Log::info('Midtrans is configured: ' . (MidtransHelper::isConfigured() ? 'YES' : 'NO'));
+            // Generate reference ID
+            $referenceId = 'BULANAN-' . $student->student_id . '-' . $request->bill_id . '-' . time();
+            
+            if ($request->bill_type === 'bebas') {
+                $referenceId = 'BEBAS-' . $student->student_id . '-' . $request->bill_id . '-' . time();
+            }
 
-            // Generate merchant reference for Payment Gateway
-            $merchantRef = 'SPPQU-' . date('YmdHis') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
-            Log::info('Generated merchant reference: ' . $merchantRef);
+            Log::info('🔵 Processing iPaymu payment', [
+                'reference_id' => $referenceId,
+                'student_id' => $student->student_id,
+                'bill_type' => $request->bill_type,
+                'bill_id' => $request->bill_id,
+                'amount' => $request->amount
+            ]);
 
             // Get bill details
             $billDetails = $this->getBillDetails($request->bill_type, $request->bill_id, $student->student_id);
-            Log::info('Bill details:', $billDetails ?: ['error' => 'not found']);
             
             if (!$billDetails) {
                 throw new \Exception('Tagihan tidak ditemukan');
             }
 
-            // Prepare order items for Midtrans
-            $orderItems = [
-                [
-                    'id' => $request->bill_type . '_' . $request->bill_id,
-                    'price' => (int) $request->amount,
-                    'quantity' => 1,
-                    'name' => $billDetails['name']
-                ]
+            // Prepare product data
+            $product = [
+                $billDetails['name']
             ];
 
-            // Prepare Midtrans transaction data
-            $midtransData = [
-                'transaction_details' => [
-                    'order_id' => $merchantRef,
-                    'gross_amount' => (int) $request->amount
-                ],
-                'item_details' => $orderItems,
-                'customer_details' => [
-                    'first_name' => $student->student_full_name,
-                    'email' => 'student@sppqu.com',
-                    'phone' => $student->student_parent_phone ?? '08123456789'
-                ],
-                'enabled_payments' => ['credit_card', 'bca_va', 'bni_va', 'bri_va', 'mandiri_clickpay', 'gopay', 'shopeepay'],
-                'callbacks' => [
-                    'finish' => url('/midtrans/finish'),
-                    'error' => url('/midtrans/error'),
-                    'pending' => url('/midtrans/pending'),
-                    'unfinish' => url('/midtrans/unfinish')
-                ],
-                'notification_url' => request()->getSchemeAndHttpHost() . '/api/midtrans/webhook'
-            ];
+            $qty = [1];
+            $price = [(int) $request->amount];
 
-            Log::info('Midtrans notification URL:', [
-                'notification_url' => request()->getSchemeAndHttpHost() . '/api/midtrans/webhook',
-                'full_url' => request()->getSchemeAndHttpHost() . '/api/midtrans/webhook'
+            // Create iPaymu payment
+            $ipaymuResponse = $ipaymuService->createPayment(
+                $referenceId,
+                $billDetails['name'],
+                (int) $request->amount,
+                $student->student_full_name,
+                $student->student_parent_phone ?? '08123456789',
+                'student@sppqu.com',
+                $product,
+                $qty,
+                $price,
+                route('ipaymu.callback'),
+                route('student.payment.history')
+            );
+
+            Log::info('🔵 iPaymu API Response', [
+                'success' => $ipaymuResponse['success'] ?? false,
+                'data' => $ipaymuResponse['data'] ?? null
             ]);
 
-            Log::info('Midtrans transaction data:', $midtransData);
-
-            // Create Midtrans transaction - try HTTP method first, then SDK
-            $midtransResponse = $midtransHelper->createSnapToken($midtransData);
-            Log::info('Midtrans HTTP response:', $midtransResponse);
-
-            // If HTTP method fails, try SDK method
-            if (!$midtransResponse || !isset($midtransResponse['success']) || !$midtransResponse['success']) {
-                Log::info('HTTP method failed, trying SDK method');
-                $midtransResponse = $midtransHelper->createSnapTokenWithSDK($midtransData);
-                Log::info('Midtrans SDK response:', $midtransResponse);
-            }
-
-            if (!$midtransResponse || !isset($midtransResponse['success']) || !$midtransResponse['success']) {
-                throw new \Exception('Gagal membuat transaksi Midtrans: ' . ($midtransResponse['message'] ?? 'Unknown error'));
+            if (!$ipaymuResponse['success']) {
+                throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
             }
 
             // Insert to transfer table
@@ -354,14 +337,14 @@ class OnlinePaymentController extends Controller
                 'detail' => $billDetails['name'],
                 'status' => 0, // Pending
                 'confirm_pay' => $request->amount,
-                'reference' => $merchantRef,
-                'merchantRef' => $merchantRef,
-                'gateway_transaction_id' => $merchantRef, // Store order_id as gateway_transaction_id
-                'payment_number' => $merchantRef, // Store order_id as payment_number
-                'payment_method' => 'midtrans', // Mark as online payment
+                'reference' => $referenceId,
+                'merchantRef' => $referenceId,
+                'gateway_transaction_id' => $ipaymuResponse['data']['transaction_id'] ?? null,
+                'payment_number' => $referenceId,
+                'payment_method' => 'ipaymu',
                 'bill_type' => $request->bill_type,
                 'bill_id' => $request->bill_id,
-                'payment_details' => json_encode($midtransData), // Store Midtrans data
+                'payment_details' => json_encode($ipaymuResponse['data'] ?? []),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -378,16 +361,25 @@ class OnlinePaymentController extends Controller
 
             DB::commit();
 
+            Log::info('✅ Transfer record created successfully', [
+                'transfer_id' => $transferId,
+                'reference_id' => $referenceId
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pembayaran berhasil diproses',
-                'payment_number' => $merchantRef,
-                'snap_token' => $midtransResponse['data']['token'],
-                'redirect_url' => null // Midtrans will handle redirect via snap token
+                'payment_number' => $referenceId,
+                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'redirect_url' => $ipaymuResponse['data']['payment_url'] ?? null
             ]);
 
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error('❌ iPaymu payment error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }
@@ -708,24 +700,17 @@ class OnlinePaymentController extends Controller
     }
 
     /**
-     * Get payment channels from Tripay
+     * Get available payment methods (iPaymu)
      */
     public function getPaymentChannels()
     {
         try {
-            $tripayService = new TripayService();
-            $channels = $tripayService->getPaymentChannels();
-
-            if (!$channels) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal mengambil daftar metode pembayaran'
-                ], 500);
-            }
-
+            // iPaymu doesn't require channel selection beforehand
+            // Payment methods are shown directly on the payment page
             return response()->json([
                 'success' => true,
-                'data' => $channels['data'] ?? []
+                'message' => 'iPaymu akan menampilkan metode pembayaran langsung di halaman pembayaran',
+                'data' => []
             ]);
 
         } catch (\Exception $e) {
@@ -741,11 +726,11 @@ class OnlinePaymentController extends Controller
     }
 
     /**
-     * Handle return from Tripay
+     * Handle return from iPaymu
      */
     public function paymentReturn(Request $request)
     {
-        $reference = $request->input('reference');
+        $reference = $request->input('reference') ?? $request->input('trx_id');
         $status = $request->input('status');
 
         // Find transfer record
@@ -753,6 +738,7 @@ class OnlinePaymentController extends Controller
             ->join('students as s', 't.student_id', '=', 's.student_id')
             ->where('t.reference', $reference)
             ->orWhere('t.merchantRef', $reference)
+            ->orWhere('t.gateway_transaction_id', $reference)
             ->select('t.*', 's.student_full_name')
             ->first();
 
@@ -763,16 +749,25 @@ class OnlinePaymentController extends Controller
         $message = '';
         $type = 'info';
 
+        // Handle different status from iPaymu
         switch ($status) {
-            case 'PAID':
+            case 'berhasil':
+            case 'success':
+            case 'paid':
                 $message = 'Pembayaran berhasil! Terima kasih telah melakukan pembayaran.';
                 $type = 'success';
                 break;
-            case 'EXPIRED':
+            case 'pending':
+                $message = 'Pembayaran sedang diproses. Silakan tunggu beberapa saat.';
+                $type = 'info';
+                break;
+            case 'expired':
+            case 'kadaluarsa':
                 $message = 'Pembayaran telah kadaluarsa. Silakan coba lagi.';
                 $type = 'warning';
                 break;
-            case 'FAILED':
+            case 'failed':
+            case 'gagal':
                 $message = 'Pembayaran gagal. Silakan coba lagi.';
                 $type = 'error';
                 break;
@@ -893,250 +888,23 @@ class OnlinePaymentController extends Controller
     }
 
     /**
-     * Callback dari Tripay
+     * Callback dari iPaymu (redirected to IpaymuCallbackController)
+     * This method is kept for backward compatibility
      */
     public function paymentCallback(Request $request)
     {
-        try {
-            // Log all request information for debugging
-            Log::info('=== MIDTRANS CALLBACK RECEIVED ===');
-            Log::info('Midtrans callback received', [
-                'method' => $request->method(),
-                'url' => $request->url(),
-                'path' => $request->path(),
-                'full_url' => $request->fullUrl(),
-                'headers' => $request->headers->all(),
-                'body' => $request->all(),
-                'raw_body' => $request->getContent(),
-                'content_type' => $request->header('Content-Type'),
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'timestamp' => now()->toISOString()
-            ]);
+        Log::info('🔵 Payment callback received - redirecting to IpaymuCallbackController', [
+            'method' => $request->method(),
+            'data' => $request->all()
+        ]);
 
-            // Check if this is a GET request (redirect) - but still process callback data
-            if ($request->isMethod('GET')) {
-                Log::info('GET request received on callback endpoint - processing as callback');
-                // For GET requests, try to get data from query parameters
-                $orderId = $request->get('order_id') ?? $request->get('merchant_ref') ?? $request->get('reference');
-                $transactionStatus = $request->get('transaction_status') ?? $request->get('status');
-                $fraudStatus = $request->get('fraud_status');
-                $paymentType = $request->get('payment_type');
-                $signatureKey = $request->get('signature_key');
-                
-                Log::info('GET request data from query parameters', [
-                    'order_id' => $orderId,
-                    'transaction_status' => $transactionStatus,
-                    'fraud_status' => $fraudStatus,
-                    'payment_type' => $paymentType,
-                    'all_query_params' => $request->query()
-                ]);
-            }
-            
-            // Check if this is a POST request (actual callback)
-            elseif (!$request->isMethod('POST')) {
-                Log::error('Invalid request method for callback', [
-                    'method' => $request->method(),
-                    'expected' => 'POST or GET'
-                ]);
-                return response()->json(['success' => false, 'message' => 'Invalid request method'], 405);
-            }
-
-            // Midtrans callback data
-            $orderId = $request->input('order_id') ?? $request->get('order_id');
-            $transactionStatus = $request->input('transaction_status') ?? $request->get('transaction_status');
-            $fraudStatus = $request->input('fraud_status') ?? $request->get('fraud_status');
-            $paymentType = $request->input('payment_type') ?? $request->get('payment_type');
-            $signatureKey = $request->input('signature_key') ?? $request->get('signature_key');
-            
-            Log::info('Processing callback data', [
-                'order_id' => $orderId,
-                'transaction_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus,
-                'payment_type' => $paymentType
-            ]);
-            
-            // If no order_id is provided (like in test requests), return success
-            if (!$orderId) {
-                Log::info('No order_id provided - likely a test request');
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Webhook endpoint is accessible',
-                    'timestamp' => now(),
-                    'method' => $request->method(),
-                    'url' => $request->fullUrl()
-                ]);
-            }
-            
-            // Verify signature for security (only in production)
-            if (MidtransHelper::isProduction()) {
-                $serverKey = MidtransHelper::getServerKey();
-                $expectedSignature = hash('sha512', $orderId . $transactionStatus . $request->input('gross_amount') . $serverKey);
-                
-                if ($signatureKey !== $expectedSignature) {
-                    Log::error('Midtrans signature verification failed', [
-                        'expected' => $expectedSignature,
-                        'received' => $signatureKey
-                    ]);
-                    return response()->json(['success' => false, 'message' => 'Invalid signature'], 400);
-                }
-            } else {
-                // For sandbox, log signature but don't verify
-                Log::info('Sandbox mode - skipping signature verification', [
-                    'received_signature' => $signatureKey
-                ]);
-            }
-
-            // Log the data we received
-            Log::info('Midtrans callback data', [
-                'order_id' => $orderId,
-                'transaction_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus,
-                'payment_type' => $paymentType,
-                'signature_key' => $signatureKey
-            ]);
-
-            // Find transfer record by order_id (merchantRef)
-            Log::info('Searching for transfer record', ['order_id' => $orderId]);
-            
-            // Log all transfer records for debugging
-            $allTransfers = DB::table('transfer')
-                ->where('payment_method', 'midtrans')
-                ->orderBy('created_at', 'desc')
-                ->limit(10)
-                ->get(['transfer_id', 'merchantRef', 'reference', 'gateway_transaction_id', 'payment_number', 'status', 'created_at']);
-            
-            Log::info('Recent Midtrans transfers for debugging:', $allTransfers->toArray());
-            
-            // Log specific search criteria
-            Log::info('Search criteria:', [
-                'merchantRef' => $orderId,
-                'reference' => $orderId,
-                'gateway_transaction_id' => $orderId,
-                'payment_number' => $orderId
-            ]);
-            
-            $transfer = DB::table('transfer')
-                ->where(function($query) use ($orderId) {
-                    $query->where('merchantRef', $orderId)
-                          ->orWhere('reference', $orderId)
-                          ->orWhere('gateway_transaction_id', $orderId)
-                          ->orWhere('payment_number', $orderId);
-                })
-                ->where('payment_method', 'midtrans')
-                ->first();
-
-            if (!$transfer) {
-                Log::error('Transfer record not found', [
-                    'order_id' => $orderId,
-                    'all_data' => $request->all(),
-                    'search_criteria' => [
-                        'merchantRef' => $orderId,
-                        'reference' => $orderId,
-                        'gateway_transaction_id' => $orderId,
-                        'payment_number' => $orderId
-                    ],
-                    'recent_transfers' => $allTransfers->toArray()
-                ]);
-                return response()->json(['success' => false, 'message' => 'Transfer not found'], 404);
-            }
-            
-            Log::info('Transfer record found', [
-                'transfer_id' => $transfer->transfer_id,
-                'merchant_ref' => $transfer->merchantRef,
-                'current_status' => $transfer->status
-            ]);
-
-            DB::beginTransaction();
-
-            // Determine status based on Midtrans transaction status
-            $newStatus = 0; // Default: Pending
-            
-            Log::info('Processing Midtrans status', [
-                'transaction_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus
-            ]);
-
-            
-            if ($transactionStatus === 'capture' || $transactionStatus === 'settlement') {
-                if ($fraudStatus === 'challenge') {
-                    $newStatus = 0; // Pending - needs manual review
-                } elseif ($fraudStatus === 'accept') {
-                    $newStatus = 1; // Success
-                } else {
-                    $newStatus = 1; // Success (for sandbox, assume success if no fraud status)
-                }
-            } elseif ($transactionStatus === 'pending') {
-                $newStatus = 0; // Pending
-            } elseif ($transactionStatus === 'deny' || $transactionStatus === 'expire' || $transactionStatus === 'cancel') {
-                $newStatus = 2; // Failed
-            }
-            
-            Log::info('Status mapping result', [
-                'original_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus,
-                'mapped_status' => $newStatus
-            ]);
-            
-            // Update transfer status
-            $updateResult = DB::table('transfer')
-            ->where('transfer_id', $transfer->transfer_id)
-            ->update([
-                'status' => $newStatus,
-                'payment_details' => json_encode($request->all()),
-                'paid_at' => $newStatus === 1 ? now() : null,
-                'updated_at' => now()
-            ]);
-
-            Log::info('Transfer status update result', [
-                'transfer_id' => $transfer->transfer_id,
-                'old_status' => $transfer->status,
-                'new_status' => $newStatus,
-                'update_result' => $updateResult,
-                'update_data' => [
-                    'status' => $newStatus,
-                    'payment_details' => json_encode($request->all()),
-                    'paid_at' => $newStatus === 1 ? now() : null,
-                    'updated_at' => now()
-                ]
-            ]);
-
-            // If payment is successful, update bill status
-            if ($newStatus === 1) {
-                Log::info('Payment successful, updating bill status', [
-                    'transfer_id' => $transfer->transfer_id,
-                    'transfer_details' => DB::table('transfer_detail')->where('transfer_id', $transfer->transfer_id)->first()
-                ]);
-                $this->updateBillStatus($transfer->transfer_id);
-                
-
-            }
-
-            DB::commit();
-
-            Log::info('Midtrans callback processed successfully', [
-                'order_id' => $orderId,
-                'transfer_id' => $transfer->transfer_id,
-                'transaction_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus,
-                'payment_type' => $paymentType,
-                'new_status' => $newStatus
-            ]);
-            
-            Log::info('=== MIDTRANS CALLBACK COMPLETED ===');
-
-            return response()->json(['success' => true]);
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Midtrans callback error', [
-                'message' => $e->getMessage(),
-                'request' => $request->all(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json(['success' => false, 'message' => 'Internal server error'], 500);
-        }
+        // Callback untuk iPaymu sudah dihandle di IpaymuCallbackController
+        // Method ini hanya untuk backward compatibility
+        return response()->json([
+            'success' => true,
+            'message' => 'Callback should be handled by IpaymuCallbackController',
+            'note' => 'Please ensure your payment gateway callback URL is set to /api/ipaymu/callback'
+        ]);
     }
 
     /**

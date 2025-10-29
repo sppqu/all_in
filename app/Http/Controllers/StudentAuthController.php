@@ -9,7 +9,7 @@ use App\Models\Student;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\WhatsAppService;
-use App\Services\TripayService;
+use App\Services\IpaymuService;
 
 class StudentAuthController extends Controller
 {
@@ -1940,8 +1940,8 @@ class StudentAuthController extends Controller
             }
 
             if ($request->payment_type === 'realtime') {
-                // Process Midtrans payment
-                return $this->processMidtransPayment($request, $studentId);
+                // Process iPaymu payment
+                return $this->processIpaymuPayment($request, $studentId);
             } else {
                 // Process manual payment
                 return $this->processManualPayment($request, $studentId);
@@ -1976,8 +1976,8 @@ class StudentAuthController extends Controller
 
         try {
             if ($request->payment_type === 'realtime') {
-                // Process Midtrans payment for tabungan
-                return $this->processMidtransTabunganPayment($request, $studentId);
+                // Process iPaymu payment for tabungan
+                return $this->processIpaymuTabunganPayment($request, $studentId);
             } else {
                 // Process manual payment for tabungan
                 return $this->processManualTabunganPayment($request, $studentId);
@@ -1996,106 +1996,71 @@ class StudentAuthController extends Controller
     }
 
     /**
-     * Process Midtrans payment for tabungan
+     * Process iPaymu payment for tabungan
      */
-    private function processMidtransTabunganPayment(Request $request, $studentId)
+    private function processIpaymuTabunganPayment(Request $request, $studentId)
     {
         try {
             // Get student data
             $student = Student::findOrFail($studentId);
 
-            // Log for debugging
-            \Log::info('Midtrans tabungan payment process started', [
+            // Initialize iPaymu service
+            $ipaymuService = new IpaymuService();
+
+            // Generate reference ID for tabungan
+            $referenceId = 'TABUNGAN-' . $studentId . '-' . time();
+
+            Log::info('🔵 Processing iPaymu tabungan payment', [
+                'reference_id' => $referenceId,
                 'student_id' => $studentId,
                 'amount' => $request->amount
             ]);
 
-            // Generate order ID with shorter format
-            $orderId = 'TB-' . str_pad($studentId, 3, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+            // Prepare product data
+            $product = ['Setor Tabungan'];
+            $qty = [1];
+            $price = [(int) $request->amount];
 
-            // Prepare Midtrans parameters
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $orderId,
-                    'gross_amount' => $request->amount,
-                ],
-                'customer_details' => [
-                    'first_name' => $student->student_full_name,
-                    'email' => 'student@sppqu.com',
-                    'phone' => '08123456789',
-                    'billing_address' => [
-                        'first_name' => $student->student_full_name,
-                        'address' => 'Alamat Siswa',
-                        'city' => 'Jakarta',
-                        'postal_code' => '12345',
-                        'country_code' => 'IDN',
-                    ],
-                ],
-                'item_details' => [
-                    [
-                        'id' => 'tabungan-setor',
-                        'price' => $request->amount,
-                        'quantity' => 1,
-                        'name' => 'Setor Tabungan',
-                    ],
-                ],
-                'callbacks' => [
-                    'finish' => url('/midtrans/finish'),
-                    'error' => url('/midtrans/error'),
-                    'pending' => url('/midtrans/pending'),
-                ],
-            ];
+            // Create iPaymu payment
+            $ipaymuResponse = $ipaymuService->createPayment(
+                $referenceId,
+                'Setor Tabungan',
+                (int) $request->amount,
+                $student->student_full_name,
+                $student->student_parent_phone ?? '08123456789',
+                'student@sppqu.com',
+                $product,
+                $qty,
+                $price,
+                route('ipaymu.callback'),
+                route('student.tabungan.index')
+            );
 
-            // Get Midtrans configuration
-            $midtransConfig = \App\Helpers\MidtransHelper::getConfig();
-            
-            // Set Midtrans configuration
-            \Midtrans\Config::$serverKey = $midtransConfig['server_key'];
-            \Midtrans\Config::$isProduction = $midtransConfig['is_production'];
-            \Midtrans\Config::$isSanitized = true;
-            \Midtrans\Config::$is3ds = true;
-
-            // Get Snap Token
-            $snapToken = \Midtrans\Snap::getSnapToken($params);
-
-            // Log the data before insert for debugging
-            \Log::info('Attempting to insert transfer data for tabungan', [
-                'student_id' => $studentId,
-                'bill_type' => 'tabungan',
-                'bill_type_length' => strlen('tabungan'),
-                'order_id' => $orderId
+            Log::info('🔵 iPaymu tabungan API Response', [
+                'success' => $ipaymuResponse['success'] ?? false,
+                'data' => $ipaymuResponse['data'] ?? null
             ]);
-            
+
+            if (!$ipaymuResponse['success']) {
+                throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
+            }
+
             // Store payment data in transfer table
-            $transferData = [
+            $transferId = DB::table('transfer')->insertGetId([
                 'student_id' => $studentId,
-                'detail' => 'Setor Tabungan via Payment Gateway',
+                'detail' => 'Setor Tabungan via iPaymu',
                 'status' => 0, // Pending
                 'confirm_pay' => $request->amount,
-                'reference' => $orderId,
-                'merchantRef' => $orderId,
-                'checkout_url' => null, // Midtrans uses snap token
-                'payment_method' => 'midtrans',
-                'gateway_transaction_id' => $orderId,
-                'payment_details' => json_encode($params),
+                'reference' => $referenceId,
+                'merchantRef' => $referenceId,
+                'gateway_transaction_id' => $ipaymuResponse['data']['transaction_id'] ?? null,
+                'payment_method' => 'ipaymu',
                 'bill_type' => 'tabungan',
                 'bill_id' => 0, // Use 0 for tabungan (no specific bill)
-                'payment_number' => $orderId,
+                'payment_number' => $referenceId,
+                'payment_details' => json_encode($ipaymuResponse['data'] ?? []),
                 'created_at' => now(),
                 'updated_at' => now()
-            ];
-            
-            // Log the complete data structure
-            \Log::info('Transfer data structure for tabungan', $transferData);
-            
-            $transferId = DB::table('transfer')->insertGetId($transferData);
-            
-            // Verify the inserted data
-            $inserted = DB::table('transfer')->where('transfer_id', $transferId)->first();
-            \Log::info('Transfer data inserted successfully', [
-                'transfer_id' => $transferId,
-                'inserted_bill_type' => $inserted->bill_type,
-                'inserted_bill_type_length' => strlen($inserted->bill_type)
             ]);
 
             // Insert to transfer_detail table for tabungan
@@ -2109,17 +2074,23 @@ class StudentAuthController extends Controller
                 'is_tabungan' => 1 // Mark as tabungan transaction
             ]);
 
+            Log::info('✅ Tabungan transfer record created', [
+                'transfer_id' => $transferId,
+                'reference_id' => $referenceId
+            ]);
+
             return response()->json([
                 'success' => true,
-                'snap_token' => $snapToken,
-                'order_id' => $orderId
+                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'reference_id' => $referenceId
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Midtrans tabungan payment error', [
+            Log::error('❌ iPaymu tabungan payment error', [
                 'message' => $e->getMessage(),
                 'student_id' => $studentId,
-                'amount' => $request->amount
+                'amount' => $request->amount,
+                'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
@@ -2219,24 +2190,31 @@ class StudentAuthController extends Controller
     }
 
     /**
-     * Process Midtrans payment
+     * Process iPaymu payment
      */
-    private function processMidtransPayment(Request $request, $studentId)
+    private function processIpaymuPayment(Request $request, $studentId)
     {
         try {
             // Get student data
             $student = Student::findOrFail($studentId);
 
-            // Log for debugging
-            \Log::info('Midtrans payment process started', [
+            // Initialize iPaymu service
+            $ipaymuService = new IpaymuService();
+
+            // Generate reference ID
+            $referenceId = 'BULANAN-' . $studentId . '-' . $request->bill_id . '-' . time();
+            
+            if ($request->bill_type === 'bebas') {
+                $referenceId = 'BEBAS-' . $studentId . '-' . $request->bill_id . '-' . time();
+            }
+
+            Log::info('🔵 Processing iPaymu payment from student portal', [
+                'reference_id' => $referenceId,
                 'student_id' => $studentId,
                 'bill_type' => $request->bill_type,
                 'bill_id' => $request->bill_id,
                 'amount' => $request->amount
             ]);
-
-            // Generate order ID with shorter format
-            $orderId = 'PG-' . str_pad($studentId, 3, '0', STR_PAD_LEFT) . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
 
             // Get bill details
             $billDetails = $this->getBillDetails($request->bill_type, $request->bill_id, $studentId);
@@ -2245,91 +2223,51 @@ class StudentAuthController extends Controller
                 throw new \Exception('Tagihan tidak ditemukan');
             }
 
-            // Prepare Midtrans parameters
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $orderId,
-                    'gross_amount' => $request->amount,
-                ],
-                'customer_details' => [
-                    'first_name' => $student->student_full_name,
-                    'email' => 'student@sppqu.com',
-                    'phone' => '08123456789',
-                    'billing_address' => [
-                        'first_name' => $student->student_full_name,
-                        'address' => 'Alamat Siswa',
-                        'city' => 'Jakarta',
-                        'postal_code' => '12345',
-                        'country_code' => 'IDN',
-                    ],
-                ],
-                'item_details' => [
-                    [
-                        'id' => $request->bill_type . '-' . $request->bill_id,
-                        'price' => $request->amount,
-                        'quantity' => 1,
-                        'name' => $billDetails['name'],
-                    ],
-                ],
-                'callbacks' => [
-                    'finish' => url('/midtrans/finish'),
-                    'error' => url('/midtrans/error'),
-                    'pending' => url('/midtrans/pending'),
-                    'unfinish' => url('/midtrans/unfinish'),
-                ],
-                'enabled_payments' => [
-                    'credit_card',
-                    'bca_va',
-                    'bni_va', 
-                    'bri_va',
-                    'mandiri_va',
-                    'permata_va',
-                    'other_va',
-                    'gopay',
-                    'indomaret',
-                    'danamon_online',
-                    'akulaku',
-                    'shopeepay',
-                    'ovo',
-                    'dana',
-                    'linkaja',
-                    'qris',
-                ],
-                'credit_card' => [
-                    'secure' => true,
-                ],
-            ];
+            // Prepare product data
+            $product = [$billDetails['name']];
+            $qty = [1];
+            $price = [(int) $request->amount];
 
-            // Create snap token using Midtrans service
-            $snapToken = app('midtrans')->createSnapToken($params);
-            
-            if (!$snapToken) {
-                throw new \Exception('Gagal membuat snap token Midtrans');
-            }
+            // Create iPaymu payment
+            $ipaymuResponse = $ipaymuService->createPayment(
+                $referenceId,
+                $billDetails['name'],
+                (int) $request->amount,
+                $student->student_full_name,
+                $student->student_parent_phone ?? '08123456789',
+                'student@sppqu.com',
+                $product,
+                $qty,
+                $price,
+                route('ipaymu.callback'),
+                route('student.payment.history')
+            );
 
-            // Log Midtrans response for debugging
-            \Log::info('Midtrans snap token created', [
-                'snap_token' => $snapToken,
-                'order_id' => $orderId
+            Log::info('🔵 iPaymu API Response', [
+                'success' => $ipaymuResponse['success'] ?? false,
+                'data' => $ipaymuResponse['data'] ?? null
             ]);
+
+            if (!$ipaymuResponse['success']) {
+                throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
+            }
 
             DB::beginTransaction();
 
-            // Insert to transfer table with Midtrans fields
+            // Insert to transfer table
             $transferId = DB::table('transfer')->insertGetId([
                 'student_id' => $studentId,
                 'detail' => $billDetails['name'],
                 'status' => 0, // Pending
                 'confirm_pay' => $request->amount,
-                'reference' => $orderId,
-                'merchantRef' => $orderId,
-                'checkout_url' => null, // Midtrans uses snap token
-                'payment_method' => 'midtrans',
-                'gateway_transaction_id' => $orderId,
-                'payment_details' => json_encode($params),
+                'reference' => $referenceId,
+                'merchantRef' => $referenceId,
+                'gateway_transaction_id' => $ipaymuResponse['data']['transaction_id'] ?? null,
+                'payment_number' => $referenceId,
+                'payment_method' => 'ipaymu',
                 'bill_type' => $request->bill_type,
                 'bill_id' => $request->bill_id,
-                'payment_number' => $orderId,
+                'payment_details' => json_encode($ipaymuResponse['data'] ?? []),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -2347,29 +2285,38 @@ class StudentAuthController extends Controller
 
             DB::commit();
 
+            Log::info('✅ Transfer record created successfully', [
+                'transfer_id' => $transferId,
+                'reference_id' => $referenceId
+            ]);
+
             // Kirim notifikasi WhatsApp jika diaktifkan
             try {
                 $gateway = DB::table('setup_gateways')->first();
                 if ($gateway && $gateway->enable_wa_notification) {
                     $whatsappService = new WhatsAppService();
                     $whatsappService->sendPaymentPendingNotification($transferId);
-                    Log::info("WhatsApp notification sent for Midtrans transfer_id: {$transferId}");
+                    Log::info("WhatsApp notification sent for iPaymu transfer_id: {$transferId}");
                 }
             } catch (\Exception $e) {
-                Log::error("Failed to send WhatsApp notification for Midtrans: " . $e->getMessage());
+                Log::error("Failed to send WhatsApp notification for iPaymu: " . $e->getMessage());
                 // Jangan gagalkan proses pembayaran jika notifikasi gagal
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pembayaran berhasil diproses',
-                'snap_token' => $snapToken,
-                'order_id' => $orderId,
-                'payment_method' => 'midtrans'
+                'payment_url' => $ipaymuResponse['data']['payment_url'] ?? null,
+                'reference_id' => $referenceId,
+                'payment_method' => 'ipaymu'
             ]);
 
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error('❌ iPaymu payment error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             throw $e;
         }
     }

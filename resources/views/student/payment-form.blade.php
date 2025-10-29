@@ -99,7 +99,7 @@
                                     <select class="form-select @error('payment_type') is-invalid @enderror" 
                                             id="payment_type" name="payment_type" required>
                                         <option value="">Pilih tipe pembayaran</option>
-                                        <option value="realtime">Pembayaran Real-time (Tripay)</option>
+                                        <option value="realtime">Pembayaran Online (iPaymu)</option>
                                         <option value="manual">Transfer Manual</option>
                                     </select>
                                     @error('payment_type')
@@ -109,35 +109,7 @@
                             </div>
                         </div>
 
-                        <!-- Payment Method Selection (for realtime) -->
-                        <div id="payment_method_section" style="display: none;">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="payment_method" class="form-label">
-                                            <i class="fas fa-credit-card me-2"></i>Metode Pembayaran
-                                        </label>
-                                        <select class="form-select @error('payment_method') is-invalid @enderror" 
-                                                id="payment_method" name="payment_method">
-                                            <option value="">Pilih metode pembayaran</option>
-                                            <option value="BRIVA">BRI Virtual Account</option>
-                                            <option value="MANDIRI">Mandiri Virtual Account</option>
-                                            <option value="BNI">BNI Virtual Account</option>
-                                            <option value="BCA">BCA Virtual Account</option>
-                                            <option value="OVO">OVO</option>
-                                            <option value="DANA">DANA</option>
-                                            <option value="SHOPEEPAY">ShopeePay</option>
-                                            <option value="GOPAY">GoPay</option>
-                                            <option value="LINKAJA">LinkAja</option>
-                                            <option value="QRIS">QRIS</option>
-                                        </select>
-                                        @error('payment_method')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Payment Method Selection removed for iPaymu - methods shown on iPaymu page -->
 
                         <div class="row">
                             <div class="col-md-6">
@@ -193,12 +165,12 @@
                         <!-- Realtime Payment Section -->
                         <div id="realtime_payment_section" style="display: none;">
                             <div class="alert alert-info">
-                                <h6><i class="fas fa-info-circle me-2"></i>Pembayaran Real-time via Tripay</h6>
-                                <p class="mb-2">Anda akan diarahkan ke halaman pembayaran Tripay untuk menyelesaikan transaksi.</p>
+                                <h6><i class="fas fa-info-circle me-2"></i>Pembayaran Online via iPaymu</h6>
+                                <p class="mb-2">Anda akan diarahkan ke halaman pembayaran iPaymu untuk menyelesaikan transaksi.</p>
                                 <ul class="mb-0">
                                     <li>Pembayaran aman dan terpercaya</li>
-                                    <li>Mendukung berbagai metode pembayaran</li>
-                                    <li>Konfirmasi otomatis setelah pembayaran</li>
+                                    <li>Mendukung berbagai metode: VA, E-Wallet, QRIS</li>
+                                    <li>Konfirmasi otomatis setelah pembayaran berhasil</li>
                                 </ul>
                             </div>
                         </div>
@@ -223,19 +195,16 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const paymentType = document.getElementById('payment_type');
-    const paymentMethodSection = document.getElementById('payment_method_section');
     const manualSection = document.getElementById('manual_payment_section');
     const realtimeSection = document.getElementById('realtime_payment_section');
     const submitBtn = document.getElementById('submitBtn');
 
     paymentType.addEventListener('change', function() {
         // Hide all sections first
-        paymentMethodSection.style.display = 'none';
         manualSection.style.display = 'none';
         realtimeSection.style.display = 'none';
 
         if (this.value === 'realtime') {
-            paymentMethodSection.style.display = 'block';
             realtimeSection.style.display = 'block';
         } else if (this.value === 'manual') {
             manualSection.style.display = 'block';
@@ -248,12 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (paymentType === 'realtime') {
             e.preventDefault();
-            
-            const paymentMethod = document.getElementById('payment_method').value;
-            if (!paymentMethod) {
-                alert('Silakan pilih metode pembayaran');
-                return;
-            }
 
             // Show loading state
             submitBtn.disabled = true;
@@ -261,12 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Submit form via AJAX
             const formData = new FormData(this);
-            
-            // Log form data for debugging
-            console.log('Form data being sent:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ': ' + value);
-            }
             
             fetch('{{ route("student.payment.process") }}', {
                 method: 'POST',
@@ -276,41 +233,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .then(response => {
-                console.log('Raw response:', response);
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
                 return response.json();
             })
             .then(data => {
-                console.log('Payment response:', data);
-                console.log('Success:', data.success);
-                console.log('Redirect URL:', data.redirect_url);
-                console.log('Message:', data.message);
+                console.log('iPaymu payment response:', data);
                 
                 if (data.success) {
-                    // Redirect ke Tripay checkout jika ada redirect_url
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
+                    // Redirect ke iPaymu payment page
+                    if (data.payment_url || data.redirect_url) {
+                        window.location.href = data.payment_url || data.redirect_url;
                     } else {
-                        alert('Pembayaran gagal diproses. Silakan coba lagi atau hubungi admin.');
+                        alert('Pembayaran gagal diproses. Tidak ada URL pembayaran. Silakan hubungi admin.');
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Proses Pembayaran';
                     }
                 } else {
                     console.error('Payment error:', data.message);
-                    alert('Error: ' + data.message);
+                    alert('Error: ' + (data.message || 'Gagal memproses pembayaran'));
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Proses Pembayaran';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat memproses pembayaran');
+                alert('Terjadi kesalahan saat memproses pembayaran: ' + error.message);
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Proses Pembayaran';
             });

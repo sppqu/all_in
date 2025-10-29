@@ -225,31 +225,12 @@
                         @else
                         <div class="row">
                             <div class="col-lg-6">
-                                <h5 class="mb-3">Midtrans Payment Gateway Settings</h5>
+                                <h5 class="mb-3">iPaymu Payment Gateway Settings</h5>
                                 <table class="table table-bordered">
-                                    <tr><th width="200">Mode</th><td>{{ ucfirst($gateway->midtrans_mode ?? 'sandbox') }}</td></tr>
-                                    <tr><th>Status</th><td>{{ $gateway->midtrans_is_active ? 'Aktif' : 'Tidak Aktif' }}</td></tr>
-                                    <tr><th>Server Key</th><td>
-                                        @if($gateway->midtrans_mode === 'production')
-                                            {{ $gateway->midtrans_server_key_production ? '***' . substr($gateway->midtrans_server_key_production, -4) : '-' }}
-                                        @else
-                                            {{ $gateway->midtrans_server_key_sandbox ? '***' . substr($gateway->midtrans_server_key_sandbox, -4) : '-' }}
-                                        @endif
-                                    </td></tr>
-                                    <tr><th>Client Key</th><td>
-                                        @if($gateway->midtrans_mode === 'production')
-                                            {{ $gateway->midtrans_client_key_production ? '***' . substr($gateway->midtrans_client_key_production, -4) : '-' }}
-                                        @else
-                                            {{ $gateway->midtrans_client_key_sandbox ? '***' . substr($gateway->midtrans_client_key_sandbox, -4) : '-' }}
-                                        @endif
-                                    </td></tr>
-                                    <tr><th>Merchant ID</th><td>
-                                        @if($gateway->midtrans_mode === 'production')
-                                            {{ $gateway->midtrans_merchant_id_production ? '***' . substr($gateway->midtrans_merchant_id_production, -4) : '-' }}
-                                        @else
-                                            {{ $gateway->midtrans_merchant_id_sandbox ? '***' . substr($gateway->midtrans_merchant_id_sandbox, -4) : '-' }}
-                                        @endif
-                                    </td></tr>
+                                    <tr><th width="200">Mode</th><td>{{ ucfirst($gateway->ipaymu_mode ?? 'sandbox') }}</td></tr>
+                                    <tr><th>Status</th><td>{{ $gateway->ipaymu_is_active ? 'Aktif' : 'Tidak Aktif' }}</td></tr>
+                                    <tr><th>VA Key</th><td>{{ $gateway->ipaymu_va ? '***' . substr($gateway->ipaymu_va, -4) : '-' }}</td></tr>
+                                    <tr><th>API Key</th><td>{{ $gateway->ipaymu_api_key ? '***' . substr($gateway->ipaymu_api_key, -4) : '-' }}</td></tr>
                                 </table>
                             </div>
                             <div class="col-lg-6">
@@ -260,74 +241,44 @@
                                         <label class="col-sm-4 col-form-label">Status</label>
                                         <div class="col-sm-8">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="midtrans_is_active" value="1" id="midtransActive" {{ ($gateway->midtrans_is_active ?? false) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="midtransActive">
-                                                    Aktifkan Midtrans Payment Gateway
+                                                <input class="form-check-input" type="checkbox" name="ipaymu_is_active" value="1" id="ipaymuActive" {{ ($gateway->ipaymu_is_active ?? false) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="ipaymuActive">
+                                                    Aktifkan iPaymu Payment Gateway
                                                 </label>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Midtrans Settings -->
-                                    <div class="card mb-3">
-                                        <div class="card-header">Midtrans Settings</div>
-                                        <div class="card-body">
-                                            <div class="row mb-3">
-                                                <label class="col-sm-4 col-form-label">Mode</label>
-                                                <div class="col-sm-8">
-                                                    <select class="form-select" name="midtrans_mode" id="midtransMode">
-                                                        <option value="sandbox" {{ ($gateway->midtrans_mode ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
-                                                        <option value="production" {{ ($gateway->midtrans_mode ?? 'sandbox') == 'production' ? 'selected' : '' }}>Production</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Sandbox Settings -->
-                                            <div id="sandboxSettings" class="midtrans-settings">
-                                                <h6 class="mb-3">Sandbox Settings</h6>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Server Key</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_server_key_sandbox" value="{{ old('midtrans_server_key_sandbox', $gateway->midtrans_server_key_sandbox ?? '') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Client Key</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_client_key_sandbox" value="{{ old('midtrans_client_key_sandbox', $gateway->midtrans_client_key_sandbox ?? '') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Merchant ID</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_merchant_id_sandbox" value="{{ old('midtrans_merchant_id_sandbox', $gateway->midtrans_merchant_id_sandbox ?? '') }}">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Production Settings -->
-                                            <div id="productionSettings" class="midtrans-settings" style="display: none;">
-                                                <h6 class="mb-3">Production Settings</h6>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Server Key</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_server_key_production" value="{{ old('midtrans_server_key_production', $gateway->midtrans_server_key_production ?? '') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Client Key</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_client_key_production" value="{{ old('midtrans_client_key_production', $gateway->midtrans_client_key_production ?? '') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="row mb-3">
-                                                    <label class="col-sm-4 col-form-label">Merchant ID</label>
-                                                    <div class="col-sm-8">
-                                                        <input type="text" class="form-control" name="midtrans_merchant_id_production" value="{{ old('midtrans_merchant_id_production', $gateway->midtrans_merchant_id_production ?? '') }}">
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    <div class="row mb-3">
+                                        <label class="col-sm-4 col-form-label">Mode</label>
+                                        <div class="col-sm-8">
+                                            <select class="form-select" name="ipaymu_mode">
+                                                <option value="sandbox" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
+                                                <option value="production" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'production' ? 'selected' : '' }}>Production</option>
+                                            </select>
+                                            <small class="text-muted">Pilih Sandbox untuk testing atau Production untuk live</small>
                                         </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <label class="col-sm-4 col-form-label">VA Key</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" name="ipaymu_va" value="{{ old('ipaymu_va', $gateway->ipaymu_va ?? '') }}" placeholder="Masukkan VA Key dari iPaymu">
+                                            <small class="text-muted">VA Key bisa didapatkan dari dashboard iPaymu</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <label class="col-sm-4 col-form-label">API Key</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" name="ipaymu_api_key" value="{{ old('ipaymu_api_key', $gateway->ipaymu_api_key ?? '') }}" placeholder="Masukkan API Key dari iPaymu">
+                                            <small class="text-muted">API Key bisa didapatkan dari dashboard iPaymu</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Info:</strong> Pastikan Anda sudah mendaftar di <a href="https://ipaymu.com" target="_blank">iPaymu.com</a> dan mendapatkan VA Key & API Key dari dashboard merchant Anda.
                                     </div>
                                     
                                     <div class="row mb-3">
@@ -527,27 +478,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 reader.readAsDataURL(file);
             }
         });
-    }
-    
-    // Midtrans mode switching
-    const modeSelect = document.getElementById('midtransMode');
-    const sandboxSettings = document.getElementById('sandboxSettings');
-    const productionSettings = document.getElementById('productionSettings');
-    
-    if (modeSelect) {
-        function toggleSettings() {
-            const selectedMode = modeSelect.value;
-            if (selectedMode === 'sandbox') {
-                sandboxSettings.style.display = 'block';
-                productionSettings.style.display = 'none';
-            } else {
-                sandboxSettings.style.display = 'none';
-                productionSettings.style.display = 'block';
-            }
-        }
-        
-        modeSelect.addEventListener('change', toggleSettings);
-        toggleSettings(); // Initial call
     }
     
     // Initialize default tab display
