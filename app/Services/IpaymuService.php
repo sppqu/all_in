@@ -551,7 +551,10 @@ class IpaymuService
             Log::info('💳 Creating iPaymu payment', [
                 'reference_id' => $referenceId,
                 'amount' => $totalAmount,
-                'products_count' => count($products)
+                'products_count' => count($products),
+                'customer_name' => $customerName,
+                'customer_phone' => $customerPhone,
+                'customer_email' => $customerEmail
             ]);
 
             $body = [
@@ -573,6 +576,12 @@ class IpaymuService
                 'cancelUrl' => $returnUrl,
                 'continueUrl' => $returnUrl
             ];
+
+            Log::info('💳 iPaymu request body', [
+                'body' => $body,
+                'is_sandbox' => $this->isSandbox,
+                'base_url' => $this->baseUrl
+            ]);
 
             $jsonBody = json_encode($body, JSON_UNESCAPED_SLASHES);
             $bodyHash = strtolower(hash('sha256', $jsonBody));
