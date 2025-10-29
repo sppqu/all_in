@@ -19,6 +19,30 @@ echo "║            Update Superadmin Phone Number                    ║\n";
 echo "╚═══════════════════════════════════════════════════════════════╝\n";
 echo "\n";
 
+// Check which phone column exists
+$phoneColumn = null;
+if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'nomor_wa')) {
+    $phoneColumn = 'nomor_wa';
+} elseif (\Illuminate\Support\Facades\Schema::hasColumn('users', 'phone')) {
+    $phoneColumn = 'phone';
+} elseif (\Illuminate\Support\Facades\Schema::hasColumn('users', 'no_hp')) {
+    $phoneColumn = 'no_hp';
+} elseif (\Illuminate\Support\Facades\Schema::hasColumn('users', 'phone_number')) {
+    $phoneColumn = 'phone_number';
+}
+
+if (!$phoneColumn) {
+    echo "❌ ERROR: No phone column found in users table!\n";
+    echo "\n";
+    echo "Please run this first:\n";
+    echo "  php vps_add_phone_column.php\n";
+    echo "\n";
+    exit(1);
+}
+
+echo "ℹ️  Using column: " . $phoneColumn . "\n";
+echo "\n";
+
 // Get current superadmin
 $admin = DB::table('users')->where('role', 'superadmin')->first();
 
@@ -31,7 +55,7 @@ echo "Current Admin Info:\n";
 echo "─────────────────────────────────────────────────────────────────\n";
 echo "Name: " . $admin->name . "\n";
 echo "Email: " . $admin->email . "\n";
-echo "Current Phone: " . ($admin->phone ?? 'NULL') . "\n";
+echo "Current Phone: " . ($admin->{$phoneColumn} ?? 'NULL') . "\n";
 echo "\n";
 
 // Get new phone from stdin
@@ -65,8 +89,9 @@ if (!str_starts_with($newPhone, '08') && !str_starts_with($newPhone, '62')) {
 
 echo "\n";
 echo "You are about to update:\n";
-echo "  From: " . ($admin->phone ?? 'NULL') . "\n";
+echo "  From: " . ($admin->{$phoneColumn} ?? 'NULL') . "\n";
 echo "  To:   " . $newPhone . "\n";
+echo "  Column: " . $phoneColumn . "\n";
 echo "\n";
 echo "Continue? (y/n): ";
 $confirm = trim(fgets(STDIN));
@@ -81,7 +106,7 @@ try {
     DB::table('users')
         ->where('id', $admin->id)
         ->update([
-            'phone' => $newPhone,
+            $phoneColumn => $newPhone,
             'updated_at' => now()
         ]);
     
@@ -89,11 +114,12 @@ try {
     echo "✅ SUCCESS! Phone number updated!\n";
     echo "\n";
     echo "New phone: " . $newPhone . "\n";
+    echo "Column: " . $phoneColumn . "\n";
     echo "\n";
     
     // Verify update
     $updated = DB::table('users')->where('id', $admin->id)->first();
-    echo "Verified from database: " . $updated->phone . "\n";
+    echo "Verified from database: " . $updated->{$phoneColumn} . "\n";
     echo "\n";
     
     echo "═══════════════════════════════════════════════════════════════\n";
