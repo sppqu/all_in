@@ -1013,6 +1013,7 @@ class StudentAuthController extends Controller
         $toDate = $request->get('to_date');
 
         // Get transaction history from transfer table (manual payments) - include all statuses
+        // EXCLUDE bulanan/bebas yang sudah ada di log_trx (akan diambil via cashBulananTransactions)
         $transferTransactionsQuery = DB::table('transfer as t')
             ->leftJoin('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
             ->leftJoin('bulan as b', 'td.bulan_id', '=', 'b.bulan_id')
@@ -1027,6 +1028,32 @@ class StudentAuthController extends Controller
             ->where(function($query) {
                 $query->where('td.payment_type', '=', 1)  // Bulanan
                       ->orWhere('td.payment_type', '=', 2); // Bebas
+            })
+            // Exclude payments that already have log_trx entries (to avoid duplicates)
+            ->whereNotExists(function($query) {
+                $query->select(DB::raw(1))
+                      ->from('log_trx as lt')
+                      ->whereColumn('lt.student_student_id', 't.student_id')
+                      ->whereNotNull('t.confirm_date')
+                      ->whereColumn(DB::raw('DATE(lt.log_trx_input_date)'), DB::raw('DATE(t.confirm_date)'))
+                      ->where(function($q) {
+                          // Check for bulanan match
+                          $q->where(function($bulananCheck) {
+                              $bulananCheck->whereColumn('lt.bulan_bulan_id', 'td.bulan_id')
+                                          ->whereNotNull('td.bulan_id')
+                                          ->whereNotNull('lt.bulan_bulan_id');
+                          })
+                          // Check for bebas match (bebas_pay_bebas_pay_id links to bebas via bebas_pay table)
+                          ->orWhere(function($bebasCheck) {
+                              $bebasCheck->whereRaw('EXISTS (
+                                  SELECT 1 FROM bebas_pay bp 
+                                  WHERE bp.bebas_pay_id = lt.bebas_pay_bebas_pay_id 
+                                  AND bp.bebas_bebas_id = td.bebas_id
+                              )')
+                              ->whereNotNull('td.bebas_id')
+                              ->whereNotNull('lt.bebas_pay_bebas_pay_id');
+                          });
+                      });
             })
             ->distinct();
         if ($fromDate) {
@@ -1319,15 +1346,25 @@ class StudentAuthController extends Controller
             
             // Remove duplicates based on unique identifier
             $uniqueTransactions = $allTransactions->unique(function ($item) {
-                // Use log_trx_id for cash transactions, transfer_id for online transactions
-                $uniqueId = $item->log_trx_id ?? $item->transfer_id ?? null;
-                $paymentDate = $item->payment_date ?? $item->created_at;
-                $amount = $item->amount;
-                $transactionType = $item->transaction_type ?? '';
-                $displayName = $item->display_name ?? '';
+                // For deduplication, we need to identify same payment from different sources
+                // Priority: log_trx_id (more specific) > transfer_id
                 
-                // Create a unique key that includes all relevant fields
-                return $uniqueId . '_' . $paymentDate . '_' . $amount . '_' . $transactionType . '_' . $displayName;
+                $paymentDate = $item->payment_date ?? $item->created_at;
+                $amount = $item->amount ?? 0;
+                $transactionType = $item->transaction_type ?? '';
+                
+                // For bulanan/bebas transactions from log_trx, use log_trx_id
+                if (isset($item->log_trx_id)) {
+                    return 'log_' . $item->log_trx_id;
+                }
+                
+                // For transfer transactions, use transfer_id
+                if (isset($item->transfer_id)) {
+                    return 'transfer_' . $item->transfer_id;
+                }
+                
+                // Fallback: use combination of date, amount, and type
+                return 'fallback_' . date('Ymd', strtotime($paymentDate)) . '_' . $amount . '_' . $transactionType;
             });
             
             // Group by reference for pending transactions, by date for successful transactions
