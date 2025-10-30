@@ -1266,6 +1266,36 @@ class StudentAuthController extends Controller
             )
             ->get();
 
+        // Check for expired payments and mark them
+        $allTransferTransactions = $allTransferTransactions->map(function($transaction) {
+            if ($transaction->status == 0 && $transaction->created_at) {
+                // Payment expires after 24 hours
+                $createdAt = \Carbon\Carbon::parse($transaction->created_at);
+                $expiryTime = $createdAt->addHours(24);
+                $isExpired = now()->greaterThan($expiryTime);
+                
+                $transaction->is_expired = $isExpired;
+            } else {
+                $transaction->is_expired = false;
+            }
+            return $transaction;
+        });
+        
+        // Mark expired payments in online payments
+        $onlinePayments = $onlinePayments->map(function($payment) {
+            if ($payment->status == 0 && $payment->created_at) {
+                // Payment expires after 24 hours
+                $createdAt = \Carbon\Carbon::parse($payment->created_at);
+                $expiryTime = $createdAt->addHours(24);
+                $isExpired = now()->greaterThan($expiryTime);
+                
+                $payment->is_expired = $isExpired;
+            } else {
+                $payment->is_expired = false;
+            }
+            return $payment;
+        });
+        
         // Get view type parameter
         $viewType = $request->get('view', 'kuitansi');
         
@@ -1418,6 +1448,11 @@ class StudentAuthController extends Controller
                     }
                 }
                 
+                // Check if any item in this group is expired
+                $isExpired = $items->contains(function($item) {
+                    return isset($item->is_expired) && $item->is_expired === true;
+                });
+                
                 $receiptGroups->push((object)[
                     'receipt_id' => $status == 0 ? $reference : date('Y-m-d', strtotime($paymentDate)),
                     'payment_number' => $receiptNumber,
@@ -1430,7 +1465,9 @@ class StudentAuthController extends Controller
                     'items' => $items,
                     'status' => $status,
                     'checkout_url' => $checkoutUrl,
-                    'transfer_id' => $transferId
+                    'transfer_id' => $transferId,
+                    'is_expired' => $isExpired,
+                    'created_at' => $firstItem->created_at ?? $firstItem->payment_date
                 ]);
             }
             
