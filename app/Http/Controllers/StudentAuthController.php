@@ -1301,7 +1301,15 @@ class StudentAuthController extends Controller
         
         if ($viewType === 'kuitansi') {
             // "Per Kuitansi" view - show all transactions grouped by reference (kuitansi number)
-            $pendingOnlineTransactions = $allTransferTransactions->where('status', 0)->where('checkout_url', '!=', '')->where('checkout_url', '!=', null);
+            // Include all pending online transactions (with or without checkout_url)
+            $pendingOnlineTransactions = $allTransferTransactions->where('status', 0)->filter(function($item) {
+                // Include if has checkout_url, payment_method, reference, or is online payment
+                return !empty($item->checkout_url) || 
+                       !empty($item->payment_method) || 
+                       !empty($item->reference) ||
+                       !empty($item->merchantRef) ||
+                       in_array($item->transaction_type ?? '', ['ONLINE', 'ONLINE_PENDING']);
+            });
             
             // Get pending online payments from transfer table
             $pendingOnlinePayments = $onlinePayments->where('status', 0);
@@ -1467,7 +1475,12 @@ class StudentAuthController extends Controller
                     'checkout_url' => $checkoutUrl,
                     'transfer_id' => $transferId,
                     'is_expired' => $isExpired,
-                    'created_at' => $firstItem->created_at ?? $firstItem->payment_date
+                    'created_at' => $firstItem->created_at ?? $firstItem->payment_date,
+                    'reference' => $firstItem->reference ?? null,
+                    'merchantRef' => $firstItem->merchantRef ?? null,
+                    'payment_method' => $firstItem->payment_method ?? null,
+                    'payment_details' => $firstItem->payment_details ?? null,
+                    'gateway_transaction_id' => $firstItem->gateway_transaction_id ?? null
                 ]);
             }
             

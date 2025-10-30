@@ -136,36 +136,45 @@
                                             @else
                                                 <!-- Pembayaran pending - tampilkan tombol Bayar Sekarang untuk online payment -->
                                                 @php
-                                                    // Check if this is an online payment (ipaymu, gateway, tripay, etc)
-                                                    $isOnlinePayment = isset($payment->payment_method) && 
-                                                        in_array($payment->payment_method, ['ipaymu', 'gateway', 'tripay', 'midtrans', 'duitku']);
+                                                    // Simplified logic: Show button for online payments (ONLINE_PENDING type or has payment_method)
+                                                    $isOnlinePayment = $payment->transaction_type === 'ONLINE_PENDING' || 
+                                                                      !empty($payment->payment_method) ||
+                                                                      !empty($payment->reference) ||
+                                                                      !empty($payment->merchantRef);
                                                     
-                                                    // Or check if has reference/merchantRef (online transaction identifier)
-                                                    $hasReference = !empty($payment->reference) || !empty($payment->merchantRef);
-                                                    
-                                                    $showPayButton = $isOnlinePayment || $hasReference;
                                                     $paymentUrl = null;
                                                     
-                                                    if ($showPayButton) {
-                                                        $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
-                                                        $ipaymuData = $paymentDetails['ipaymu_response'] ?? $paymentDetails;
-                                                        $paymentUrl = $ipaymuData['payment_url'] ?? null;
-                                                        $paymentNo = $ipaymuData['payment_no'] ?? $ipaymuData['PaymentNo'] ?? null;
+                                                    if ($isOnlinePayment) {
+                                                        // Try to get payment URL from checkout_url first
+                                                        $paymentUrl = $payment->checkout_url ?? null;
                                                         
-                                                        // If no payment URL but has VA number or reference, create instruction page link
-                                                        if (!$paymentUrl && ($paymentNo || $hasReference)) {
-                                                            $paymentUrl = route('student.payment.va-instructions', [
-                                                                'transfer_id' => $payment->transfer_id ?? $payment->id,
-                                                                'reference' => $payment->reference ?? $payment->merchantRef
-                                                            ]);
+                                                        // If no checkout_url, try to get from payment_details
+                                                        if (!$paymentUrl && !empty($payment->payment_details)) {
+                                                            $paymentDetails = is_string($payment->payment_details) 
+                                                                ? json_decode($payment->payment_details, true) 
+                                                                : $payment->payment_details;
+                                                            $paymentUrl = $paymentDetails['payment_url'] ?? 
+                                                                         $paymentDetails['redirect_url'] ?? null;
+                                                        }
+                                                        
+                                                        // If still no URL but has transfer_id, create a check status page URL
+                                                        if (!$paymentUrl && isset($payment->transfer_id)) {
+                                                            // For now, show message to contact admin or create route for check status
+                                                            $paymentUrl = '#'; // Placeholder
                                                         }
                                                     }
                                                 @endphp
                                                 
-                                                @if($showPayButton && $paymentUrl)
-                                                    <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
-                                                        <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
-                                                    </a>
+                                                @if($isOnlinePayment)
+                                                    @if($paymentUrl && $paymentUrl !== '#')
+                                                        <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                            <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn btn-warning btn-sm" onclick="alert('Link pembayaran sedang diproses. Silakan refresh halaman dalam beberapa saat.')">
+                                                            <i class="fas fa-hourglass-half me-1"></i>Menunggu Link
+                                                        </button>
+                                                    @endif
                                                 @endif
                                             @endif
                                         @else
@@ -271,37 +280,38 @@
                                             @else
                                                 <!-- Pembayaran pending - tampilkan tombol Bayar Sekarang untuk online payment -->
                                                 @php
-                                                    // Check if this is an online payment
-                                                    $isOnlinePayment = isset($payment->payment_method) && 
-                                                        in_array($payment->payment_method, ['ipaymu', 'gateway', 'tripay', 'midtrans', 'duitku']);
+                                                    // Simplified logic: Show button for online payments
+                                                    $isOnlinePayment = $payment->transaction_type === 'ONLINE_PENDING' || 
+                                                                      !empty($payment->payment_method) ||
+                                                                      !empty($payment->reference) ||
+                                                                      !empty($payment->merchantRef);
                                                     
-                                                    // Or check if has reference/merchantRef
-                                                    $hasReference = !empty($payment->reference) || !empty($payment->merchantRef);
+                                                    $paymentUrl = $payment->checkout_url ?? null;
                                                     
-                                                    $showPayButton = $isOnlinePayment || $hasReference;
-                                                    $paymentUrl = null;
+                                                    if ($isOnlinePayment && !$paymentUrl && !empty($payment->payment_details)) {
+                                                        $paymentDetails = is_string($payment->payment_details) 
+                                                            ? json_decode($payment->payment_details, true) 
+                                                            : $payment->payment_details;
+                                                        $paymentUrl = $paymentDetails['payment_url'] ?? 
+                                                                     $paymentDetails['redirect_url'] ?? null;
+                                                    }
                                                     
-                                                    if ($showPayButton) {
-                                                        $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
-                                                        $ipaymuData = $paymentDetails['ipaymu_response'] ?? $paymentDetails;
-                                                        $paymentUrl = $ipaymuData['payment_url'] ?? null;
-                                                        $paymentNo = $ipaymuData['payment_no'] ?? $ipaymuData['PaymentNo'] ?? null;
-                                                        
-                                                        // If no payment URL but has VA number or reference
-                                                        if (!$paymentUrl && ($paymentNo || $hasReference)) {
-                                                            $paymentUrl = route('student.payment.va-instructions', [
-                                                                'transfer_id' => $payment->transfer_id ?? $payment->id,
-                                                                'reference' => $payment->reference ?? $payment->merchantRef
-                                                            ]);
-                                                        }
+                                                    if (!$paymentUrl && isset($payment->transfer_id)) {
+                                                        $paymentUrl = '#';
                                                     }
                                                 @endphp
                                                 
-                                                @if($showPayButton && $paymentUrl)
+                                                @if($isOnlinePayment)
                                                     <div class="mt-2">
-                                                        <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
-                                                            <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
-                                                        </a>
+                                                        @if($paymentUrl && $paymentUrl !== '#')
+                                                            <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                                <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn btn-warning btn-sm" onclick="alert('Link pembayaran sedang diproses. Silakan refresh halaman.')">
+                                                                <i class="fas fa-hourglass-half me-1"></i>Menunggu Link
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 @endif
                                             @endif
@@ -325,37 +335,37 @@
                                             @else
                                                 <!-- Pembayaran pending online payment -->
                                                 @php
-                                                    // Check if this is an online payment
-                                                    $isOnlinePayment = isset($payment->payment_method) && 
-                                                        in_array($payment->payment_method, ['ipaymu', 'gateway', 'tripay', 'midtrans', 'duitku']);
+                                                    // Simplified logic: Show button for online payments
+                                                    $isOnlinePayment = !empty($payment->payment_method) ||
+                                                                      !empty($payment->reference) ||
+                                                                      !empty($payment->merchantRef);
                                                     
-                                                    // Or check if has reference/merchantRef
-                                                    $hasReference = !empty($payment->reference) || !empty($payment->merchantRef);
+                                                    $paymentUrl = $payment->checkout_url ?? null;
                                                     
-                                                    $showPayButton = $isOnlinePayment || $hasReference;
-                                                    $paymentUrl = null;
+                                                    if ($isOnlinePayment && !$paymentUrl && !empty($payment->payment_details)) {
+                                                        $paymentDetails = is_string($payment->payment_details) 
+                                                            ? json_decode($payment->payment_details, true) 
+                                                            : $payment->payment_details;
+                                                        $paymentUrl = $paymentDetails['payment_url'] ?? 
+                                                                     $paymentDetails['redirect_url'] ?? null;
+                                                    }
                                                     
-                                                    if ($showPayButton) {
-                                                        $paymentDetails = json_decode($payment->payment_details ?? '{}', true);
-                                                        $ipaymuData = $paymentDetails['ipaymu_response'] ?? $paymentDetails;
-                                                        $paymentUrl = $ipaymuData['payment_url'] ?? null;
-                                                        $paymentNo = $ipaymuData['payment_no'] ?? $ipaymuData['PaymentNo'] ?? null;
-                                                        
-                                                        // If no payment URL but has VA number or reference
-                                                        if (!$paymentUrl && ($paymentNo || $hasReference)) {
-                                                            $paymentUrl = route('student.payment.va-instructions', [
-                                                                'transfer_id' => $payment->transfer_id ?? $payment->id,
-                                                                'reference' => $payment->reference ?? $payment->merchantRef
-                                                            ]);
-                                                        }
+                                                    if (!$paymentUrl && isset($payment->transfer_id)) {
+                                                        $paymentUrl = '#';
                                                     }
                                                 @endphp
                                                 
-                                                @if($showPayButton && $paymentUrl)
+                                                @if($isOnlinePayment)
                                                     <div class="mt-2">
-                                                        <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
-                                                            <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
-                                                        </a>
+                                                        @if($paymentUrl && $paymentUrl !== '#')
+                                                            <a href="{{ $paymentUrl }}" class="btn btn-primary btn-sm" target="_blank">
+                                                                <i class="fas fa-credit-card me-1"></i>Bayar Sekarang
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn btn-warning btn-sm" onclick="alert('Link pembayaran sedang diproses. Silakan refresh halaman.')">
+                                                                <i class="fas fa-hourglass-half me-1"></i>Menunggu Link
+                                                            </button>
+                                                        @endif
                                                     </div>
                                                 @endif
                                             @endif
