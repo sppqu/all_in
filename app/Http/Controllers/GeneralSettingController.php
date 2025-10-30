@@ -146,17 +146,42 @@ class GeneralSettingController extends Controller
             ->where('status', 'active')
             ->exists();
         
-        if (!$hasPaymentGatewayAddon) {
-            return redirect()->route('manage.general.setting')->with('error', 'Anda tidak memiliki akses ke Payment Gateway. Silakan beli add-on Payment Gateway terlebih dahulu.');
-        }
-        
-        // Check if user has WhatsApp Gateway add-on for WhatsApp settings
+        // Check if user has WhatsApp Gateway add-on
         $hasWhatsAppGatewayAddon = UserAddon::where('user_id', auth()->id())
             ->whereHas('addon', function($query) {
                 $query->where('slug', 'whatsapp-gateway');
             })
             ->where('status', 'active')
             ->exists();
+        
+        // Determine what user is trying to update based on request fields
+        $isUpdatingPaymentGateway = $request->has('ipaymu_va') || 
+                                     $request->has('ipaymu_api_key') || 
+                                     $request->has('ipaymu_mode') || 
+                                     $request->has('ipaymu_is_active');
+        
+        $isUpdatingWhatsApp = $request->has('url_wagateway') || 
+                             $request->has('apikey_wagateway') || 
+                             $request->has('sender_wagateway') || 
+                             $request->has('wa_gateway') || 
+                             $request->has('enable_wa_notification');
+        
+        // Validate addon access based on what user is trying to update
+        if ($isUpdatingPaymentGateway && !$hasPaymentGatewayAddon) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Anda tidak memiliki akses ke Payment Gateway. Silakan beli add-on Payment Gateway terlebih dahulu.');
+        }
+        
+        if ($isUpdatingWhatsApp && !$hasWhatsAppGatewayAddon) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Anda tidak memiliki akses ke WhatsApp Gateway. Silakan beli add-on WhatsApp Gateway terlebih dahulu.');
+        }
+        
+        // If user doesn't have any addon and trying to update either gateway
+        if (!$hasPaymentGatewayAddon && !$hasWhatsAppGatewayAddon) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Anda tidak memiliki akses ke Gateway settings. Silakan beli add-on terlebih dahulu.');
+        }
         
         $gateway = SetupGateway::first() ?? new SetupGateway();
         
@@ -168,33 +193,43 @@ class GeneralSettingController extends Controller
             'request_data' => $request->all()
         ]);
         
-        // Handle iPaymu settings
-        if ($request->has('ipaymu_va')) {
-            $gateway->ipaymu_va = $request->ipaymu_va;
+        // Handle iPaymu settings (only if user has Payment Gateway addon)
+        if ($hasPaymentGatewayAddon && $isUpdatingPaymentGateway) {
+            if ($request->has('ipaymu_va')) {
+                $gateway->ipaymu_va = $request->ipaymu_va;
+            }
+            if ($request->has('ipaymu_api_key')) {
+                $gateway->ipaymu_api_key = $request->ipaymu_api_key;
+            }
+            if ($request->has('ipaymu_mode')) {
+                $gateway->ipaymu_mode = $request->ipaymu_mode;
+            }
+            // Handle iPaymu active status
+            $gateway->ipaymu_is_active = $request->has('ipaymu_is_active') ? 1 : 0;
+            
+            \Log::info('iPaymu settings updated', [
+                'ipaymu_mode' => $gateway->ipaymu_mode,
+                'ipaymu_is_active' => $gateway->ipaymu_is_active,
+                'ipaymu_va_set' => !empty($gateway->ipaymu_va),
+                'ipaymu_api_key_set' => !empty($gateway->ipaymu_api_key)
+            ]);
         }
-        if ($request->has('ipaymu_api_key')) {
-            $gateway->ipaymu_api_key = $request->ipaymu_api_key;
+        
+        // Handle WhatsApp settings (only if user has WhatsApp Gateway addon)
+        if ($hasWhatsAppGatewayAddon && $isUpdatingWhatsApp) {
+            $gateway->fill($request->only([
+                'url_wagateway', 'apikey_wagateway', 'sender_wagateway', 'wa_gateway',
+            ]));
+            
+            // Handle enable_wa_notification checkbox
+            $gateway->enable_wa_notification = $request->has('enable_wa_notification') ? 1 : 0;
+            
+            \Log::info('WhatsApp settings updated', [
+                'enable_wa_notification' => $gateway->enable_wa_notification,
+                'url_wagateway' => $gateway->url_wagateway,
+                'sender_wagateway' => $gateway->sender_wagateway
+            ]);
         }
-        if ($request->has('ipaymu_mode')) {
-            $gateway->ipaymu_mode = $request->ipaymu_mode;
-        }
-        // Handle iPaymu active status
-        $gateway->ipaymu_is_active = $request->has('ipaymu_is_active') ? 1 : 0;
-        
-        \Log::info('iPaymu settings updated', [
-            'ipaymu_mode' => $gateway->ipaymu_mode,
-            'ipaymu_is_active' => $gateway->ipaymu_is_active,
-            'ipaymu_va_set' => !empty($gateway->ipaymu_va),
-            'ipaymu_api_key_set' => !empty($gateway->ipaymu_api_key)
-        ]);
-        
-        // Handle WhatsApp settings
-        $gateway->fill($request->only([
-            'url_wagateway', 'apikey_wagateway', 'sender_wagateway', 'wa_gateway',
-        ]));
-        
-        // Handle enable_wa_notification checkbox
-        $gateway->enable_wa_notification = $request->has('enable_wa_notification') ? 1 : 0;
         
         // Handle Bank Account settings - hanya update jika ada input
         if ($request->filled('norek_bank')) {
@@ -216,7 +251,19 @@ class GeneralSettingController extends Controller
         
         $gateway->save();
 
-        return redirect()->route('manage.general.setting')->with('success', 'Pengaturan berhasil disimpan!');
+        // Generate specific success message
+        $successMessage = '';
+        if ($isUpdatingPaymentGateway && $isUpdatingWhatsApp) {
+            $successMessage = 'Pengaturan Payment Gateway dan WhatsApp Gateway berhasil disimpan!';
+        } elseif ($isUpdatingPaymentGateway) {
+            $successMessage = 'Pengaturan Payment Gateway berhasil disimpan!';
+        } elseif ($isUpdatingWhatsApp) {
+            $successMessage = 'Pengaturan WhatsApp Gateway berhasil disimpan!';
+        } else {
+            $successMessage = 'Pengaturan berhasil disimpan!';
+        }
+
+        return redirect()->route('manage.general.setting')->with('success', $successMessage);
     }
 
     public function updateRekening(Request $request)
