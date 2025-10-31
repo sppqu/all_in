@@ -197,16 +197,6 @@
                 @endif
             </div>
         </div>
-        
-        <div class="form-row">
-            <div class="form-label">Biaya Pendaftaran:</div>
-            <div class="form-value">{{ $registration->registration_fee_paid ? 'Lunas' : 'Belum Lunas' }}</div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-label">Biaya SPMB:</div>
-            <div class="form-value">{{ $registration->spmb_fee_paid ? 'Lunas' : 'Belum Lunas' }}</div>
-        </div>
     </div>
 
     <!-- Tanda Tangan -->
