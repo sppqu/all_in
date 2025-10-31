@@ -557,7 +557,7 @@
         <!-- Mobile Menu Container -->
         <div class="mobile-menu-container" id="mobileMenu">
             <div class="mobile-menu-grid">
-                <a href="{{ route('manage.spmb.create') }}" class="mobile-menu-item btn-success">
+                <a href="{{ route('manage.spmb.create') }}" class="mobile-menu-item btn-success d-none">
                     <i class="fas fa-user-plus"></i>
                     <div class="btn-text">Tambah Pendaftar</div>
                 </a>
@@ -615,7 +615,7 @@
                             <span class="ms-2 text-muted selected-count">0 dipilih</span>
                         </div>
                         <!-- Action Buttons -->
-                        <a href="{{ route('manage.spmb.create') }}" class="btn btn-success">
+                        <a href="{{ route('manage.spmb.create') }}" class="btn btn-success d-none">
 <i class="fas fa-user-plus me-1"></i>Tambah Pendaftar
                         </a>
                         <a href="{{ route('manage.spmb.settings') }}" class="btn btn-info">
