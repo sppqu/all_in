@@ -147,7 +147,7 @@ class SPMBRegistration extends Model
      */
     public function additionalFees()
     {
-        return $this->belongsToMany(SPMBAdditionalFee::class, 'spmb_registration_additional_fees')
+        return $this->belongsToMany(SPMBAdditionalFee::class, 'spmb_registration_additional_fees', 'registration_id', 'additional_fee_id')
                     ->withPivot(['amount', 'is_paid', 'paid_at', 'metadata'])
                     ->withTimestamps();
     }

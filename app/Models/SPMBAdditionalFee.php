@@ -33,14 +33,14 @@ class SPMBAdditionalFee extends Model
     // Relationships
     public function waves()
     {
-        return $this->belongsToMany(SPMBWave::class, 'spmb_wave_additional_fees')
+        return $this->belongsToMany(SPMBWave::class, 'spmb_wave_additional_fees', 'additional_fee_id', 'wave_id')
                     ->withPivot(['amount', 'is_active'])
                     ->withTimestamps();
     }
 
     public function registrations()
     {
-        return $this->belongsToMany(SPMBRegistration::class, 'spmb_registration_additional_fees')
+        return $this->belongsToMany(SPMBRegistration::class, 'spmb_registration_additional_fees', 'additional_fee_id', 'registration_id')
                     ->withPivot(['amount', 'is_paid', 'paid_at', 'metadata'])
                     ->withTimestamps();
     }
@@ -114,13 +114,13 @@ class SPMBAdditionalFee extends Model
 
     public function getAmountForWave($waveId)
     {
-        $waveFee = $this->waves()->where('wave_id', $waveId)->first();
+        $waveFee = $this->waves()->where('spmb_waves.id', $waveId)->first();
         return $waveFee ? $waveFee->pivot->amount : $this->amount;
     }
 
     public function isActiveForWave($waveId)
     {
-        $waveFee = $this->waves()->where('wave_id', $waveId)->first();
+        $waveFee = $this->waves()->where('spmb_waves.id', $waveId)->first();
         if (!$waveFee) {
             return $this->is_active;
         }
