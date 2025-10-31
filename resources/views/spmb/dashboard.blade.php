@@ -899,9 +899,6 @@
                                 <a href="{{ route('spmb.step', ['step' => 2]) }}" class="btn btn-primary">
                                     <i class="fas fa-credit-card me-1"></i>Bayar Biaya Pendaftaran
                                 </a>
-                                <a href="{{ route('spmb.skip-step2') }}" class="btn btn-warning">
-                                    <i class="fas fa-forward me-1"></i>Skip Pembayaran
-                                </a>
                             @elseif($registration->step == 3)
                                 <a href="{{ route('spmb.step', ['step' => 3]) }}" class="btn btn-primary">
                                     <i class="fas fa-edit me-1"></i>Lengkapi Formulir
