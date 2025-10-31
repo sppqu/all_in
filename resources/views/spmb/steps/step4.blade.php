@@ -150,7 +150,7 @@
                             </ul>
                         </div>
 
-                        <form method="POST" action="{{ route('spmb.step4.post') }}" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('spmb.step4.post') }}" enctype="multipart/form-data" id="step4Form">
                             @csrf
                             
                             <div class="row">
@@ -257,7 +257,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between action-buttons">
                                 <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
                                 </a>
@@ -276,6 +276,39 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="spmb-bottom-nav d-md-none" id="bottomNav">
+        <div class="spmb-bottom-nav-content">
+            <a href="{{ route('spmb.dashboard') }}" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                <span>Dashboard</span>
+            </a>
+            <button type="submit" name="action" value="skip" form="step4Form" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-secondary">
+                <i class="fas fa-forward"></i>
+                <span>Skip</span>
+            </button>
+            <button type="submit" name="action" value="upload" form="step4Form" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-primary">
+                <i class="fas fa-upload"></i>
+                <span>Upload</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Show bottom nav on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('bottomNav')?.classList.add('active');
+        }
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('bottomNav')?.classList.add('active');
+            } else {
+                document.getElementById('bottomNav')?.classList.remove('active');
+            }
+        });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

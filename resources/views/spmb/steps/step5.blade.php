@@ -186,7 +186,7 @@
                                 <i class="fas fa-eye me-1"></i>Lihat Status
                             </button>
                         @else
-                            <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between action-buttons">
                                 <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
                                 </a>
@@ -575,6 +575,42 @@
             // Initial calculation
             console.log('Running initial calculation...');
             calculateAdditionalFees();
+        });
+    </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="spmb-bottom-nav d-md-none" id="bottomNav">
+        <div class="spmb-bottom-nav-content">
+            <a href="{{ route('spmb.dashboard') }}" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                <span>Dashboard</span>
+            </a>
+            @php
+                $existingPayment = $registration->payments()->where('type', 'spmb_fee')->first();
+                $paymentStatus = $existingPayment ? $existingPayment->status : null;
+            @endphp
+            
+            @if($paymentStatus !== 'paid' && $paymentStatus !== 'pending')
+                <button type="button" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Bayar</span>
+                </button>
+            @endif
+        </div>
+    </div>
+
+    <script>
+        // Show bottom nav on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('bottomNav')?.classList.add('active');
+        }
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('bottomNav')?.classList.add('active');
+            } else {
+                document.getElementById('bottomNav')?.classList.remove('active');
+            }
         });
     </script>
 </body>

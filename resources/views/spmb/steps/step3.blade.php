@@ -103,7 +103,7 @@
                             <strong>Informasi Penting:</strong> Setelah berhasil mengisi formulir, Anda akan mendapatkan nomor pendaftaran otomatis yang dapat digunakan untuk melacak status pendaftaran Anda.
                         </div>
 
-                        <form method="POST" action="{{ route('spmb.step3.post') }}">
+                        <form method="POST" action="{{ route('spmb.step3.post') }}" id="step3Form">
                             @csrf
                             
                             @foreach($formSettings as $section => $fields)
@@ -197,7 +197,7 @@
                             </div>
                             @endif
 
-                            <div class="d-flex justify-content-between mt-4">
+                            <div class="d-flex justify-content-between mt-4 action-buttons">
                                 <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
                                 </a>
@@ -213,5 +213,34 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="spmb-bottom-nav d-md-none" id="bottomNav">
+        <div class="spmb-bottom-nav-content">
+            <a href="{{ route('spmb.dashboard') }}" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                <span>Dashboard</span>
+            </a>
+            <button type="submit" form="step3Form" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-primary">
+                <i class="fas fa-save"></i>
+                <span>Simpan</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Show bottom nav on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('bottomNav')?.classList.add('active');
+        }
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('bottomNav')?.classList.add('active');
+            } else {
+                document.getElementById('bottomNav')?.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

@@ -699,3 +699,137 @@ body {
     }
 }
 
+/* Mobile Bottom Navigation Bar */
+.spmb-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-top: 2px solid #e9ecef;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+    padding: 0.75rem 1rem;
+    z-index: 1000;
+    display: none;
+}
+
+.spmb-bottom-nav.active {
+    display: block;
+}
+
+.spmb-bottom-nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 100%;
+}
+
+.spmb-bottom-nav-btn {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid transparent;
+    white-space: nowrap;
+    min-height: 48px;
+    text-decoration: none;
+}
+
+.spmb-bottom-nav-btn-primary {
+    background: linear-gradient(135deg, #008060 0%, #006d52 100%);
+    color: white;
+    border-color: #008060;
+}
+
+.spmb-bottom-nav-btn-primary:hover,
+.spmb-bottom-nav-btn-primary:active {
+    background: linear-gradient(135deg, #006d52 0%, #005a45 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 128, 96, 0.3);
+    color: white;
+}
+
+.spmb-bottom-nav-btn-secondary {
+    background: #f8f9fa;
+    color: #6c757d;
+    border-color: #e9ecef;
+}
+
+.spmb-bottom-nav-btn-secondary:hover,
+.spmb-bottom-nav-btn-secondary:active {
+    background: #e9ecef;
+    color: #495057;
+    transform: translateY(-2px);
+}
+
+.spmb-bottom-nav-btn i {
+    font-size: 1rem;
+}
+
+/* Enhanced Mobile Responsive Buttons */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px;
+    }
+    
+    .step-body {
+        padding-bottom: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.875rem 1.25rem !important;
+        font-size: 0.9rem !important;
+        min-height: 48px !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+    }
+    
+    .btn-lg {
+        padding: 1rem 1.5rem !important;
+        font-size: 1rem !important;
+        min-height: 52px !important;
+    }
+    
+    /* Button groups should stack on mobile */
+    .d-flex.justify-content-between {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .d-flex.justify-content-between > * {
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Gap utility classes for buttons */
+    .d-flex.gap-2 {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .d-flex.gap-2 > * {
+        width: 100% !important;
+    }
+    
+    /* Action button container */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        margin: 0;
+    }
+}
+

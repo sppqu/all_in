@@ -124,7 +124,7 @@
                                 Default Rp 3.000
                             </small>
                         </div>
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between action-buttons">
                             <a href="{{ route('spmb.dashboard') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>Kembali ke Dashboard
                             </a>
@@ -499,6 +499,48 @@
                 button.classList.add('btn-outline-secondary');
             }, 3000);
         }
+    </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <div class="spmb-bottom-nav d-md-none" id="bottomNav">
+        <div class="spmb-bottom-nav-content">
+            <a href="{{ route('spmb.dashboard') }}" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                <span>Dashboard</span>
+            </a>
+            @php
+                $existingPayment = $registration->payments()->where('type', 'registration_fee')->first();
+                $paymentStatus = $existingPayment ? $existingPayment->status : null;
+                $paymentMethod = $existingPayment ? $existingPayment->payment_method : null;
+            @endphp
+            
+            @if($paymentStatus === 'pending' && $paymentMethod === 'QRIS')
+                <a href="{{ route('spmb.payment', $existingPayment->id) }}" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-primary">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Bayar</span>
+                </a>
+            @elseif($paymentStatus !== 'paid')
+                <button type="submit" form="qrisPaymentForm" class="spmb-bottom-nav-btn spmb-bottom-nav-btn-primary" id="btnPayQrisMobile">
+                    <i class="fas fa-qrcode"></i>
+                    <span>Bayar QRIS</span>
+                </button>
+            @endif
+        </div>
+    </div>
+
+    <script>
+        // Show bottom nav on mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('bottomNav')?.classList.add('active');
+        }
+        
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('bottomNav')?.classList.add('active');
+            } else {
+                document.getElementById('bottomNav')?.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>
