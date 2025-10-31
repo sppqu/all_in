@@ -53,7 +53,8 @@ class SPMBAdditionalFeeController extends Controller
         }
 
         $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        // Checkbox yang dicentang (value="1") akan dikirim, yang tidak dicentang tidak akan dikirim sama sekali
+        $data['is_active'] = $request->filled('is_active');
         
         SPMBAdditionalFee::create($data);
 
@@ -108,7 +109,8 @@ class SPMBAdditionalFeeController extends Controller
         }
 
         $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
+        // Checkbox yang dicentang (value="1") akan dikirim, yang tidak dicentang tidak akan dikirim sama sekali
+        $data['is_active'] = $request->filled('is_active');
         
         $additionalFee->update($data);
 

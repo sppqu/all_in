@@ -286,7 +286,7 @@
                             <div class="mb-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
-                                           {{ old('is_active', true) ? 'checked' : '' }}>
+                                           value="1" {{ old('is_active', true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="is_active">
                                         <strong>Aktifkan biaya ini</strong>
                                     </label>
