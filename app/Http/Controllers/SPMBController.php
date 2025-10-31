@@ -38,7 +38,18 @@ class SPMBController extends Controller
     public function index()
     {
         $schoolProfile = SchoolProfile::first();
-        return view('spmb.landing', compact('schoolProfile'));
+        $gateway = \App\Models\SetupGateway::first();
+        
+        // Get WhatsApp number from gateway (wa_gateway) or fallback to school phone (no_telp)
+        $whatsappNumber = $gateway->wa_gateway ?? $schoolProfile->no_telp ?? '6281234567890';
+        
+        // Format nomor (remove leading 0, add 62 if needed)
+        $whatsappNumber = preg_replace('/^0/', '', $whatsappNumber); // Remove leading 0
+        if (!preg_match('/^62/', $whatsappNumber)) {
+            $whatsappNumber = '62' . ltrim($whatsappNumber, '62'); // Ensure starts with 62
+        }
+        
+        return view('spmb.landing', compact('schoolProfile', 'whatsappNumber'));
     }
 
     /**
@@ -194,8 +205,18 @@ class SPMBController extends Controller
 
         $registration = SPMBRegistration::findOrFail($registrationId);
         $schoolProfile = SchoolProfile::first();
+        $gateway = \App\Models\SetupGateway::first();
         
-        return view('spmb.dashboard', compact('registration', 'schoolProfile'));
+        // Get WhatsApp number from gateway (wa_gateway) or fallback to school phone (no_telp)
+        $whatsappNumber = $gateway->wa_gateway ?? $schoolProfile->no_telp ?? '6281234567890';
+        
+        // Format nomor (remove leading 0, add 62 if needed)
+        $whatsappNumber = preg_replace('/^0/', '', $whatsappNumber); // Remove leading 0
+        if (!preg_match('/^62/', $whatsappNumber)) {
+            $whatsappNumber = '62' . ltrim($whatsappNumber, '62'); // Ensure starts with 62
+        }
+        
+        return view('spmb.dashboard', compact('registration', 'schoolProfile', 'whatsappNumber'));
     }
 
     /**

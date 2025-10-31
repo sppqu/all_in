@@ -945,10 +945,10 @@
     </div>
 
     <!-- Floating WhatsApp Button -->
-    <a href="https://wa.me/6281234567890?text=Halo,%20saya%20butuh%20bantuan%20mengenai%20pendaftaran%20SPMB" 
+    <a href="https://wa.me/{{ $whatsappNumber ?? '6281234567890' }}?text=Halo,%20saya%20butuh%20bantuan%20mengenai%20pendaftaran%20SPMB" 
        target="_blank" 
        class="whatsapp-float"
-       title="Chat dengan Admin">
+       title="Chat dengan Admin ({{ $whatsappNumber ?? '6281234567890' }})">
         <i class="fab fa-whatsapp"></i>
     </a>
 
