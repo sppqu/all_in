@@ -471,9 +471,19 @@
                     <a href="{{ route('student.tabungan') }}" class="list-group-item list-group-item-action {{ request()->routeIs('student.tabungan') ? 'active' : '' }}">
                         <i class="fas fa-university me-2"></i>Tabungan
                     </a>
+                    @php
+                        $hasBK = hasBKAddon();
+                    @endphp
+                    @if($hasBK)
                     <a href="{{ route('student.bk.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('student.bk.*') ? 'active' : '' }}">
                         <i class="fas fa-clipboard-list me-2"></i>BK Siswa
                     </a>
+                    @else
+                    <a href="#" class="list-group-item list-group-item-action disabled" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;" title="Add-on tidak aktif">
+                        <i class="fas fa-clipboard-list me-2"></i>BK Siswa
+                        <small class="text-muted d-block" style="font-size: 0.7rem;">(Add-on tidak aktif)</small>
+                    </a>
+                    @endif
                     <a href="{{ route('student.payment.history') }}" class="list-group-item list-group-item-action {{ request()->routeIs('student.payment.history') ? 'active' : '' }}">
                         <i class="fas fa-history me-2"></i>Riwayat Pembayaran
                     </a>
@@ -501,11 +511,22 @@
                 </a>
             </div>
 
+            @php
+                $hasEJurnal = hasEJurnalAddon();
+                $hasBK = hasBKAddon();
+            @endphp
             <div class="col">
+                @if($hasEJurnal)
                 <a href="{{ route('student.jurnal.index') }}" class="nav-link {{ request()->routeIs('student.jurnal.*') ? 'active' : '' }}">
                     <i class="fas fa-book" style="color: inherit !important;"></i>
                     <span>E-Jurnal</span>
                 </a>
+                @else
+                <a href="#" class="nav-link disabled" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;" title="Add-on tidak aktif">
+                    <i class="fas fa-book" style="color: inherit !important;"></i>
+                    <span>E-Jurnal</span>
+                </a>
+                @endif
             </div>
 
             <div class="col home-item">
@@ -516,10 +537,17 @@
             </div>
 
             <div class="col">
+                @if($hasBK)
                 <a href="{{ route('student.bk.index') }}" class="nav-link {{ request()->routeIs('student.bk.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list"></i>
                     <span>BK</span>
                 </a>
+                @else
+                <a href="#" class="nav-link disabled" style="opacity: 0.5; cursor: not-allowed; pointer-events: none;" title="Add-on tidak aktif">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>BK</span>
+                </a>
+                @endif
             </div>
 
             <div class="col">

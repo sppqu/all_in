@@ -94,13 +94,26 @@
                     <span>Tabungan</span>
                 </a>
                         </div>
+            @php
+                $hasEJurnal = hasEJurnalAddon();
+            @endphp
             <div class="col-6 col-md-3">
+                @if($hasEJurnal)
                 <a href="{{ route('student.jurnal.create') }}" class="quick-action-card">
                     <div class="quick-icon" style="background: linear-gradient(135deg, #6f42c1, #9d5bd2);">
                         <i class="fas fa-pen"></i>
                     </div>
                     <span>Jurnal</span>
-            </a>
+                </a>
+                @else
+                <div class="quick-action-card disabled">
+                    <div class="quick-icon" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); opacity: 0.5;">
+                        <i class="fas fa-pen"></i>
+                    </div>
+                    <span style="opacity: 0.6;">Jurnal</span>
+                    <small class="text-muted" style="font-size: 0.7rem; margin-top: 4px;">Add-on tidak aktif</small>
+                </div>
+                @endif
         </div>
             <div class="col-6 col-md-3">
                 <a href="{{ route('student.payment.history') }}" class="quick-action-card">
@@ -110,21 +123,45 @@
                     <span>Riwayat Bayar</span>
             </a>
         </div>
+            @php
+                $hasBK = hasBKAddon();
+                $hasLibrary = hasLibraryAddon();
+            @endphp
             <div class="col-6 col-md-3">
+                @if($hasBK)
                 <a href="{{ route('student.bk.index') }}" class="quick-action-card">
                     <div class="quick-icon" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
                     <span>BK Siswa</span>
                 </a>
+                @else
+                <div class="quick-action-card disabled">
+                    <div class="quick-icon" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); opacity: 0.5;">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <span style="opacity: 0.6;">BK Siswa</span>
+                    <small class="text-muted" style="font-size: 0.7rem; margin-top: 4px;">Add-on tidak aktif</small>
+                </div>
+                @endif
             </div>
             <div class="col-6 col-md-3">
+                @if($hasLibrary)
                 <a href="{{ route('student.library') }}" class="quick-action-card">
                     <div class="quick-icon" style="background: linear-gradient(135deg,rgb(22, 54, 197),rgb(56, 161, 231));">
                         <i class="fas fa-book-reader"></i>
                     </div>
                     <span>E-Perpus</span>
                 </a>
+                @else
+                <div class="quick-action-card disabled">
+                    <div class="quick-icon" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); opacity: 0.5;">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <span style="opacity: 0.6;">E-Perpus</span>
+                    <small class="text-muted" style="font-size: 0.7rem; margin-top: 4px;">Add-on tidak aktif</small>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -248,6 +285,17 @@
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     color: #2c3e50;
+}
+
+.quick-action-card.disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.quick-action-card.disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .quick-icon {
