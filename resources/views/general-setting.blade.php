@@ -358,6 +358,12 @@
                                             <input type="text" class="form-control" name="wa_gateway" value="{{ old('wa_gateway', $gateway->wa_gateway ?? '') }}">
                                         </div>
                                     </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Info:</strong> Pastikan Anda sudah mendaftar di <a href="https://fonnte.com" target="_blank">Fonnte.com</a> dan mendapatkan API Key dari dashboard merchant Anda.
+                                    </div>
+                                    
                                     <div class="row mb-3">
                                         <div class="col-sm-8 offset-sm-4">
                                             <button type="submit" class="btn btn-success text-white">Simpan WhatsApp Gateway</button>
