@@ -105,12 +105,9 @@
             
             <!-- Action Buttons -->
             <div class="mt-3">
-                <div class="d-flex gap-2">
-                    <a href="{{ route('manage.addons.index') }}" class="btn btn-primary flex-fill">
+                <div class="d-grid">
+                    <a href="{{ route('manage.addons.index') }}" class="btn btn-primary">
                         <i class="fas fa-puzzle-piece me-2"></i>Add-ons Premium
-                    </a>
-                    <a href="{{ route('manage.subscription.premium-features') }}" class="btn btn-warning flex-fill">
-                        <i class="fas fa-star me-2"></i>Lihat Fitur Premium
                     </a>
                 </div>
             </div>
