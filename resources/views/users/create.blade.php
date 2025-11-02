@@ -31,7 +31,6 @@
                             <select name="role" class="form-select" required>
                                 <option value="">- Pilih Role -</option>
                                 <option value="superadmin" {{ old('role')=='superadmin' ? 'selected' : '' }}>Superadmin</option>
-                                <option value="admin" {{ old('role')=='admin' ? 'selected' : '' }}>Admin</option>
                                 <option value="admin_bk" {{ old('role')=='admin_bk' ? 'selected' : '' }}>Admin BK</option>
                                 <option value="admin_jurnal" {{ old('role')=='admin_jurnal' ? 'selected' : '' }}>Admin Jurnal</option>
                                 <option value="spmb_admin" {{ old('role')=='spmb_admin' ? 'selected' : '' }}>Admin SPMB</option>
