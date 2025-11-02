@@ -33,7 +33,7 @@
                                 <td>{{ $user->created_at->format('d/m/Y') }}</td>
                                 <td>
                                     <a href="{{ route('manage.users.edit', $user->id) }}" class="btn btn-sm btn-outline-primary"><i class="fa fa-edit"></i></a>
-<form action="{{ route('manage.users.destroy', $user->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Yakin hapus pengguna ini?')">
+                                    <form action="{{ route('manage.users.destroy', $user->id) }}" method="POST" style="display:inline" onsubmit="return confirm('Yakin hapus pengguna ini?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></button>
