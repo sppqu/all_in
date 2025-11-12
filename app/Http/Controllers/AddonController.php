@@ -30,14 +30,32 @@ class AddonController extends Controller
         $addons = Addon::active()->get();
         $user = auth()->user();
         
+        // For inheritance: if user is not superadmin, check superadmin's addons
+        $checkUserId = ($user->role === 'superadmin') ? $user->id : getSuperadminId();
+        
         // Get user's active addons with valid addon relationships
-        $userAddons = UserAddon::where('user_id', $user->id)
+        $userAddons = $checkUserId ? UserAddon::where('user_id', $checkUserId)
             ->where('status', 'active')
             ->withValidAddon() // Only get records that have a valid addon relationship
             ->with('addon')
-            ->get();
+            ->get() : collect();
 
-        return view('addons.index', compact('addons', 'userAddons'));
+        // Get user's purchased but not active addons (pending, inactive, etc.)
+        $purchasedButInactive = $checkUserId ? UserAddon::where('user_id', $checkUserId)
+            ->where('status', '!=', 'active')
+            ->withValidAddon()
+            ->with('addon')
+            ->get() : collect();
+
+        // Get all purchased addons (active + inactive) for checking ownership
+        $allPurchasedAddons = $checkUserId ? UserAddon::where('user_id', $checkUserId)
+            ->withValidAddon()
+            ->with('addon')
+            ->get()
+            ->pluck('addon_id')
+            ->toArray() : [];
+
+        return view('addons.index', compact('addons', 'userAddons', 'purchasedButInactive', 'allPurchasedAddons'));
     }
 
     public function show($slug)
@@ -482,6 +500,108 @@ class AddonController extends Controller
     }
 
     /**
+     * Activate purchased addon that is not yet active
+     */
+    public function activatePurchasedAddon(Request $request)
+    {
+        $user = auth()->user();
+        $userAddonId = $request->input('user_addon_id');
+        
+        if (!$userAddonId) {
+            return response()->json(['error' => 'User addon ID required'], 400);
+        }
+
+        try {
+            $userAddon = UserAddon::where('id', $userAddonId)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (!$userAddon) {
+                return response()->json(['error' => 'Addon tidak ditemukan'], 404);
+            }
+
+            if ($userAddon->status === 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Addon sudah aktif'
+                ]);
+            }
+
+            $addon = $userAddon->addon;
+            if (!$addon) {
+                return response()->json(['error' => 'Addon tidak ditemukan'], 404);
+            }
+
+            // For inheritance: if user is not superadmin, activate for superadmin instead
+            $targetUserId = ($user->role === 'superadmin') ? $user->id : getSuperadminId();
+            
+            if (!$targetUserId) {
+                return response()->json(['error' => 'Superadmin tidak ditemukan'], 404);
+            }
+
+            // Find or create user addon for target user
+            $targetUserAddon = UserAddon::where('user_id', $targetUserId)
+                ->where('addon_id', $addon->id)
+                ->first();
+
+            if ($targetUserAddon) {
+                // Update existing
+                $targetUserAddon->update([
+                    'status' => 'active',
+                    'purchased_at' => $targetUserAddon->purchased_at ?? now(),
+                    'expires_at' => $addon->type === 'one_time' ? null : ($targetUserAddon->expires_at ?? now()->addYear()),
+                    'updated_at' => now()
+                ]);
+            } else {
+                // Create new for target user
+                UserAddon::create([
+                    'user_id' => $targetUserId,
+                    'addon_id' => $addon->id,
+                    'status' => 'active',
+                    'purchased_at' => $userAddon->purchased_at ?? now(),
+                    'amount_paid' => $userAddon->amount_paid ?? $addon->price,
+                    'payment_method' => $userAddon->payment_method ?? 'manual_activation',
+                    'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            // Also update the original user addon if it's different
+            if ($targetUserId !== $user->id) {
+                $userAddon->update([
+                    'status' => 'active',
+                    'updated_at' => now()
+                ]);
+            } else {
+                $userAddon->update([
+                    'status' => 'active',
+                    'updated_at' => now()
+                ]);
+            }
+
+            Log::info('Purchased addon activated', [
+                'user_id' => $user->id,
+                'target_user_id' => $targetUserId,
+                'addon_id' => $addon->id,
+                'addon_slug' => $addon->slug
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Addon '{$addon->name}' berhasil diaktifkan!"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error activating purchased addon: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Check addon payment status from Tripay API
      */
     public function checkPaymentStatus(Request $request)
@@ -708,7 +828,7 @@ class AddonController extends Controller
         }
 
         // Get school profile
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
 
         $data = [
             'userAddon' => $userAddon,

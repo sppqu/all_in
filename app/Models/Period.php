@@ -14,7 +14,8 @@ class Period extends Model
     protected $fillable = [
         'period_start',
         'period_end',
-        'period_status'
+        'period_status',
+        'school_id'
     ];
 
     protected $casts = [
@@ -39,5 +40,11 @@ class Period extends Model
     public function scopeActive($query)
     {
         return $query->where('period_status', 1);
+    }
+
+    // Relasi dengan School
+    public function school()
+    {
+        return $this->belongsTo(\App\Models\School::class, 'school_id', 'id');
     }
 }

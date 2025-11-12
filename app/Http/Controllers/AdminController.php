@@ -14,31 +14,67 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
+        $user = auth()->user();
+        
+        // Redirect superadmin dan admin_yayasan ke foundation dashboard
+        if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+            return redirect()->route('manage.foundation.dashboard');
+        }
+        
         // Redirect admin SPMB ke dashboard SPMB
-        if (auth()->user()->role === 'spmb_admin' || (auth()->user()->role !== 'superadmin' && auth()->user()->spmb_admin_access)) {
+        if ($user->role === 'spmb_admin' || ($user->role !== 'superadmin' && $user->spmb_admin_access)) {
             return redirect()->route('manage.spmb.index');
         }
-        // Data untuk chart kelas
-        $kelas = ClassModel::orderBy('class_name')->get();
+        
+        // Get current school ID untuk filtering
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+        
+        // Get current school data
+        $currentSchool = \App\Models\School::find($currentSchoolId);
+        
+        // Data untuk chart kelas - filter by school_id
+        $kelas = ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get();
         $labels = $kelas->pluck('class_name');
         $data = $kelas->map(function($k) {
             return $k->students()->where('student_status', 1)->count();
         });
 
-        // Statistik pembayaran dari tabel transfer
-        $totalPayments = DB::table('transfer')->count();
-        $successPayments = DB::table('transfer')->where('status', 1)->count();
-        $pendingPayments = DB::table('transfer')->where('status', 0)->count();
-        $failedPayments = DB::table('transfer')->where('status', 2)->count();
+        // Statistik pembayaran dari tabel transfer - filter by school_id
+        $totalPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->count();
+        $successPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 1)
+            ->count();
+        $pendingPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 0)
+            ->count();
+        $failedPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 2)
+            ->count();
 
         // ==========================================================
         // KARTU PEMBAYARAN: hanya transaksi pembayaran (cash log_trx + transfer sukses)
         // ==========================================================
         // Hari ini
-        // Kas murni: exclude entri yang terkait transfer (hindari duplikasi)
+        // Kas murni: exclude entri yang terkait transfer (hindari duplikasi) - filter by school_id
         $cashToday = (float) (
             DB::table('log_trx as lt')
                 ->leftJoin('bulan as b', 'lt.bulan_bulan_id', '=', 'b.bulan_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereDate('lt.log_trx_input_date', today())
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -51,6 +87,8 @@ class AdminController extends Controller
             +
             DB::table('log_trx as lt')
                 ->leftJoin('bebas_pay as bp', 'lt.bebas_pay_bebas_pay_id', '=', 'bp.bebas_pay_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereDate('lt.log_trx_input_date', today())
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -63,6 +101,8 @@ class AdminController extends Controller
         );
         $transferToday = (float) DB::table('transfer as t')
             ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
             ->where('t.status', 1)
             ->whereDate('t.updated_at', today())
             ->where(function($q){
@@ -71,12 +111,14 @@ class AdminController extends Controller
             ->sum(DB::raw('COALESCE(td.subtotal,0)'));
         $todayPayments = $cashToday + $transferToday;
 
-        // Bulan ini (Month-To-Date): dari awal bulan hingga saat ini
+        // Bulan ini (Month-To-Date): dari awal bulan hingga saat ini - filter by school_id
         $startOfMonth = now()->copy()->startOfMonth();
         $endOfNow = now();
         $cashMonth = (float) (
             DB::table('log_trx as lt')
                 ->leftJoin('bulan as b', 'lt.bulan_bulan_id', '=', 'b.bulan_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereBetween('lt.log_trx_input_date', [$startOfMonth, $endOfNow])
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -89,6 +131,8 @@ class AdminController extends Controller
             +
             DB::table('log_trx as lt')
                 ->leftJoin('bebas_pay as bp', 'lt.bebas_pay_bebas_pay_id', '=', 'bp.bebas_pay_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereBetween('lt.log_trx_input_date', [$startOfMonth, $endOfNow])
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -101,6 +145,8 @@ class AdminController extends Controller
         );
         $transferMonth = (float) DB::table('transfer as t')
             ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
             ->where('t.status', 1)
             ->whereBetween('t.updated_at', [$startOfMonth, $endOfNow])
             ->where(function($q){
@@ -118,11 +164,13 @@ class AdminController extends Controller
         );
         $monthPayments = (float) ($rekapMonth->sum('cash_amount') + $rekapMonth->sum('transfer_amount') + $rekapMonth->sum('gateway_amount'));
 
-        // Tahun ini (Year-To-Date): dari 1 Januari hingga saat ini
+        // Tahun ini (Year-To-Date): dari 1 Januari hingga saat ini - filter by school_id
         $startOfYear = now()->copy()->startOfYear();
         $cashYear = (float) (
             DB::table('log_trx as lt')
                 ->leftJoin('bulan as b', 'lt.bulan_bulan_id', '=', 'b.bulan_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereBetween('lt.log_trx_input_date', [$startOfYear, $endOfNow])
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -135,6 +183,8 @@ class AdminController extends Controller
             +
             DB::table('log_trx as lt')
                 ->leftJoin('bebas_pay as bp', 'lt.bebas_pay_bebas_pay_id', '=', 'bp.bebas_pay_id')
+                ->join('students as s', 'lt.student_student_id', '=', 's.student_id')
+                ->where('s.school_id', $currentSchoolId)
                 ->whereBetween('lt.log_trx_input_date', [$startOfYear, $endOfNow])
                 ->whereNotExists(function($q){
                     $q->select(DB::raw(1))
@@ -147,6 +197,8 @@ class AdminController extends Controller
         );
         $transferYear = (float) DB::table('transfer as t')
             ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
             ->where('t.status', 1)
             ->whereBetween('t.updated_at', [$startOfYear, $endOfNow])
             ->where(function($q){
@@ -234,27 +286,108 @@ class AdminController extends Controller
             ->whereYear('tabungan_input_date', now()->year)
             ->sum('saldo') ?? 0;
 
-        // Statistik tambahan
-        $totalStudents = DB::table('students')->where('student_status', 1)->count();
-        $totalClasses = DB::table('class_models')->count();
-        $totalPos = DB::table('pos_pembayaran')->count();
+        // Statistik tambahan - filter by school_id
+        $totalStudents = DB::table('students')
+            ->where('school_id', $currentSchoolId)
+            ->where('student_status', 1)
+            ->count();
+        $totalClasses = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->count();
+        $totalPos = DB::table('pos_pembayaran')->count(); // POS tidak perlu filter by school
         
-        // Filter periode (tahun ajaran Juli-Juni)
-        $periods = DB::table('periods')->orderBy('period_id', 'desc')->get();
+        // Filter periode (tahun ajaran Juli-Juni) - perlu didefinisikan dulu
+        $periods = DB::table('periods')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('period_id', 'desc')
+            ->get();
         $selectedPeriodId = $request->input('period_id');
         if (!$selectedPeriodId && $periods->count() > 0) {
             $active = $periods->firstWhere('period_status', 1);
             $selectedPeriodId = $active->period_id ?? $periods->first()->period_id;
         }
         $selectedPeriod = $periods->firstWhere('period_id', (int)$selectedPeriodId) ?? null;
-
+        
+        // Tentukan rentang tanggal untuk tahun ajaran aktif
         if ($selectedPeriod) {
-            $startDate = \Carbon\Carbon::create((int)$selectedPeriod->period_start, 7, 1, 0, 0, 0)->startOfDay();
-            $endDate = \Carbon\Carbon::create((int)$selectedPeriod->period_end, 6, 30, 23, 59, 59)->endOfDay();
+            $periodStartDate = \Carbon\Carbon::create((int)$selectedPeriod->period_start, 7, 1, 0, 0, 0)->startOfDay();
+            $periodEndDate = \Carbon\Carbon::create((int)$selectedPeriod->period_end, 6, 30, 23, 59, 59)->endOfDay();
         } else {
-            $startDate = now()->copy()->startOfYear();
-            $endDate = now()->copy()->endOfYear();
+            // Fallback: tahun ajaran saat ini (Juli - Juni)
+            $currentYear = now()->year;
+            if (now()->month >= 7) {
+                // Jika bulan >= Juli, tahun ajaran dimulai tahun ini
+                $periodStartDate = \Carbon\Carbon::create($currentYear, 7, 1, 0, 0, 0)->startOfDay();
+                $periodEndDate = \Carbon\Carbon::create($currentYear + 1, 6, 30, 23, 59, 59)->endOfDay();
+            } else {
+                // Jika bulan < Juli, tahun ajaran dimulai tahun lalu
+                $periodStartDate = \Carbon\Carbon::create($currentYear - 1, 7, 1, 0, 0, 0)->startOfDay();
+                $periodEndDate = \Carbon\Carbon::create($currentYear, 6, 30, 23, 59, 59)->endOfDay();
+            }
         }
+        
+        // Statistik untuk kartu baru - filter by school_id dan tahun ajaran aktif
+        $activePeriodId = $selectedPeriodId ?? null;
+        
+        // Siswa Aktif (T.A. Ini) - hanya siswa yang aktif
+        $siswaAktifQuery = DB::table('students')
+            ->where('school_id', $currentSchoolId)
+            ->where('student_status', 1);
+        
+        // Total siswa aktif di T.A. ini (semua siswa aktif, tidak peduli kapan masuknya)
+        $totalSiswaAktif = $siswaAktifQuery->count();
+        
+        // Breakdown Reguler/Pindahan/Masuk Kembali berdasarkan tanggal masuk
+        // Reguler: siswa yang masuk di awal tahun ajaran (Juli-September)
+        $regulerStart = $periodStartDate->copy();
+        $regulerEnd = $periodStartDate->copy()->addMonths(3)->endOfDay(); // Juli-September
+        
+        $siswaAktifReguler = (clone $siswaAktifQuery)
+            ->whereBetween('student_input_date', [$regulerStart, $regulerEnd])
+            ->count();
+        
+        // Pindahan: siswa yang masuk di tengah tahun ajaran (Oktober-Maret)
+        $pindahanStart = $periodStartDate->copy()->addMonths(3)->addDay()->startOfDay(); // Oktober
+        $pindahanEnd = $periodStartDate->copy()->addMonths(9)->endOfDay(); // Maret
+        
+        $siswaAktifPindahan = (clone $siswaAktifQuery)
+            ->whereBetween('student_input_date', [$pindahanStart, $pindahanEnd])
+            ->count();
+        
+        // Masuk Kembali: siswa yang statusnya pernah 0 kemudian kembali jadi 1 di tahun ajaran ini
+        // Untuk sementara, hitung siswa yang student_input_date di akhir tahun ajaran (April-Juni)
+        $masukKembaliStart = $periodStartDate->copy()->addMonths(9)->addDay()->startOfDay(); // April
+        $masukKembaliEnd = $periodEndDate->copy(); // Juni
+        
+        $siswaAktifMasukKembali = (clone $siswaAktifQuery)
+            ->whereBetween('student_input_date', [$masukKembaliStart, $masukKembaliEnd])
+            ->count();
+        
+        // Jika total breakdown tidak sama dengan total aktif, sisanya adalah Reguler (untuk siswa yang masuk sebelum T.A. ini atau tidak masuk kategori)
+        $currentReguler = $siswaAktifReguler;
+        $siswaAktifReguler = max(0, $totalSiswaAktif - $siswaAktifPindahan - $siswaAktifMasukKembali);
+        
+        // Jumlah Kelas (T.A. Aktif) - semua kelas di sekolah ini
+        $jumlahKelasTA = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->count();
+        
+        // Total Alumni (s.d. T.A. Aktif) - siswa yang status non-aktif
+        $totalAlumni = DB::table('students')
+            ->where('school_id', $currentSchoolId)
+            ->where('student_status', 0)
+            ->count();
+        
+        // Total Siswa Keluar (T.A. Aktif) - siswa yang menjadi non-aktif di tahun ajaran ini
+        $totalSiswaKeluar = DB::table('students')
+            ->where('school_id', $currentSchoolId)
+            ->where('student_status', 0)
+            ->whereBetween('student_last_update', [$periodStartDate, $periodEndDate])
+            ->count();
+
+        // Gunakan rentang tanggal periode yang sudah dihitung di atas
+        $startDate = $periodStartDate;
+        $endDate = $periodEndDate;
         
         // Agregat bulanan untuk chart (periode Juli-Juni)
         $monthLabels = [
@@ -401,9 +534,11 @@ class AdminController extends Controller
         // Transaksi hari ini (count)
         $todayTransactions = $todayPaymentsCount;
         
-        // Hitung pertumbuhan transaksi hari ini vs kemarin
+        // Hitung pertumbuhan transaksi hari ini vs kemarin - filter by school_id
         $yesterdayTransactions = DB::table('transfer as t')
             ->join('transfer_detail as td', 't.transfer_id', '=', 'td.transfer_id')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
             ->where('t.status', 1)
             ->whereDate('t.updated_at', now()->subDay())
             ->where(function($q){
@@ -455,38 +590,75 @@ class AdminController extends Controller
         $totalArrears = $unpaidBills ? (float) $unpaidBills->total_arrears : 0;
         $unpaidStudentsCount = $unpaidBills ? (int) $unpaidBills->unpaid_count : 0;
         
-        // Target prosentase pembayaran bulan ini
+        // Target prosentase pembayaran bulan ini (termasuk bulanan dan bebas)
         $currentMonth = now()->month;
         $currentYear = now()->year;
         
-        // Hitung total tagihan bulan ini
-        $totalBillsThisMonth = DB::table('bebas')
-            ->whereYear('bebas_input_date', $currentYear)
-            ->whereMonth('bebas_input_date', $currentMonth)
+        // Hitung total tagihan bulan ini (bulanan + bebas)
+        // Bulanan: tagihan yang dibuat bulan ini (berdasarkan bulan_input_date)
+        $totalBulananThisMonth = DB::table('bulan as b')
+            ->join('students as s', 'b.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('s.student_status', 1)
+            ->whereYear('b.bulan_input_date', $currentYear)
+            ->whereMonth('b.bulan_input_date', $currentMonth)
             ->count();
-            
+        
+        // Bebas: tagihan yang dibuat bulan ini
+        $totalBebasThisMonth = DB::table('bebas as be')
+            ->join('students as s', 'be.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('s.student_status', 1)
+            ->whereYear('be.bebas_input_date', $currentYear)
+            ->whereMonth('be.bebas_input_date', $currentMonth)
+            ->count();
+        
+        $totalBillsThisMonth = $totalBulananThisMonth + $totalBebasThisMonth;
+        
         // Hitung tagihan yang sudah lunas bulan ini
-        $paidBillsThisMonth = DB::table('bebas')
-            ->whereYear('bebas_input_date', $currentYear)
-            ->whereMonth('bebas_input_date', $currentMonth)
-            ->whereRaw('bebas_total_pay >= bebas_bill')
+        // Bulanan: yang sudah ada tanggal bayar dan dibuat bulan ini
+        $paidBulananThisMonth = DB::table('bulan as b')
+            ->join('students as s', 'b.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('s.student_status', 1)
+            ->whereNotNull('b.bulan_date_pay')
+            ->whereYear('b.bulan_input_date', $currentYear)
+            ->whereMonth('b.bulan_input_date', $currentMonth)
             ->count();
+        
+        // Bebas: yang sudah lunas (total_pay >= bill) dan dibuat bulan ini
+        $paidBebasThisMonth = DB::table('bebas as be')
+            ->join('students as s', 'be.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('s.student_status', 1)
+            ->whereYear('be.bebas_input_date', $currentYear)
+            ->whereMonth('be.bebas_input_date', $currentMonth)
+            ->whereRaw('be.bebas_total_pay >= be.bebas_bill')
+            ->count();
+        
+        $paidBillsThisMonth = $paidBulananThisMonth + $paidBebasThisMonth;
             
         $paymentCompletionPercent = $totalBillsThisMonth > 0 
             ? round(($paidBillsThisMonth / $totalBillsThisMonth) * 100, 1)
             : 0;
         
-        // Data Countdown Berlangganan (ambil subscription user yang login)
+        // Data Countdown Berlangganan (gunakan inheritance dari superadmin)
         $currentDate = now();
-        $userId = auth()->id();
+        $user = auth()->user();
         
-        // Ambil subscription aktif terbaru user yang login
-        $activeSubscription = DB::table('subscriptions')
-            ->where('user_id', $userId)
-            ->where('status', 'active')
-            ->whereNotNull('expires_at')
-            ->orderBy('expires_at', 'desc')
-            ->first();
+        // Gunakan getCheckUserId untuk inheritance (sama seperti sistem addon)
+        $checkUserId = ($user->role === 'superadmin') ? $user->id : getSuperadminId();
+        
+        // Ambil subscription aktif terbaru dari user yang di-check (superadmin untuk inheritance)
+        $activeSubscription = null;
+        if ($checkUserId) {
+            $activeSubscription = DB::table('subscriptions')
+                ->where('user_id', $checkUserId)
+                ->where('status', 'active')
+                ->whereNotNull('expires_at')
+                ->orderBy('expires_at', 'desc')
+                ->first();
+        }
         
         if ($activeSubscription) {
             $expiresAt = \Carbon\Carbon::parse($activeSubscription->expires_at);
@@ -520,7 +692,8 @@ class AdminController extends Controller
         
         // Log untuk debug
         \Log::info('Subscription Stats', [
-            'user_id' => $userId,
+            'user_id' => $user->id,
+            'check_user_id' => $checkUserId,
             'days_left' => $subscriptionDaysLeft,
             'expires_at' => $subscriptionExpiresAt,
             'total_active' => $totalActiveSubscriptions,
@@ -631,7 +804,10 @@ class AdminController extends Controller
             'paymentCompletionPercent','arrearsCount','expiredPercentage',
             'subscriptionDaysLeft','subscriptionExpiresAt',
             'classLabels','classData','transactionsMonthly','paymentProgressByClass',
-            'rankingLabels','rankingData','activityLogs','topPaymentUsers'
+            'rankingLabels','rankingData','activityLogs','topPaymentUsers',
+            'currentSchool','activePeriodId',
+            'siswaAktifReguler','siswaAktifPindahan','siswaAktifMasukKembali',
+            'jumlahKelasTA','totalAlumni','totalSiswaKeluar','selectedPeriod'
         ));
     }
 } 

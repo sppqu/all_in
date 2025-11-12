@@ -214,6 +214,7 @@ if (!function_exists('hasSPMBAddon')) {
     /**
      * Check if user has SPMB addon
      * Non-superadmin users inherit addon from superadmin
+     * Returns true if addon is purchased (not only active)
      */
     function hasSPMBAddon($userId = null) {
         // Get the correct user ID to check (superadmin for inheritance)
@@ -223,12 +224,13 @@ if (!function_exists('hasSPMBAddon')) {
             return false;
         }
         
-        // Check if user has SPMB addon
+        // Check if user has SPMB addon (purchased, not only active)
+        // Menu should appear if addon is purchased, even if not yet active
         return \DB::table('user_addons')
             ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
             ->where('user_addons.user_id', $checkUserId)
-            ->where('user_addons.status', 'active')
             ->where('addons.slug', 'spmb')
+            ->whereIn('user_addons.status', ['active', 'pending', 'inactive'])
             ->where(function($query) {
                 $query->whereNull('user_addons.expires_at')
                       ->orWhere('user_addons.expires_at', '>', now());
@@ -241,6 +243,7 @@ if (!function_exists('hasLibraryAddon')) {
     /**
      * Check if user has Library addon
      * Non-superadmin users inherit addon from superadmin
+     * Returns true if addon is purchased (not only active)
      */
     function hasLibraryAddon($userId = null) {
         // Get the correct user ID to check (superadmin for inheritance)
@@ -250,12 +253,14 @@ if (!function_exists('hasLibraryAddon')) {
             return false;
         }
         
-        // Check if user has Library addon
+        // Check if user has Library addon (purchased, not only active)
+        // Menu should appear if addon is purchased, even if not yet active
+        // Support both 'library' and 'e-perpustakaan' slugs
         return \DB::table('user_addons')
             ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
             ->where('user_addons.user_id', $checkUserId)
-            ->where('user_addons.status', 'active')
-            ->where('addons.slug', 'library')
+            ->whereIn('addons.slug', ['library', 'e-perpustakaan'])
+            ->whereIn('user_addons.status', ['active', 'pending', 'inactive'])
             ->where(function($query) {
                 $query->whereNull('user_addons.expires_at')
                       ->orWhere('user_addons.expires_at', '>', now());
@@ -268,6 +273,7 @@ if (!function_exists('hasBKAddon')) {
     /**
      * Check if user has BK (Bimbingan Konseling) addon
      * Non-superadmin users inherit addon from superadmin
+     * Returns true if addon is purchased (not only active)
      */
     function hasBKAddon($userId = null) {
         // Get the correct user ID to check (superadmin for inheritance)
@@ -277,7 +283,7 @@ if (!function_exists('hasBKAddon')) {
             return false;
         }
         
-        // Check if user has BK addon
+        // Check if user has BK addon (must be active for menu to appear)
         return \DB::table('user_addons')
             ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
             ->where('user_addons.user_id', $checkUserId)
@@ -295,6 +301,7 @@ if (!function_exists('hasEJurnalAddon')) {
     /**
      * Check if user has E-Jurnal addon
      * Non-superadmin users inherit addon from superadmin
+     * Returns true if addon is purchased (not only active)
      */
     function hasEJurnalAddon($userId = null) {
         // Get the correct user ID to check (superadmin for inheritance)
@@ -304,16 +311,136 @@ if (!function_exists('hasEJurnalAddon')) {
             return false;
         }
         
-        // Check if user has E-Jurnal addon
+        // Check if user has E-Jurnal addon (must be active for menu to appear)
+        // Support both 'e-jurnal' and 'ejurnal-7kaih' slugs for backward compatibility
         return \DB::table('user_addons')
             ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
             ->where('user_addons.user_id', $checkUserId)
             ->where('user_addons.status', 'active')
-            ->where('addons.slug', 'e-jurnal')
+            ->whereIn('addons.slug', ['e-jurnal', 'ejurnal-7kaih'])
             ->where(function($query) {
                 $query->whereNull('user_addons.expires_at')
                       ->orWhere('user_addons.expires_at', '>', now());
             })
             ->exists();
+    }
+}
+
+if (!function_exists('currentSchool')) {
+    /**
+     * Get current school from session
+     */
+    function currentSchool() {
+        static $school = null;
+        
+        if ($school === null && session('current_school_id')) {
+            $school = \App\Models\School::find(session('current_school_id'));
+        }
+        
+        return $school;
+    }
+}
+
+if (!function_exists('currentSchoolId')) {
+    /**
+     * Get current school ID from session
+     */
+    function currentSchoolId() {
+        return session('current_school_id');
+    }
+}
+
+if (!function_exists('currentFoundation')) {
+    /**
+     * Get current foundation from session
+     */
+    function currentFoundation() {
+        static $foundation = null;
+        
+        if ($foundation === null && session('foundation_id')) {
+            $foundation = \App\Models\Foundation::find(session('foundation_id'));
+        }
+        
+        return $foundation;
+    }
+}
+
+if (!function_exists('currentFoundationId')) {
+    /**
+     * Get current foundation ID from session
+     */
+    function currentFoundationId() {
+        return session('foundation_id');
+    }
+}
+
+if (!function_exists('canManageAddons')) {
+    /**
+     * Check if user can manage addons (superadmin only)
+     */
+    function canManageAddons() {
+        $user = auth()->user();
+        return $user && $user->role === 'superadmin';
+    }
+}
+
+if (!function_exists('grantAddonToUser')) {
+    /**
+     * Grant addon to user
+     * For non-superadmin users, grant to superadmin instead (inheritance)
+     */
+    function grantAddonToUser($userId, $addonSlug) {
+        try {
+            $addon = \App\Models\Addon::where('slug', $addonSlug)->first();
+            if (!$addon) {
+                return false;
+            }
+
+            $user = \App\Models\User::find($userId);
+            if (!$user) {
+                return false;
+            }
+
+            // For inheritance: if user is not superadmin, grant to superadmin instead
+            $targetUserId = ($user->role === 'superadmin') ? $userId : getSuperadminId();
+            
+            if (!$targetUserId) {
+                return false;
+            }
+
+            $userAddon = \App\Models\UserAddon::where('user_id', $targetUserId)
+                ->where('addon_id', $addon->id)
+                ->first();
+
+            if ($userAddon) {
+                // Update existing
+                $userAddon->update([
+                    'status' => 'active',
+                    'purchased_at' => now(),
+                    'amount_paid' => $addon->price,
+                    'payment_method' => 'admin_grant',
+                    'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
+                    'updated_at' => now()
+                ]);
+            } else {
+                // Create new
+                \App\Models\UserAddon::create([
+                    'user_id' => $targetUserId,
+                    'addon_id' => $addon->id,
+                    'status' => 'active',
+                    'purchased_at' => now(),
+                    'amount_paid' => $addon->price,
+                    'payment_method' => 'admin_grant',
+                    'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Error granting addon: ' . $e->getMessage());
+            return false;
+        }
     }
 }

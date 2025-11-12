@@ -220,7 +220,7 @@ class LibraryController extends Controller
             ->orderBy('student_full_name')
             ->get();
         
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         $pdf = \PDF::loadView('library.cards.print-class', compact('class', 'students', 'schoolProfile'));
         $pdf->setPaper('A4', 'portrait');

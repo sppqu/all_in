@@ -22,9 +22,17 @@ class BKMiddleware
 
         $user = auth()->user();
 
-        // Check if user has BK role OR is superadmin (superadmin can access all)
-        if (!$user->is_bk && $user->role !== 'superadmin') {
-            return redirect()->route('manage.admin.dashboard')
+        // Check if user can access BK menu:
+        // 1. User dengan role BK (is_bk = true)
+        // 2. Superadmin (selalu bisa akses semua, tidak perlu addon)
+        // 3. Admin utama (role = 'admin') dengan addon BK aktif
+        $hasBKAddon = hasBKAddon();
+        $canAccess = $user->is_bk || 
+                     $user->role === 'superadmin' || 
+                     ($user->role === 'admin' && $hasBKAddon);
+
+        if (!$canAccess) {
+            return redirect()->route('admin.dashboard')
                 ->with('error', 'Anda tidak memiliki akses ke menu Bimbingan Konseling.');
         }
 

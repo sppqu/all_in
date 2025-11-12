@@ -19,7 +19,15 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
         $query = Student::with(['class', 'major']);
+        
+        // Filter siswa berdasarkan sekolah yang sedang aktif
+        if ($currentSchoolId) {
+            $query->where('school_id', $currentSchoolId);
+        }
 
         // Filter by NIS/Nama
         if ($request->filled('search')) {
@@ -41,10 +49,12 @@ class StudentController extends Controller
             $query->where('student_status', $request->status);
         }
 
-        $students = $query->orderBy('student_full_name')->paginate(30);
+        $students = $query->orderBy('student_full_name')->paginate(40);
         
-        // Get classes for filter dropdown
-        $classes = ClassModel::orderBy('class_name')->get();
+        // Get classes for filter dropdown - filter berdasarkan sekolah yang sedang aktif
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
 
         return view('students.index', compact('students', 'classes'));
     }
@@ -54,7 +64,11 @@ class StudentController extends Controller
      */
     public function create()
     {
-        $classes = ClassModel::orderBy('class_name')->get();
+        // Filter kelas berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
         $majors = Major::orderBy('majors_name')->get();
         return view('students.create', compact('classes', 'majors'));
     }
@@ -94,6 +108,64 @@ class StudentController extends Controller
         $data['student_name_of_father'] = null;
         $data['majors_majors_id'] = null;
         
+        // PASTIKAN school_id selalu diambil dari kelas yang dipilih
+        // HAPUS school_id dari request data jika ada (untuk mencegah override)
+        unset($data['school_id']);
+        
+        // Ambil kelas yang dipilih
+        $class = ClassModel::find($data['class_class_id']);
+        if (!$class) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Kelas tidak ditemukan.');
+        }
+        
+        // Prioritas 1: PAKAI school_id dari kelas yang dipilih (INI YANG PENTING!)
+        if ($class->school_id) {
+            $data['school_id'] = $class->school_id;
+        } else {
+            // Prioritas 2: Jika kelas tidak punya school_id, pakai currentSchoolId
+            $currentSchoolId = currentSchoolId();
+            if ($currentSchoolId) {
+                $data['school_id'] = $currentSchoolId;
+                
+                // Update kelas juga agar punya school_id
+                $class->update(['school_id' => $currentSchoolId]);
+                
+                \Log::warning("Kelas tidak punya school_id, pakai currentSchoolId dan update kelas", [
+                    'class_id' => $class->class_id,
+                    'class_name' => $class->class_name,
+                    'assigned_school_id' => $currentSchoolId,
+                ]);
+            } else {
+                // Log error jika tidak ada school_id
+                \Log::error("Tidak dapat menentukan school_id saat create student", [
+                    'class_id' => $data['class_class_id'],
+                    'class_name' => $class->class_name,
+                    'class_school_id' => $class->school_id,
+                    'current_school_id' => $currentSchoolId,
+                    'user_id' => auth()->id(),
+                    'user_role' => auth()->user()->role ?? null,
+                ]);
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Tidak dapat menentukan sekolah. Silakan hubungi administrator.');
+            }
+        }
+        
+        // Debug logging - IMPORTANT untuk troubleshooting
+        \Log::info("Create student - school_id assignment", [
+            'student_nis' => $data['student_nis'],
+            'student_name' => $data['student_full_name'],
+            'class_id' => $data['class_class_id'],
+            'class_name' => $class->class_name,
+            'class_school_id' => $class->school_id,
+            'assigned_school_id' => $data['school_id'],
+            'current_school_id' => currentSchoolId(),
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()->role ?? null,
+        ]);
+        
         // Hash password
         $data['student_password'] = Hash::make($data['student_password']);
 
@@ -117,7 +189,11 @@ class StudentController extends Controller
      */
     public function edit(Student $student)
     {
-        $classes = ClassModel::orderBy('class_name')->get();
+        // Filter kelas berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
         $majors = Major::orderBy('majors_name')->get();
         return view('students.edit', compact('student', 'classes', 'majors'));
     }
@@ -147,6 +223,94 @@ class StudentController extends Controller
 
         $data = $request->all();
         $data['student_status'] = $request->has('student_status') ? 1 : 0;
+        
+        // PASTIKAN school_id selalu diambil dari kelas yang dipilih
+        // HAPUS school_id dari request data jika ada (untuk mencegah override)
+        unset($data['school_id']);
+        
+        // Jika kelas diubah, update school_id dari kelas baru
+        if (isset($data['class_class_id'])) {
+            $class = ClassModel::find($data['class_class_id']);
+            if (!$class) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Kelas tidak ditemukan.');
+            }
+            
+            if ($class->school_id) {
+                // Prioritas 1: Pakai school_id dari kelas yang dipilih
+                $data['school_id'] = $class->school_id;
+                
+                // Jika student pindah ke kelas dari sekolah berbeda, update school_id
+                if ($student->school_id && $student->school_id != $class->school_id) {
+                    \Log::info("Student pindah ke sekolah lain", [
+                        'student_id' => $student->student_id,
+                        'student_nis' => $student->student_nis,
+                        'old_school_id' => $student->school_id,
+                        'new_school_id' => $class->school_id,
+                        'class_id' => $class->class_id,
+                        'class_name' => $class->class_name,
+                    ]);
+                }
+            } else {
+                // Prioritas 2: Jika kelas tidak punya school_id, pakai currentSchoolId
+                $currentSchoolId = currentSchoolId();
+                if ($currentSchoolId) {
+                    $data['school_id'] = $currentSchoolId;
+                    
+                    // Update kelas juga agar punya school_id
+                    $class->update(['school_id' => $currentSchoolId]);
+                    
+                    \Log::warning("Kelas tidak punya school_id saat update student, pakai currentSchoolId dan update kelas", [
+                        'class_id' => $class->class_id,
+                        'class_name' => $class->class_name,
+                        'assigned_school_id' => $currentSchoolId,
+                    ]);
+                } else {
+                    // Jika student sudah punya school_id, pertahankan
+                    if ($student->school_id) {
+                        $data['school_id'] = $student->school_id;
+                    }
+                }
+            }
+        } else {
+            // Jika kelas tidak diubah, pastikan school_id tetap sesuai dengan kelas lama
+            if ($student->class_class_id) {
+                $oldClass = ClassModel::find($student->class_class_id);
+                if ($oldClass && $oldClass->school_id) {
+                    $data['school_id'] = $oldClass->school_id;
+                } else {
+                    // Jika kelas lama tidak punya school_id, pakai school_id student jika ada
+                    if ($student->school_id) {
+                        $data['school_id'] = $student->school_id;
+                    }
+                }
+            } else {
+                // Student tidak punya kelas, pertahankan school_id jika ada
+                if ($student->school_id) {
+                    $data['school_id'] = $student->school_id;
+                } else {
+                    // Last resort: pakai currentSchoolId
+                    $currentSchoolId = currentSchoolId();
+                    if ($currentSchoolId) {
+                        $data['school_id'] = $currentSchoolId;
+                    }
+                }
+            }
+        }
+        
+        // Debug logging - IMPORTANT untuk troubleshooting
+        \Log::info("Update student - school_id assignment", [
+            'student_id' => $student->student_id,
+            'student_nis' => $data['student_nis'] ?? $student->student_nis,
+            'class_id' => $data['class_class_id'] ?? $student->class_class_id,
+            'old_school_id' => $student->school_id,
+            'new_school_id' => $data['school_id'] ?? null,
+            'current_school_id' => currentSchoolId(),
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()->role ?? null,
+        ]);
+        
         // Set nilai default untuk field yang disembunyikan (jika belum ada nilai)
         if (!isset($data['student_nisn'])) $data['student_nisn'] = null;
         if (!isset($data['student_phone'])) $data['student_phone'] = null;
@@ -299,7 +463,11 @@ class StudentController extends Controller
      */
     public function moveClass()
     {
-        $classes = ClassModel::orderBy('class_name')->get();
+        // Filter kelas berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
         return view('students.move-class', compact('classes'));
     }
 
@@ -364,7 +532,11 @@ class StudentController extends Controller
 
     public function graduate()
     {
-        $classes = ClassModel::orderBy('class_name')->get();
+        // Filter kelas berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
         return view('students.graduate', compact('classes'));
     }
 

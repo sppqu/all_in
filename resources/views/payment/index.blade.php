@@ -58,7 +58,14 @@
                                             <i class="fa fa-shopping-cart me-1"></i> Setting Pembayaran
                                         </a>
                                     </td>
-                                    <td>{{ $payment->payment_type == 'BULAN' ? 'Bulanan' : 'Bebas' }}</td>
+                                    <td>
+                                        {{ $payment->payment_type == 'BULAN' ? 'Bulanan' : 'Bebas' }}
+                                        @if($payment->is_for_spmb)
+                                            <span class="badge bg-success ms-1" title="Aktif untuk SPMB">
+                                                <i class="fas fa-check-circle me-1"></i>SPMB
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td>{{ $payment->period->period_name ?? '-' }}</td>
                                     <td>
                                         <a href="{{ route('payment.edit', $payment->payment_id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>

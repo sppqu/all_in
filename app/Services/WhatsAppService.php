@@ -12,10 +12,21 @@ class WhatsAppService
     protected $url;
     protected $sender;
 
-    public function __construct()
+    public function __construct($schoolId = null)
     {
-        // Ambil konfigurasi dari setup_gateways
-        $gateway = DB::table('setup_gateways')->first();
+        // Get school_id from parameter or from currentSchoolId() helper
+        $currentSchoolId = $schoolId ?? currentSchoolId();
+        
+        // Ambil konfigurasi dari setup_gateways berdasarkan school_id
+        if ($currentSchoolId) {
+            $gateway = DB::table('setup_gateways')
+                ->where('school_id', $currentSchoolId)
+                ->first();
+        } else {
+            // Fallback: ambil dari sekolah pertama jika school_id tidak tersedia (untuk backward compatibility)
+            $gateway = DB::table('setup_gateways')->first();
+            Log::warning('WhatsApp gateway: school_id tidak tersedia, menggunakan gateway pertama');
+        }
         
         if ($gateway) {
             $this->apiKey = $gateway->apikey_wagateway ?? '';
@@ -23,6 +34,7 @@ class WhatsAppService
             $this->sender = $gateway->sender_wagateway ?? '';
             
             Log::info('WhatsApp gateway configuration loaded:', [
+                'school_id' => $currentSchoolId ?? 'NULL',
                 'has_api_key' => !empty($this->apiKey),
                 'has_url' => !empty($this->url),
                 'has_sender' => !empty($this->sender),
@@ -33,7 +45,9 @@ class WhatsAppService
             $this->apiKey = '';
             $this->url = '';
             $this->sender = '';
-            Log::warning('WhatsApp gateway configuration not found in setup_gateways table');
+            Log::warning('WhatsApp gateway configuration not found in setup_gateways table', [
+                'school_id' => $currentSchoolId ?? 'NULL'
+            ]);
         }
     }
 

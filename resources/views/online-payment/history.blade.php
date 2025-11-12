@@ -155,12 +155,21 @@
                                         <td>{{ \Carbon\Carbon::parse($transfer->created_at)->format('d/m/Y H:i') }}</td>
                                         <td class="text-center">
                                             <div class="d-flex gap-1 justify-content-center">
-                                                <!-- Lihat Detail -->
-                                                <button type="button" class="btn btn-sm btn-outline-primary view-detail-btn" 
-                                                        data-payment-id="{{ $transfer->transfer_id }}"
-                                                        title="Lihat Detail">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
+                                                @if($transfer->status == 1)
+                                                    <!-- Cetak Receipt - untuk pembayaran yang sudah disetujui -->
+                                                    <button type="button" class="btn btn-sm btn-outline-success print-receipt-btn" 
+                                                            data-payment-id="{{ $transfer->transfer_id }}"
+                                                            title="Cetak Receipt">
+                                                        <i class="fas fa-print"></i>
+                                                    </button>
+                                                @else
+                                                    <!-- Lihat Detail - untuk pembayaran yang belum disetujui -->
+                                                    <button type="button" class="btn btn-sm btn-outline-primary view-detail-btn" 
+                                                            data-payment-id="{{ $transfer->transfer_id }}"
+                                                            title="Lihat Detail">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -381,6 +390,24 @@ window.downloadReceipt = function(paymentId) {
     window.open(receiptUrl, '_blank');
 };
 
+// Function to print receipt directly
+window.printReceipt = function(paymentId) {
+    console.log('printReceipt called with:', paymentId);
+    
+    // Open receipt in new tab and trigger print
+    const receiptUrl = `{{ url('online-payment/receipt') }}/${paymentId}`;
+    const printWindow = window.open(receiptUrl, '_blank');
+    
+    // Wait for the page to load, then trigger print
+    if (printWindow) {
+        printWindow.onload = function() {
+            setTimeout(function() {
+                printWindow.print();
+            }, 500);
+        };
+    }
+};
+
 // Function to verify payment
 window.verifyPayment = function(paymentId, status) {
     console.log('verifyPayment called with:', paymentId, status);
@@ -418,19 +445,25 @@ window.verifyPayment = function(paymentId, status) {
     })
     .then(data => {
         if (data.success) {
-            // Show success message
-            alert(`Pembayaran berhasil ${status === 'verified' ? 'diverifikasi' : 'ditolak'}`);
-            
             // Close the detail modal
             const detailModal = bootstrap.Modal.getInstance(document.getElementById('detailModal'));
             if (detailModal) {
                 detailModal.hide();
             }
             
-            // Refresh the page to show updated status
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            // Jika verified dan ada redirect URL, redirect ke halaman cetak kuitansi
+            if (status === 'verified' && data.redirect) {
+                // Redirect ke halaman cetak kuitansi
+                window.location.href = data.redirect;
+            } else {
+                // Show success message
+                alert(`Pembayaran berhasil ${status === 'verified' ? 'diverifikasi' : 'ditolak'}`);
+                
+                // Refresh the page to show updated status
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
         } else {
             alert('Gagal memproses verifikasi: ' + (data.message || 'Unknown error'));
         }
@@ -472,6 +505,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup view detail buttons
     setupViewDetailButtons();
+    
+    // Setup print receipt buttons
+    setupPrintReceiptButtons();
 });
 
 // Function to setup view detail buttons
@@ -494,6 +530,33 @@ function setupViewDetailButtons() {
             } else {
                 console.error('viewPaymentDetail function not available');
                 alert('Fungsi detail pembayaran tidak tersedia. Silakan refresh halaman.');
+            }
+        });
+    });
+}
+
+// Function to setup print receipt buttons
+function setupPrintReceiptButtons() {
+    console.log('Setting up print receipt buttons');
+    
+    // Add click event to all print receipt buttons
+    const printButtons = document.querySelectorAll('.print-receipt-btn');
+    printButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const paymentId = this.getAttribute('data-payment-id');
+            console.log('Print receipt button clicked for payment:', paymentId);
+            
+            // Call printReceipt function
+            if (typeof window.printReceipt === 'function') {
+                window.printReceipt(paymentId);
+            } else {
+                console.error('printReceipt function not available');
+                // Fallback: open receipt in new tab
+                const receiptUrl = `{{ url('online-payment/receipt') }}/${paymentId}`;
+                window.open(receiptUrl, '_blank');
             }
         });
     });

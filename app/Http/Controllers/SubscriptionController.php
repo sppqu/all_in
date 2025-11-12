@@ -467,7 +467,7 @@ class SubscriptionController extends BaseController
         }
 
         // Get school profile
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
 
         $data = [
             'invoice' => $invoice,

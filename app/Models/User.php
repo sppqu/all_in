@@ -44,4 +44,14 @@ class User extends Authenticatable
             'spmb_admin_access' => 'boolean',
         ];
     }
+
+    /**
+     * Get schools that user has access to
+     */
+    public function schools()
+    {
+        return $this->belongsToMany(\App\Models\School::class, 'user_schools', 'user_id', 'school_id')
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
 }

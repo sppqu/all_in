@@ -1,9 +1,7 @@
-@extends('layouts.spmb-admin')
-
-@section('title', 'Transfer SPMB ke Students')
+@extends('layouts.coreui')
 
 @section('content')
-<div class="container-fluid mt-4">
+<div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Transfer SPMB ke Students</h4>
         <a href="{{ route('manage.spmb.index') }}" class="btn btn-outline-secondary">
@@ -125,6 +123,19 @@
                                 @enderror
                             </div>
 
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="create_spmb_bill" name="create_spmb_bill" value="1" checked>
+                                    <label class="form-check-label" for="create_spmb_bill">
+                                        <strong>Buat Tagihan Biaya SPMB</strong>
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted d-block mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Jika dicentang, tagihan biaya SPMB akan otomatis dibuat di sistem pembayaran (jenis BEBAS) untuk siswa yang belum membayar biaya SPMB.
+                                </small>
+                            </div>
+
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
                                 <strong>Informasi:</strong>
@@ -132,6 +143,7 @@
                                     <li>NIS akan otomatis digenerate</li>
                                     <li>Data dari form SPMB akan dipindahkan</li>
                                     <li>Status siswa akan aktif</li>
+                                    <li>Tagihan SPMB akan masuk ke jenis <strong>BEBAS</strong> (jika opsi diaktifkan)</li>
                                 </ul>
                             </div>
 
@@ -158,7 +170,9 @@
         </div>
     @endif
 </div>
+@endsection
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('selectAll');
@@ -228,4 +242,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endsection
+@endpush

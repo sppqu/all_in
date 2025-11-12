@@ -68,8 +68,11 @@ Route::get('/deactivate/{userId}/{slug}', [App\Http\Controllers\AddonController:
 Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription')->group(function () {
     // Manage Login - Langsung ke OTP
     Route::get('/', function () {
-        return redirect()->route('otp.request');
+        return redirect()->route('login');
     })->name('login')->withoutMiddleware('check.subscription');
+    
+    // Route untuk POST login email (jika perlu)
+    Route::post('/login', [App\Http\Controllers\OtpController::class, 'emailLogin'])->name('login.post')->withoutMiddleware(['auth', 'check.subscription']);
     
     Route::post('/logout', function () {
         Auth::logout();
@@ -81,6 +84,32 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     
     // Manage Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard')->middleware('session.timeout');
+    
+    // Foundation (Yayasan) Routes
+    Route::prefix('foundation')->name('foundation.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\FoundationController::class, 'dashboard'])->name('dashboard');
+        Route::post('/set/{foundationId}', [\App\Http\Controllers\FoundationController::class, 'setFoundation'])->name('set');
+        
+        // Schools Management
+        Route::resource('schools', \App\Http\Controllers\SchoolController::class)->names([
+            'index' => 'schools.index',
+            'create' => 'schools.create',
+            'store' => 'schools.store',
+            'show' => 'schools.show',
+            'edit' => 'schools.edit',
+            'update' => 'schools.update',
+            'destroy' => 'schools.destroy',
+        ]);
+        Route::post('/schools/{schoolId}/switch', [\App\Http\Controllers\SchoolController::class, 'switchSchool'])->name('schools.switch');
+        
+        // Monitoring Keuangan Routes
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('/pemasukan', [\App\Http\Controllers\FoundationController::class, 'laporanPemasukan'])->name('pemasukan');
+            Route::get('/tunggakan', [\App\Http\Controllers\FoundationController::class, 'laporanTunggakan'])->name('tunggakan');
+            Route::get('/jenis-biaya', [\App\Http\Controllers\FoundationController::class, 'laporanJenisBiaya'])->name('jenis-biaya');
+            Route::get('/umum', [\App\Http\Controllers\FoundationController::class, 'laporanUmum'])->name('umum');
+        });
+    });
     
     // Manage Settings
     Route::get('/general-setting', [GeneralSettingController::class, 'index'])->name('general.setting')->middleware('auth', 'session.timeout');
@@ -104,8 +133,10 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::post('/online-payments/{id}/approve', [OnlinePaymentController::class, 'approve'])->name('online-payments.approve')->middleware('auth');
     Route::post('/online-payments/{id}/reject', [OnlinePaymentController::class, 'reject'])->name('online-payments.reject')->middleware('auth');
     
+    // Testing route untuk update bulan status (hanya development)
     Route::post('/online-payments/test-update-bulan/{bulanId}', [OnlinePaymentController::class, 'testUpdateBulanStatus'])->name('online-payments.test-update-bulan')->middleware('auth');
     
+    // Testing route untuk reprocess successful transfer (hanya development)
     Route::post('/online-payments/reprocess-transfer/{transferId}', [OnlinePaymentController::class, 'reprocessSuccessfulTransfer'])->name('online-payments.reprocess-transfer')->middleware('auth');
     
     // Manage Notifications
@@ -146,6 +177,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     Route::get('/addons/invoice/{userAddonId}/download', [App\Http\Controllers\AddonController::class, 'downloadInvoice'])->name('addons.download-invoice')->middleware('auth');
     Route::get('/addons/{slug}/check', [App\Http\Controllers\AddonController::class, 'checkUserAddon'])->name('addons.check')->middleware('auth');
     Route::post('/addons/refresh-status', [App\Http\Controllers\AddonController::class, 'refreshAddonStatus'])->name('addons.refresh-status')->middleware('auth');
+    Route::post('/addons/activate-purchased', [App\Http\Controllers\AddonController::class, 'activatePurchasedAddon'])->name('addons.activate-purchased');
     
     // Manage Periods
     Route::resource('periods', PeriodController::class)->middleware('auth');
@@ -207,6 +239,8 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
     // Manage Arus Kas
     Route::get('/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index')->middleware('auth');
     Route::get('/arus-kas/export', [ArusKasController::class, 'export'])->name('arus-kas.export')->middleware('auth');
+    Route::get('/arus-kas/export-excel', [ArusKasController::class, 'exportExcel'])->name('arus-kas.excel')->middleware('auth');
+    Route::get('/arus-kas/export-pdf', [ArusKasController::class, 'exportPDF'])->name('arus-kas.pdf')->middleware('auth');
     
     // Manage Realisasi Pos
     Route::get('/realisasi-pos', [RealisasiPosController::class, 'index'])->name('realisasi-pos.index')->middleware('auth');
@@ -256,8 +290,10 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
         // Pos View routes (untuk lihat semua pos dengan pendapatan)
         Route::get('/pos-view', [\App\Http\Controllers\Accounting\ReceiptPosController::class, 'posView'])->name('pos-view');
         
+        // Test route untuk debugging receipt-pos
         Route::get('/receipt-pos-test', function() {
             return response()->json([
+                'message' => 'Receipt-pos test route working',
                 'csrf_token' => csrf_token(),
                 'session_id' => session()->getId(),
                 'auth_check' => auth()->check(),
@@ -416,6 +452,7 @@ Route::resource('classes', ClassController::class)->middleware('auth');
 // Student (Peserta Didik) Routes
 Route::delete('/bulk-delete-students', [StudentController::class, 'bulkDelete'])->name('students.bulk-delete');
 Route::post('/bulk-delete-students', [StudentController::class, 'bulkDelete'])->name('students.bulk-delete-post');
+Route::get('/test-bulk', function() { return 'Bulk route works!'; })->name('test.bulk');
 Route::resource('students', StudentController::class)->middleware('auth');
 
 // Import routes for students
@@ -456,39 +493,45 @@ Route::get('/debug/payment-structure', function() {
     return response()->json($payments);
 });
 
-
-Route::get('/tripay-return', function(Request $request) {
-    $reference = $request->get('reference');
-    $status = $request->get('status');
-    
-    if ($reference) {
-        // Cek status transaksi di database
-        $transfer = DB::table('transfer')->where('reference', $reference)->first();
-        
-        if ($transfer) {
-            if ($status === 'PAID') {
-                return redirect()->route('student.payment.history')
-                    ->with('success', 'Pembayaran berhasil! Status akan diperbarui dalam beberapa menit.');
-            } else {
-                return redirect()->route('student.payment.history')
-                    ->with('warning', 'Pembayaran belum selesai. Anda dapat melanjutkan pembayaran dari halaman riwayat.');
-            }
-        }
-    }
-    
-    return redirect()->route('student.payment.history')
-        ->with('info', 'Kembali dari halaman pembayaran.');
-});
-
-// Midtrans Payment Routes - REMOVED (using iPaymu now)
-
-    return view('test-payment-gateway');
-
-
+// Payment Gateway Test Routes
+// Test Tripay Route - REMOVED
+/*
+Route::get('/test-tripay', function() {
     try {
-        $tripayService = new App\Services\TripayService();
+        $tripayService = new \App\Services\TripayService();
         $channels = $tripayService->getPaymentChannels();
-        return response()->json($channels);
+        
+        return response()->json([
+            'success' => true,
+            'channels' => $channels,
+            'message' => 'TripayService berfungsi dengan baik'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'message' => 'TripayService error'
+        ]);
+// Midtrans Payment Routes - REMOVED (using iPaymu now)
+        $testData = [
+            'method' => 'BRIVA',
+            'merchant_ref' => 'PG-TEST-' . time(),
+            'amount' => 100000,
+            'customer_name' => 'Test User',
+            'customer_email' => 'test@sppqu.com',
+            'customer_phone' => '08123456789',
+            'order_items' => [
+                [
+                    'name' => 'Test Tagihan',
+                    'price' => 100000,
+                    'quantity' => 1
+                ]
+            ],
+            'return_url' => route('tripay.return'),
+            'callback_url' => route('online-payment.callback')
+        ];
+        $result = $tripayService->createTransaction($testData);
+        return response()->json($result);
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -496,9 +539,10 @@ Route::get('/tripay-return', function(Request $request) {
         ]);
     }
 });
+*/
 
-
-
+// Test route untuk StudentAuthController processPayment
+Route::post('/test-student-payment', function() {
     try {
         // Simulate request data
         $requestData = [
@@ -537,11 +581,115 @@ Route::get('/tripay-return', function(Request $request) {
             'message' => 'StudentAuthController processPayment test failed'
         ]);
     }
+})->name('test.student.payment');
 
 // Route untuk Tripay Cart - REMOVED
+/*
+Route::post('/test-tripay-transaction-from-cart', function(Request $request) {
+    try {
+        // Check if student is logged in
+        if (!session('is_student')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
 
+        $studentId = session('student_id');
+        $cartItems = json_decode($request->input('cart_items'), true);
+        $totalAmount = $request->input('total_amount');
+        $paymentMethod = $request->input('payment_method', 'BRIVA');
+        
+        if (!$cartItems || !$totalAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cart items atau total amount tidak valid'
+            ]);
+        }
+
+        // Generate merchant reference
+        $merchantRef = 'PG-CART-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+
+        $orderItems = [];
+        foreach ($cartItems as $item) {
+            $orderItems[] = [
+                'name' => $item['name'] ?? 'Tagihan',
+                'price' => isset($item['amount']) ? (int)preg_replace('/[^0-9]/', '', $item['amount']) : (int)$totalAmount,
+                'quantity' => $item['quantity'] ?? 1
+            ];
+        }
+
+        $tripayService = new App\Services\TripayService();
+        $result = $tripayService->createTransaction([
+            'method' => $paymentMethod,
+            'merchant_ref' => $merchantRef,
+            'amount' => (int)$totalAmount,
+            'customer_name' => 'Test User Cart',
+            'customer_email' => 'testcart@sppqu.com',
+            'customer_phone' => '08123456789',
+            'order_items' => $orderItems,
+            'return_url' => route('tripay.return'),
+            'callback_url' => route('online-payment.callback')
+        ]);
+
+        if (!$result || !isset($result['success']) || !$result['success']) {
+            throw new \Exception('Gagal membuat transaksi Tripay: ' . ($result['message'] ?? 'Unknown error'));
+        }
+
+        DB::beginTransaction();
+
+        // Insert to transfer table
+        $transferId = DB::table('transfer')->insertGetId([
+            'student_id' => $studentId,
+            'detail' => 'Pembayaran Cart via Payment Gateway',
+            'status' => 0, // Pending
+            'confirm_pay' => (int)$totalAmount,
+            'reference' => $result['data']['reference'] ?? $merchantRef,
+            'merchantRef' => $merchantRef,
+            'checkout_url' => $result['data']['checkout_url'] ?? null,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        // Insert to transfer_detail table for each cart item
+        foreach ($cartItems as $item) {
+            $amount = (int)str_replace(['Rp ', '.', ','], '', $item['amount']);
+            
+            DB::table('transfer_detail')->insert([
+                'transfer_id' => $transferId,
+                'payment_type' => $item['type'] === 'bulanan' ? 1 : 2,
+                'bulan_id' => $item['type'] === 'bulanan' ? $item['id'] : null,
+                'bebas_id' => $item['type'] === 'bebas' ? $item['id'] : null,
+                'desc' => $item['name'],
+                'subtotal' => $amount,
+                'is_tabungan' => 0 // Default value for cart items
+            ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pembayaran berhasil diproses',
+            'checkout_url' => $result['data']['checkout_url'] ?? null,
+            'data' => $result['data'] ?? [],
+            'reference' => $result['data']['reference'] ?? $merchantRef
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+*/
+
+// Webhook Test Routes
 Route::get('/webhook-test', function() {
     return response()->json([
+        'message' => 'Webhook test route working',
         'timestamp' => now()
     ]);
 });
@@ -560,7 +708,10 @@ Route::post('/callback-test', function(Request $request) {
     return response()->json(['success' => true, 'message' => 'Callback received']);
 })->name('callback.test');
 
+// WhatsApp Test Routes
+Route::get('/test-whatsapp-notification', function() {
     return response()->json([
+        'message' => 'WhatsApp notification test route working',
         'timestamp' => now()
     ]);
 });
@@ -642,8 +793,12 @@ Route::middleware(['auth', 'session.timeout'])->prefix('admin')->name('admin.')-
 // Subscription Callback Route (tanpa middleware CSRF)
 Route::match(['GET', 'POST'], '/subscription/callback', [App\Http\Controllers\SubscriptionController::class, 'callback'])->name('subscription.callback');
 
+// AJAX Test Routes
+Route::get('/test-ajax-page', function() {
     return view('students.test-ajax');
+})->name('test.ajax-page');
 
+Route::get('/test-data', function() {
     $classes = App\Models\ClassModel::all();
     $students = App\Models\Student::where('student_status', 1)->get();
     
@@ -663,21 +818,33 @@ Route::match(['GET', 'POST'], '/subscription/callback', [App\Http\Controllers\Su
     ];
     
     return response()->json([
+        'message' => 'Test data route working',
         'data' => $result
     ]);
 });
 
+// Test route for debugging
+Route::post('/test-ajax', function() {
     return response()->json(['message' => 'AJAX works!', 'data' => request()->all()]);
+})->name('test.ajax');
 
+Route::get('/test-ajax-page', function() {
     return view('students.test-ajax');
+})->name('test.ajax.page');
 
+// Filter History Test Routes
+Route::get('/test-filter-history', function(Request $request) {
     return response()->json([
         'success' => true,
+        'message' => 'Filter test route accessible',
         'filters' => $request->only(['status', 'payment_type', 'date_from', 'date_to', 'search', 'per_page']),
         'url' => $request->url(),
         'query' => $request->query()
     ]);
+})->name('test.filter.history');
 
+Route::get('/test-outside', function() {
+    return 'Test route di luar group manage berhasil!';
 });
 
 
@@ -750,6 +917,8 @@ Route::post('/bulk-whatsapp/send', [BulkWhatsAppController::class, 'sendBulkBill
 Route::post('/bulk-whatsapp/send-mass-message', [BulkWhatsAppController::class, 'sendMassMessage'])->name('bulk-whatsapp.send-mass-message')->middleware('auth');
 Route::post('/bulk-whatsapp/send-consolidated', [BulkWhatsAppController::class, 'sendConsolidatedBills'])->name('bulk-whatsapp.send-consolidated')->middleware('auth');
 
+// Test Tunggakan Data Routes
+Route::get('/test-tunggakan-data', function() {
     $bulananCount = DB::table('bulan')
         ->where('bulan_bill', '>', 0)
         ->where('bulan_pay', '<', 'bulan_bill')
@@ -787,6 +956,7 @@ Route::post('/bulk-whatsapp/send-consolidated', [BulkWhatsAppController::class, 
         'sample_bulanan' => $sampleBulanan,
         'sample_bebas' => $sampleBebas
     ]);
+})->name('test.tunggakan-data');
 
 // Addons Routes
 Route::get('/addons', [App\Http\Controllers\AddonController::class, 'index'])->name('addons.index')->middleware('auth');
@@ -858,27 +1028,52 @@ Route::get('/laporan/realisasi-pos', [RealisasiPosController::class, 'index'])->
 Route::get('/laporan/realisasi-pos/export-excel', [RealisasiPosController::class, 'exportExcel'])->name('laporan.realisasi-pos.export-excel')->middleware('auth');
 Route::get('/laporan/realisasi-pos/export-pdf', [RealisasiPosController::class, 'exportPdf'])->name('laporan.realisasi-pos.export-pdf')->middleware('auth');
 
+// Test Realisasi Pos Routes
+Route::get('/test-realisasi-pos', [RealisasiPosController::class, 'test'])->name('test.realisasi-pos');
+Route::get('/test-target-calculation', [RealisasiPosController::class, 'testTargetCalculation'])->name('test.target-calculation');
+Route::get('/test-month-data', [RealisasiPosController::class, 'testMonthData'])->name('test.month-data');
+Route::get('/test-terbayar-data', [RealisasiPosController::class, 'testTerbayarData'])->name('test.terbayar-data');
+Route::get('/test-bulan-data', [RealisasiPosController::class, 'testBulanData'])->name('test.bulan-data');
+Route::get('/test-realisasi-calculation', [RealisasiPosController::class, 'testRealisasiCalculation'])->name('test.realisasi-calculation');
+Route::get('/test-terbayar-comparison', [RealisasiPosController::class, 'testTerbayarComparison'])->name('test.terbayar-comparison');
+Route::get('/test-comparison-with-rekapitulasi', [RealisasiPosController::class, 'testComparisonWithRekapitulasi'])->name('test.comparison-with-rekapitulasi');
+Route::get('/test-same-data-comparison', [RealisasiPosController::class, 'testSameDataComparison'])->name('test.same-data-comparison');
+Route::get('/test-realisasi-by-class', [RealisasiPosController::class, 'testRealisasiByClass'])->name('test.realisasi-by-class');
+Route::get('/test-realisasi-pos-with-class', [RealisasiPosController::class, 'testRealisasiPosWithClass'])->name('test.realisasi-pos-with-class');
 
 // Pembayaran Pos Routes
+Route::get('/pembayaran-pos', function() {
+    return 'Pembayaran Pos - Test Route Berhasil!';
+})->name('test.pembayaran-pos');
 
+// Test Pembayaran Per Pos Routes
+Route::get('/test-pembayaran-per-pos', function() {
+    return 'Test route berhasil!';
 });
 
+Route::get('/test-simple', function() {
     return 'Test simple berhasil!';
 });
 
+Route::get('/hello', function() {
     return 'Hello World!';
 });
 
+// Test Account Codes Toast Routes
+Route::get('/test-account-codes-toast', function() {
+    // Test success toast
     if (request('type') === 'success') {
         return redirect()->route('manage.account-codes.index')
             ->with('success', 'Test: Kode akun berhasil ditambahkan');
     }
     
+    // Test error toast  
     if (request('type') === 'error') {
         return redirect()->route('manage.account-codes.index')
             ->with('error', 'Test: Kode akun sudah digunakan. Silakan gunakan kode yang berbeda.');
     }
     
+    // Test warning toast
     if (request('type') === 'warning') {
         return redirect()->route('manage.account-codes.index')
             ->with('warning', 'Test: Peringatan sistem account codes');
@@ -892,6 +1087,7 @@ Route::get('/laporan/realisasi-pos/export-pdf', [RealisasiPosController::class, 
             'warning' => url('/test-account-codes-toast?type=warning')
         ]
     ]);
+})->name('test.account-codes-toast');
 
 // Receipt Routes
 Route::get('/receipt/{paymentNumber}', [ReceiptController::class, 'show'])->name('receipt.show');
@@ -913,8 +1109,51 @@ Route::prefix('online-payment')->name('online-payment.')->middleware('auth')->gr
     Route::get('/return', [OnlinePaymentController::class, 'paymentReturn'])->name('return');
 });
 
+// Test route untuk detail tanpa auth (temporary)
+Route::get('/test-detail/{id}', [OnlinePaymentController::class, 'paymentDetail'])->name('test.detail');
 
 // Callback routes tanpa middleware apapun - Tripay REMOVED
+/*
+Route::group(['middleware' => []], function () {
+    Route::post('/callback', [CallbackController::class, 'tripayCallback']);
+    Route::post('/webhook', [CallbackController::class, 'tripayCallback']);
+    Route::post('/tripay-webhook', [CallbackController::class, 'tripayCallback']);
+    Route::post('/api/callback', [CallbackController::class, 'tripayCallback']);
+    Route::post('/tripay/callback', [CallbackController::class, 'tripayCallback']);
+    
+    // Simple test route
+    Route::post('/test-callback', function(Request $request) {
+        Log::info('Test callback received', $request->all());
+        return response()->json(['success' => true, 'message' => 'Test callback received']);
+    });
+    
+    // Super simple test route
+    Route::post('/simple-callback', function() {
+        Log::info('Simple callback hit');
+        return response()->json(['success' => true, 'message' => 'Simple callback works']);
+    });
+    
+    // Ultra simple test route - no parameters
+    Route::post('/ultra-callback', function() {
+        return 'OK';
+    });
+    
+    // Test route untuk Tripay callback
+    Route::post('/tripay-test', function() {
+        return response()->json(['success' => true, 'message' => 'Tripay test callback works']);
+    });
+    
+    // Super ultra simple callback - no middleware at all
+    Route::post('/no-csrf-callback', function() {
+        return 'NO-CSRF-OK';
+    });
+    
+    // Payment callback routes (DEPRECATED - Use api.php for Tripay callback)
+    // Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback'); // MOVED TO api.php
+    Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
+    Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
+});
+*/
 
 // Logout Routes
 Route::post('/logout', function () {
@@ -924,30 +1163,41 @@ Route::post('/logout', function () {
     return redirect('/manage');
 })->name('logout');
 
-// Login Routes
-Route::get('/login', function () {
-    return redirect()->route('otp.request');
-})->name('login');
+// Login Routes - Email Login
+Route::get('/login', [App\Http\Controllers\OtpController::class, 'showEmailLoginForm'])->name('login');
+Route::post('/login', [App\Http\Controllers\OtpController::class, 'emailLogin'])->name('login.post');
 
+// Test routes - moved outside manage group for direct access
+    Route::get('/test-pembayaran-per-pos', function() {
+        return 'Test route berhasil!';
     });
     
+    Route::get('/test-simple', function() {
         return 'Test simple berhasil!';
     });
     
+    Route::get('/pembayaran-pos', function() {
+        return 'Pembayaran Pos - Test Route Berhasil!';
+    })->name('test.pembayaran-pos');
     
+    Route::get('/hello', function() {
         return 'Hello World!';
     });
 
+    Route::get('/test-account-codes-toast', function() {
+        // Test success toast
         if (request('type') === 'success') {
             return redirect()->route('manage.account-codes.index')
                 ->with('success', 'Test: Kode akun berhasil ditambahkan');
         }
         
+        // Test error toast  
         if (request('type') === 'error') {
             return redirect()->route('manage.account-codes.index')
                 ->with('error', 'Test: Kode akun sudah digunakan. Silakan gunakan kode yang berbeda.');
         }
         
+        // Test warning toast
         if (request('type') === 'warning') {
             return redirect()->route('manage.account-codes.index')
                 ->with('warning', 'Test: Peringatan sistem account codes');
@@ -961,11 +1211,16 @@ Route::get('/login', function () {
                 'warning' => url('/test-account-codes-toast?type=warning')
             ]
         ]);
+    })->name('test.account-codes-toast');
 
+    Route::get('/test-auto-accounting', function() {
         return response()->json([
+            'message' => 'Auto accounting test route',
             'status' => 'working'
         ]);
+    })->name('test.auto-accounting');
 
+    Route::get('/test-tunggakan-data', function() {
         try {
             $bulananCount = DB::table('bulanan_pay as bp')
                 ->join('students as s', 'bp.student_student_id', '=', 's.student_id')
@@ -1019,6 +1274,7 @@ Route::get('/login', function () {
             'message' => $e->getMessage()
         ], 500);
     }
+        })->name('test.tunggakan-data');
 
     // Arus Kas Routes
     Route::get('/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index')->middleware('auth');
@@ -1034,6 +1290,13 @@ Route::get('/login', function () {
     Route::get('/api/account-codes', [AccountCodeController::class, 'getAccountCodes'])->name('account-codes.api')->middleware('auth');
 
 // OTP Routes - REMOVED DUPLICATE (already defined above at line 316)
+/*
+Route::get('/otp/login', [App\Http\Controllers\OtpController::class, 'showRequestForm'])->name('otp.request');
+Route::post('/otp/login', [App\Http\Controllers\OtpController::class, 'requestOtp'])->name('otp.request');
+Route::get('/otp/verify', [App\Http\Controllers\OtpController::class, 'showVerifyForm'])->name('otp.verify');
+Route::post('/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify');
+Route::get('/otp/resend', [App\Http\Controllers\OtpController::class, 'resendOtp'])->name('otp.resend');
+*/
 
 // Student Routes - dengan middleware yang benar
 Route::prefix('student')->name('student.')->group(function () {
@@ -1090,12 +1353,22 @@ Route::prefix('student')->name('student.')->group(function () {
         Route::post('/cart/payment/ipaymu', [StudentAuthController::class, 'processCartPaymentIpaymu'])
             ->name('cart.payment.ipaymu');
         
+        // Test route for debugging
+        Route::get('/test-cart-route', function() {
             return response()->json(['message' => 'Cart route is working']);
+        })->name('test.cart.route');
         
 
     });
 });
 
+// Cart Payment without auth for testing - REMOVED
+/*
+Route::post('/student/test-midtrans-transaction-from-cart-no-auth', [StudentAuthController::class, 'processCartPayment'])
+    ->name('cart.payment.noauth')
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class, \App\Http\Middleware\StudentAuth::class])
+    ->middleware('web');
+*/
 
 
 
@@ -1125,6 +1398,7 @@ Route::resource('classes', ClassController::class)->middleware('auth');
 // Student (Peserta Didik) Routes
 Route::delete('/bulk-delete-students', [StudentController::class, 'bulkDelete'])->name('students.bulk-delete');
 Route::post('/bulk-delete-students', [StudentController::class, 'bulkDelete'])->name('students.bulk-delete-post');
+Route::get('/test-bulk', function() { return 'Bulk route works!'; })->name('test.bulk');
 Route::resource('students', StudentController::class)->middleware('auth');
 
 // Import routes for students
@@ -1165,6 +1439,28 @@ Route::get('/debug/payment-structure', function() {
     return response()->json($payments);
 });
 
+// Payment Gateway Test Routes
+// Test Tripay Route - REMOVED
+/*
+Route::get('/test-tripay', function() {
+    try {
+        $tripayService = new \App\Services\TripayService();
+        $channels = $tripayService->getPaymentChannels();
+        
+        return response()->json([
+            'success' => true,
+            'channels' => $channels,
+            'message' => 'TripayService berfungsi dengan baik'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'message' => 'TripayService error'
+        ]);
+    }
+})->name('test.tripay');
+*/
 
 Route::get('/tripay-return', function(Request $request) {
     $reference = $request->get('reference');
@@ -1191,9 +1487,15 @@ Route::get('/tripay-return', function(Request $request) {
 
 // Midtrans Payment Routes - REMOVED (using iPaymu now)
 
+Route::get('/test-payment-gateway', function() {
     return view('test-payment-gateway');
+})->name('test.payment.gateway');
 
+// Test route untuk payment channels tanpa auth
+Route::get('/test-payment-channels', [App\Http\Controllers\OnlinePaymentController::class, 'getPaymentChannels']);
 
+// Test route untuk payment channels cart
+Route::get('/test-payment-channels-cart', function() {
     try {
         $tripayService = new App\Services\TripayService();
         $channels = $tripayService->getPaymentChannels();
@@ -1206,8 +1508,44 @@ Route::get('/tripay-return', function(Request $request) {
     }
 });
 
+// Test route untuk process payment tanpa auth
+Route::post('/test-process-payment', [App\Http\Controllers\OnlinePaymentController::class, 'processPayment']);
 
+// Test Tripay Transaction Route - REMOVED
+/*
+Route::post('/test-tripay-transaction', function() {
+    try {
+        $tripayService = new TripayService();
+        $testData = [
+            'method' => 'BRIVA',
+            'merchant_ref' => 'PG-TEST-' . time(),
+            'amount' => 100000,
+            'customer_name' => 'Test User',
+            'customer_email' => 'test@sppqu.com',
+            'customer_phone' => '08123456789',
+            'order_items' => [
+                [
+                    'name' => 'Test Tagihan',
+                    'price' => 100000,
+                    'quantity' => 1
+                ]
+            ],
+            'return_url' => route('tripay.return'),
+            'callback_url' => route('online-payment.callback')
+        ];
+        $result = $tripayService->createTransaction($testData);
+        return response()->json($result);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+});
+*/
 
+// Test route untuk StudentAuthController processPayment
+Route::post('/test-student-payment', function() {
     try {
         // Simulate request data
         $requestData = [
@@ -1246,10 +1584,13 @@ Route::get('/tripay-return', function(Request $request) {
             'message' => 'StudentAuthController processPayment test failed'
         ]);
     }
+})->name('test.student.payment');
 
 
+// Webhook Test Routes
 Route::get('/webhook-test', function() {
     return response()->json([
+        'message' => 'Webhook test route working',
         'timestamp' => now()
     ]);
 });
@@ -1268,7 +1609,10 @@ Route::post('/callback-test', function(Request $request) {
     return response()->json(['success' => true, 'message' => 'Callback received']);
 })->name('callback.test');
 
+// WhatsApp Test Routes
+Route::get('/test-whatsapp-notification', function() {
     return response()->json([
+        'message' => 'WhatsApp notification test route working',
         'timestamp' => now()
     ]);
 });
@@ -1349,8 +1693,12 @@ Route::middleware(['auth', 'session.timeout'])->prefix('admin')->name('admin.')-
 // Subscription Callback Route (tanpa middleware CSRF)
 Route::match(['GET', 'POST'], '/subscription/callback', [App\Http\Controllers\SubscriptionController::class, 'callback'])->name('subscription.callback');
 
+// AJAX Test Routes
+Route::get('/test-ajax-page', function() {
     return view('students.test-ajax');
+})->name('test.ajax-page');
 
+Route::get('/test-data', function() {
     $classes = App\Models\ClassModel::all();
     $students = App\Models\Student::where('student_status', 1)->get();
     
@@ -1370,23 +1718,43 @@ Route::match(['GET', 'POST'], '/subscription/callback', [App\Http\Controllers\Su
     ];
     
     return response()->json([
+        'message' => 'Test data route working',
         'data' => $result
     ]);
 });
 
+// Test route for debugging
+Route::post('/test-ajax', function() {
     return response()->json(['message' => 'AJAX works!', 'data' => request()->all()]);
+})->name('test.ajax');
 
+Route::get('/test-ajax-page', function() {
     return view('students.test-ajax');
+})->name('test.ajax.page');
 
+// Filter History Test Routes
+Route::get('/test-filter-history', function(Request $request) {
     return response()->json([
         'success' => true,
+        'message' => 'Filter test route accessible',
         'filters' => $request->only(['status', 'payment_type', 'date_from', 'date_to', 'search', 'per_page']),
         'url' => $request->url(),
         'query' => $request->query()
     ]);
+})->name('test.filter.history');
 
+Route::get('/test-outside', function() {
+    return 'Test route di luar group manage berhasil!';
 });
 
+// Form Test Routes - Midtrans REMOVED
+/*
+Route::get('/form', function() {
+    $students = \App\Models\Student::all();
+    $periods = \App\Models\Period::all();
+    return view('online-payment.midtrans-form', compact('students', 'periods'));
+})->name('midtrans.form');
+*/
 
 // Payment Form Routes
 Route::get('/payment-form/{studentId}/{billType}/{billId}', [OnlinePaymentController::class, 'paymentForm'])->name('form');
@@ -1416,6 +1784,8 @@ Route::post('/bulk-whatsapp/send', [BulkWhatsAppController::class, 'sendBulkBill
 Route::post('/bulk-whatsapp/send-mass-message', [BulkWhatsAppController::class, 'sendMassMessage'])->name('bulk-whatsapp.send-mass-message')->middleware('auth');
 Route::post('/bulk-whatsapp/send-consolidated', [BulkWhatsAppController::class, 'sendConsolidatedBills'])->name('bulk-whatsapp.send-consolidated')->middleware('auth');
 
+// Test Tunggakan Data Routes
+Route::get('/test-tunggakan-data', function() {
     $bulananCount = DB::table('bulan')
         ->where('bulan_bill', '>', 0)
         ->where('bulan_pay', '<', 'bulan_bill')
@@ -1453,6 +1823,7 @@ Route::post('/bulk-whatsapp/send-consolidated', [BulkWhatsAppController::class, 
         'sample_bulanan' => $sampleBulanan,
         'sample_bebas' => $sampleBebas
     ]);
+})->name('test.tunggakan-data');
 
 // Addons Routes
 Route::get('/addons', [App\Http\Controllers\AddonController::class, 'index'])->name('addons.index')->middleware('auth');
@@ -1524,27 +1895,47 @@ Route::get('/laporan/realisasi-pos', [RealisasiPosController::class, 'index'])->
 Route::get('/laporan/realisasi-pos/export-excel', [RealisasiPosController::class, 'exportExcel'])->name('laporan.realisasi-pos.export-excel')->middleware('auth');
 Route::get('/laporan/realisasi-pos/export-pdf', [RealisasiPosController::class, 'exportPdf'])->name('laporan.realisasi-pos.export-pdf')->middleware('auth');
 
+// Test Realisasi Pos Routes
+Route::get('/test-realisasi-pos', [RealisasiPosController::class, 'test'])->name('test.realisasi-pos');
+Route::get('/test-target-calculation', [RealisasiPosController::class, 'testTargetCalculation'])->name('test.target-calculation');
+Route::get('/test-month-data', [RealisasiPosController::class, 'testMonthData'])->name('test.month-data');
+Route::get('/test-terbayar-data', [RealisasiPosController::class, 'testTerbayarData'])->name('test.terbayar-data');
+Route::get('/test-bulan-data', [RealisasiPosController::class, 'testBulanData'])->name('test.bulan-data');
+Route::get('/test-realisasi-calculation', [RealisasiPosController::class, 'testRealisasiCalculation'])->name('test.realisasi-calculation');
 
 // Pembayaran Pos Routes
+Route::get('/pembayaran-pos', function() {
+    return 'Pembayaran Pos - Test Route Berhasil!';
+})->name('test.pembayaran-pos');
 
+// Test Pembayaran Per Pos Routes
+Route::get('/test-pembayaran-per-pos', function() {
+    return 'Test route berhasil!';
 });
 
+Route::get('/test-simple', function() {
     return 'Test simple berhasil!';
 });
 
+Route::get('/hello', function() {
     return 'Hello World!';
 });
 
+// Test Account Codes Toast Routes
+Route::get('/test-account-codes-toast', function() {
+    // Test success toast
     if (request('type') === 'success') {
         return redirect()->route('manage.account-codes.index')
             ->with('success', 'Test: Kode akun berhasil ditambahkan');
     }
     
+    // Test error toast  
     if (request('type') === 'error') {
         return redirect()->route('manage.account-codes.index')
             ->with('error', 'Test: Kode akun sudah digunakan. Silakan gunakan kode yang berbeda.');
     }
     
+    // Test warning toast
     if (request('type') === 'warning') {
         return redirect()->route('manage.account-codes.index')
             ->with('warning', 'Test: Peringatan sistem account codes');
@@ -1558,6 +1949,7 @@ Route::get('/laporan/realisasi-pos/export-pdf', [RealisasiPosController::class, 
             'warning' => url('/test-account-codes-toast?type=warning')
         ]
     ]);
+})->name('test.account-codes-toast');
 
 // Receipt Routes
 Route::get('/receipt/{paymentNumber}', [ReceiptController::class, 'show'])->name('receipt.show');
@@ -1579,8 +1971,51 @@ Route::prefix('online-payment')->name('online-payment.')->middleware('auth')->gr
     Route::get('/return', [OnlinePaymentController::class, 'paymentReturn'])->name('return');
 });
 
+// Test route untuk detail tanpa auth (temporary)
+Route::get('/test-detail/{id}', [OnlinePaymentController::class, 'paymentDetail'])->name('test.detail');
 
 // Callback routes tanpa middleware apapun - Tripay REMOVED
+/*
+Route::group(['middleware' => []], function () {
+    Route::post('/callback', [CallbackController::class, 'tripayCallback']);
+    Route::post('/webhook', [CallbackController::class, 'tripayCallback']);
+    Route::post('/tripay-webhook', [CallbackController::class, 'tripayCallback']);
+    Route::post('/api/callback', [CallbackController::class, 'tripayCallback']);
+    Route::post('/tripay/callback', [CallbackController::class, 'tripayCallback']);
+    
+    // Simple test route
+    Route::post('/test-callback', function(Request $request) {
+        Log::info('Test callback received', $request->all());
+        return response()->json(['success' => true, 'message' => 'Test callback received']);
+    });
+    
+    // Super simple test route
+    Route::post('/simple-callback', function() {
+        Log::info('Simple callback hit');
+        return response()->json(['success' => true, 'message' => 'Simple callback works']);
+    });
+    
+    // Ultra simple test route - no parameters
+    Route::post('/ultra-callback', function() {
+        return 'OK';
+    });
+    
+    // Test route untuk Tripay callback
+    Route::post('/tripay-test', function() {
+        return response()->json(['success' => true, 'message' => 'Tripay test callback works']);
+    });
+    
+    // Super ultra simple callback - no middleware at all
+    Route::post('/no-csrf-callback', function() {
+        return 'NO-CSRF-OK';
+    });
+    
+    // Payment callback routes (DEPRECATED - Use api.php for Tripay callback)
+    // Route::post('/api/tripay/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('api.tripay.callback'); // MOVED TO api.php
+    Route::post('/online-payment/callback', [OnlinePaymentController::class, 'paymentCallback'])->name('online-payment.callback');
+    Route::post('/midtrans/webhook', [OnlinePaymentController::class, 'paymentCallback'])->name('midtrans.webhook');
+});
+*/
 
 // Logout Routes
 Route::post('/logout', function () {
@@ -1590,30 +2025,41 @@ Route::post('/logout', function () {
     return redirect('/manage');
 })->name('logout');
 
-// Login Routes
-Route::get('/login', function () {
-    return redirect()->route('otp.request');
-})->name('login');
+// Login Routes - Email Login
+Route::get('/login', [App\Http\Controllers\OtpController::class, 'showEmailLoginForm'])->name('login');
+Route::post('/login', [App\Http\Controllers\OtpController::class, 'emailLogin'])->name('login.post');
 
+// Test routes - moved outside manage group for direct access
+    Route::get('/test-pembayaran-per-pos', function() {
+        return 'Test route berhasil!';
     });
     
+    Route::get('/test-simple', function() {
         return 'Test simple berhasil!';
     });
     
+    Route::get('/pembayaran-pos', function() {
+        return 'Pembayaran Pos - Test Route Berhasil!';
+    })->name('test.pembayaran-pos');
     
+    Route::get('/hello', function() {
         return 'Hello World!';
     });
 
+    Route::get('/test-account-codes-toast', function() {
+        // Test success toast
         if (request('type') === 'success') {
             return redirect()->route('manage.account-codes.index')
                 ->with('success', 'Test: Kode akun berhasil ditambahkan');
         }
         
+        // Test error toast  
         if (request('type') === 'error') {
             return redirect()->route('manage.account-codes.index')
                 ->with('error', 'Test: Kode akun sudah digunakan. Silakan gunakan kode yang berbeda.');
         }
         
+        // Test warning toast
         if (request('type') === 'warning') {
             return redirect()->route('manage.account-codes.index')
                 ->with('warning', 'Test: Peringatan sistem account codes');
@@ -1627,11 +2073,16 @@ Route::get('/login', function () {
                 'warning' => url('/test-account-codes-toast?type=warning')
             ]
         ]);
+    })->name('test.account-codes-toast');
 
+    Route::get('/test-auto-accounting', function() {
         return response()->json([
+            'message' => 'Auto accounting test route',
             'status' => 'working'
         ]);
+    })->name('test.auto-accounting');
 
+    Route::get('/test-tunggakan-data', function() {
         try {
             $bulananCount = DB::table('bulanan_pay as bp')
                 ->join('students as s', 'bp.student_student_id', '=', 's.student_id')
@@ -1685,6 +2136,7 @@ Route::get('/login', function () {
             'message' => $e->getMessage()
         ], 500);
     }
+        })->name('test.tunggakan-data');
 
     // Arus Kas Routes
     Route::get('/arus-kas', [ArusKasController::class, 'index'])->name('arus-kas.index')->middleware('auth');

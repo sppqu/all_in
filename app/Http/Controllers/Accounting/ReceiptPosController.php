@@ -47,7 +47,7 @@ class ReceiptPosController extends Controller
             ->get();
         
         // Ambil data profil sekolah untuk header kuitansi
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
         
         // Ambil data kas untuk dropdown
         $kasList = DB::table('kas')
@@ -596,7 +596,7 @@ class ReceiptPosController extends Controller
         });
         
         // Ambil data profil sekolah untuk header cetak
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
         
         return view('accounting.pos-view.index', compact('posIncomes', 'startDate', 'endDate', 'schoolProfile'));
     }

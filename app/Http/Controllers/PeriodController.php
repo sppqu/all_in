@@ -30,18 +30,33 @@ class PeriodController extends Controller
      */
     public function store(Request $request)
     {
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
         $request->validate([
             'period_start' => 'required|integer|min:2000|max:2100',
             'period_end' => 'required|integer|min:2000|max:2100|gt:period_start',
             'period_status' => 'boolean'
         ]);
 
-        // Jika status aktif, nonaktifkan periode lain
+        // Jika status aktif, nonaktifkan periode lain di sekolah yang sama
         if ($request->period_status) {
-            Period::where('period_status', 1)->update(['period_status' => 0]);
+            Period::where('school_id', $currentSchoolId)
+                ->where('period_status', 1)
+                ->update(['period_status' => 0]);
         }
 
-        Period::create($request->all());
+        $data = $request->all();
+        $data['school_id'] = $currentSchoolId;
+        Period::create($data);
 
         return redirect()->route('periods.index')
             ->with('success', 'Tahun pelajaran berhasil ditambahkan!');

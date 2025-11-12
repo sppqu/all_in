@@ -2,6 +2,59 @@
 
 @section('content')
 <div class="container-fluid px-4 py-4">
+    <!-- Pratinjau Profil Sekolah -->
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <h5 class="fw-bold mb-0">Pratinjau Profil Sekolah</h5>
+                @php
+                    $isFoundationLevel = auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan';
+                @endphp
+                @if($isFoundationLevel)
+                    <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-edit me-2"></i>Lengkapi Profil
+                    </a>
+                @else
+                    <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-edit me-2"></i>Lengkapi Profil
+                    </a>
+                @endif
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Nama Sekolah</label>
+                        <div class="fw-bold">{{ $currentSchool->nama_sekolah ?? 'Belum diisi' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Kepala Sekolah</label>
+                        <div class="fw-bold">{{ $currentSchool->kepala_sekolah ?? '-' }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">NPSN</label>
+                        <div class="fw-bold">{{ $currentSchool->npsn ?? '-' }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small mb-1">Alamat</label>
+                        <div class="fw-bold">
+                            @if($currentSchool->alamat_baris_1)
+                                {{ $currentSchool->alamat_baris_1 }}
+                                @if($currentSchool->alamat_baris_2)
+                                    <br>{{ $currentSchool->alamat_baris_2 }}
+                                @endif
+                            @else
+                                {{ $currentSchool->alamat ?? 'Belum diisi' }}
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Row: Statistik Pembayaran & Traffic Pembayaran -->
     <div class="row mb-4">
         <!-- Statistik Pembayaran (Line Chart) -->

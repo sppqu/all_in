@@ -12,12 +12,20 @@ class GeneralSettingController extends Controller
 {
     public function index()
     {
-        $profile = SchoolProfile::first();
-        $gateway = SetupGateway::first();
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+        
+        $profile = currentSchool();
+        $gateway = SetupGateway::where('school_id', $currentSchoolId)->first();
         
         // Jika gateway tidak ada, buat default object
         if (!$gateway) {
             $gateway = new SetupGateway();
+            $gateway->school_id = $currentSchoolId;
             $gateway->midtrans_mode = 'sandbox';
             $gateway->midtrans_is_active = false;
             $gateway->midtrans_server_key_sandbox = '';
@@ -66,74 +74,22 @@ class GeneralSettingController extends Controller
             ->where('status', 'active')
             ->exists();
         
+        \Log::info('General Setting data:', [
+            'current_school_id' => $currentSchoolId,
+            'profile_exists' => $profile ? 'YES' : 'NO',
+            'gateway_exists' => $gateway ? 'YES' : 'NO',
+            'gateway_school_id' => $gateway ? $gateway->school_id : null,
+        ]);
+        
         return view('general-setting', compact('profile', 'gateway', 'hasPaymentGatewayAddon', 'hasWhatsAppGatewayAddon'));
     }
 
     public function update(Request $request)
     {
-        try {
-            $request->validate([
-                'jenjang' => 'required|string|max:50',
-                'nama_sekolah' => 'required|string|max:255',
-                'alamat' => 'required|string',
-                'no_telp' => 'required|string|max:50',
-                'logo_sekolah' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            ]);
-
-            $profile = SchoolProfile::first() ?? new SchoolProfile();
-            $profile->jenjang = $request->jenjang;
-            $profile->nama_sekolah = $request->nama_sekolah;
-            $profile->alamat = $request->alamat;
-            $profile->no_telp = $request->no_telp;
-
-            if ($request->hasFile('logo_sekolah')) {
-                try {
-                    // Hapus logo lama jika ada
-                    if ($profile->logo_sekolah && $profile->logo_sekolah !== 'Logo' && Storage::disk('public')->exists($profile->logo_sekolah)) {
-                        Storage::disk('public')->delete($profile->logo_sekolah);
-                    }
-                    
-                    // Upload logo baru
-                    $logoPath = $request->file('logo_sekolah')->store('logos', 'public');
-                    $profile->logo_sekolah = $logoPath;
-                    
-                    \Log::info('Logo uploaded successfully', [
-                        'original_name' => $request->file('logo_sekolah')->getClientOriginalName(),
-                        'stored_path' => $logoPath,
-                        'file_size' => $request->file('logo_sekolah')->getSize(),
-                        'mime_type' => $request->file('logo_sekolah')->getMimeType()
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error('Logo upload failed', [
-                        'error' => $e->getMessage(),
-                        'file' => $request->file('logo_sekolah')->getClientOriginalName()
-                    ]);
-                    return redirect()->route('manage.general.setting')->with('error', 'Gagal upload logo: ' . $e->getMessage());
-                }
-            }
-
-            $profile->save();
-            
-            \Log::info('School profile updated successfully', [
-                'profile_id' => $profile->id,
-                'has_logo' => !empty($profile->logo_sekolah)
-            ]);
-
-            return redirect()->route('manage.general.setting')->with('success', 'Profile sekolah berhasil disimpan!');
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation failed', [
-                'errors' => $e->errors()
-            ]);
-            return redirect()->route('manage.general.setting')->withErrors($e->errors())->withInput();
-            
-        } catch (\Exception $e) {
-            \Log::error('Profile update failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->route('manage.general.setting')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
+        // Method ini sudah tidak digunakan karena tab profil sekolah sudah dihapus
+        // Profil sekolah di-edit melalui dashboard sekolah
+        return redirect()->route('manage.general.setting')
+            ->with('info', 'Edit profil sekolah dilakukan melalui dashboard sekolah.');
     }
 
     public function updateGateway(Request $request)
@@ -183,10 +139,23 @@ class GeneralSettingController extends Controller
                 ->with('error', 'Anda tidak memiliki akses ke Gateway settings. Silakan beli add-on terlebih dahulu.');
         }
         
-        $gateway = SetupGateway::first() ?? new SetupGateway();
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+        
+        // Get or create gateway for current school
+        $gateway = SetupGateway::where('school_id', $currentSchoolId)->first();
+        if (!$gateway) {
+            $gateway = new SetupGateway();
+            $gateway->school_id = $currentSchoolId;
+        }
         
         // Log data sebelum update untuk debugging
         \Log::info('Gateway update - Data sebelum update:', [
+            'school_id' => $currentSchoolId,
             'norek_bank' => $gateway->norek_bank,
             'nama_bank' => $gateway->nama_bank,
             'nama_rekening' => $gateway->nama_rekening,
@@ -244,6 +213,7 @@ class GeneralSettingController extends Controller
         
         // Log data setelah update untuk debugging
         \Log::info('Gateway update - Data setelah update:', [
+            'school_id' => $currentSchoolId,
             'norek_bank' => $gateway->norek_bank,
             'nama_bank' => $gateway->nama_bank,
             'nama_rekening' => $gateway->nama_rekening
@@ -269,16 +239,29 @@ class GeneralSettingController extends Controller
     public function updateRekening(Request $request)
     {
         try {
+            $currentSchoolId = currentSchoolId();
+            
+            if (!$currentSchoolId) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            
             $request->validate([
                 'norek_bank' => 'required|string|max:100',
                 'nama_bank' => 'required|string|max:100',
                 'nama_rekening' => 'required|string|max:100',
             ]);
 
-            $gateway = SetupGateway::first() ?? new SetupGateway();
+            // Get or create gateway for current school
+            $gateway = SetupGateway::where('school_id', $currentSchoolId)->first();
+            if (!$gateway) {
+                $gateway = new SetupGateway();
+                $gateway->school_id = $currentSchoolId;
+            }
             
             // Log data sebelum update
             \Log::info('Rekening update - Data sebelum update:', [
+                'school_id' => $currentSchoolId,
                 'norek_bank' => $gateway->norek_bank,
                 'nama_bank' => $gateway->nama_bank,
                 'nama_rekening' => $gateway->nama_rekening
@@ -293,6 +276,7 @@ class GeneralSettingController extends Controller
             
             // Log data setelah update
             \Log::info('Rekening update - Data setelah update:', [
+                'school_id' => $currentSchoolId,
                 'norek_bank' => $gateway->norek_bank,
                 'nama_bank' => $gateway->nama_bank,
                 'nama_rekening' => $gateway->nama_rekening

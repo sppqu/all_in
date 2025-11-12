@@ -10,7 +10,8 @@ use Illuminate\Support\Str;
 use App\Models\SPMBRegistration;
 use App\Models\SPMBDocument;
 use App\Models\SPMBPayment;
-use App\Models\SchoolProfile;
+use App\Models\School;
+use App\Models\SchoolProfile; // @deprecated - kept for backward compatibility
 use App\Services\IpaymuService;
 use App\Services\WhatsAppService;
 use App\Helpers\WaveHelper;
@@ -37,7 +38,7 @@ class SPMBController extends Controller
      */
     public function index()
     {
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         $gateway = \App\Models\SetupGateway::first();
         
         // Get WhatsApp number from gateway (wa_gateway) or fallback to school phone (no_telp)
@@ -57,7 +58,7 @@ class SPMBController extends Controller
      */
     public function showLogin()
     {
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         return view('spmb.login', compact('schoolProfile'));
     }
 
@@ -66,7 +67,7 @@ class SPMBController extends Controller
      */
     public function showRegister()
     {
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         return view('spmb.register', compact('schoolProfile'));
     }
 
@@ -204,7 +205,7 @@ class SPMBController extends Controller
         }
 
         $registration = SPMBRegistration::findOrFail($registrationId);
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         $gateway = \App\Models\SetupGateway::first();
         
         // Get WhatsApp number from gateway (wa_gateway) or fallback to school phone (no_telp)
@@ -251,11 +252,39 @@ class SPMBController extends Controller
             // Get additional fees for step 5 (SPMB fee payment)
             if ($step == 5) {
                 $additionalFees = \App\Helpers\WaveHelper::getAvailableAdditionalFees($registration);
+                
+                // Get payment yang aktif untuk SPMB (untuk menampilkan nama pos)
+                $spmbPayment = null;
+                $currentSchoolId = currentSchoolId();
+                if ($currentSchoolId) {
+                    // Cari payment aktif untuk SPMB, prioritas: period aktif > period terbaru
+                    $activePeriod = \App\Models\Period::where('school_id', $currentSchoolId)
+                        ->where('period_status', 1)
+                        ->first();
+                    
+                    if ($activePeriod) {
+                        $spmbPayment = \App\Models\Payment::with('pos')
+                            ->where('is_for_spmb', true)
+                            ->where('period_period_id', $activePeriod->period_id)
+                            ->where('school_id', $currentSchoolId)
+                            ->first();
+                    }
+                    
+                    // Jika tidak ada di period aktif, ambil yang terbaru
+                    if (!$spmbPayment) {
+                        $spmbPayment = \App\Models\Payment::with('pos')
+                            ->where('is_for_spmb', true)
+                            ->where('school_id', $currentSchoolId)
+                            ->orderBy('period_period_id', 'desc')
+                            ->first();
+                    }
+                }
             } else {
                 $additionalFees = collect();
+                $spmbPayment = null;
             }
             
-            return view('spmb.steps.step' . $step, compact('registration', 'gatewayInfo', 'settings', 'additionalFees'));
+            return view('spmb.steps.step' . $step, compact('registration', 'gatewayInfo', 'settings', 'additionalFees', 'spmbPayment'));
         }
 
         return view('spmb.steps.step' . $step, compact('registration'));
@@ -832,7 +861,7 @@ class SPMBController extends Controller
     {
         $registrationId = Session::get('spmb_registration_id');
         $registration = SPMBRegistration::with(['kejuruan'])->findOrFail($registrationId);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         return view('spmb.download-form', compact('registration', 'schoolProfile'));
     }
@@ -1047,7 +1076,7 @@ class SPMBController extends Controller
      */
     public function showForgotPassword()
     {
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         return view('spmb.forgot-password', compact('schoolProfile'));
     }
 
@@ -1098,7 +1127,7 @@ class SPMBController extends Controller
         ]);
 
         // Kirim notifikasi WhatsApp
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         $schoolName = $schoolProfile->nama_sekolah ?? 'SPPQU';
         
         $message = "🔑 *Reset Password SPMB*\n\n";
@@ -1168,7 +1197,7 @@ class SPMBController extends Controller
                 ->with('error', 'Kode reset tidak valid atau sudah kadaluarsa. Silakan request ulang.');
         }
 
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         $phone = $reset->phone;
         
         return view('spmb.reset-password', compact('schoolProfile', 'token', 'phone'));
@@ -1269,7 +1298,7 @@ class SPMBController extends Controller
             ->update(['used' => true]);
 
         // Kirim notifikasi WhatsApp
-        $schoolProfile = SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? School::first();
         $schoolName = $schoolProfile->nama_sekolah ?? 'SPPQU';
         
         $message = "✅ *Password Berhasil Direset*\n\n";

@@ -12,7 +12,8 @@ class ClassModel extends Model
     protected $primaryKey = 'class_id';
     
     protected $fillable = [
-        'class_name'
+        'class_name',
+        'school_id'
     ];
 
     // Aktifkan timestamps
@@ -22,6 +23,12 @@ class ClassModel extends Model
     public function students()
     {
         return $this->hasMany(Student::class, 'class_class_id', 'class_id');
+    }
+
+    // Relasi dengan School
+    public function school()
+    {
+        return $this->belongsTo(\App\Models\School::class, 'school_id', 'id');
     }
 
     // Accessor untuk mendapatkan jumlah siswa

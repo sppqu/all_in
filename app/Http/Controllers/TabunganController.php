@@ -8,7 +8,8 @@ use App\Models\Student;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Period;
 use App\Models\ClassModel;
-use App\Models\SchoolProfile;
+use App\Models\School;
+use App\Models\SchoolProfile; // @deprecated - kept for backward compatibility
 
 class TabunganController extends Controller
 {
@@ -17,16 +18,26 @@ class TabunganController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil data kelas untuk filter
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
+        // Ambil data kelas untuk filter berdasarkan school_id
         $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
             ->select('class_id', 'class_name')
             ->orderBy('class_name')
             ->get();
 
-        // Query dasar
+        // Query dasar dengan filter school_id
         $query = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -60,8 +71,17 @@ class TabunganController extends Controller
 
         $tabungan = $query->orderBy('s.student_full_name')->paginate(15);
 
-        $totalSaldo = DB::table('tabungan')->sum('saldo');
-        $totalStudents = DB::table('tabungan')->count();
+        // Statistik dengan filter school_id
+        $totalSaldo = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->sum('t.saldo');
+        
+        $totalStudents = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->count();
+        
         $averageSaldo = $totalStudents > 0 ? $totalSaldo / $totalStudents : 0;
 
         return view('admin.tabungan.index', compact('tabungan', 'totalSaldo', 'totalStudents', 'averageSaldo', 'classes'));
@@ -72,14 +92,8 @@ class TabunganController extends Controller
      */
     public function create()
     {
-        $students = DB::table('students as s')
-            ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
-            ->where('s.student_status', 1)
-            ->select('s.student_id', 's.student_full_name', 's.student_nis', 'c.class_name')
-            ->orderBy('s.student_full_name')
-            ->get();
-
-        return view('admin.tabungan.create', compact('students'));
+        // Tidak perlu load semua students karena akan menggunakan AJAX search
+        return view('admin.tabungan.create');
     }
 
     /**
@@ -87,10 +101,28 @@ class TabunganController extends Controller
      */
     public function store(Request $request)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $request->validate([
             'student_id' => 'required|exists:students,student_id',
             'saldo' => 'required|string',
         ]);
+
+        // Validasi student_id sesuai dengan school_id
+        $student = DB::table('students')
+            ->where('student_id', $request->student_id)
+            ->where('school_id', $currentSchoolId)
+            ->first();
+
+        if (!$student) {
+            return back()->withErrors(['student_id' => 'Siswa tidak ditemukan atau tidak termasuk dalam sekolah yang dipilih.']);
+        }
 
         // Bersihkan input saldo dari separator ribuan
         $saldo = str_replace('.', '', $request->saldo);
@@ -142,11 +174,20 @@ class TabunganController extends Controller
      */
     public function show($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
-            ->select('t.*', 's.student_nis', 's.student_full_name', 'c.class_name')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
+            ->select('t.*', 's.student_nis', 's.student_full_name', 'c.class_name')
             ->first();
 
         if (!$tabungan) {
@@ -161,10 +202,19 @@ class TabunganController extends Controller
      */
     public function edit($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -188,9 +238,28 @@ class TabunganController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $request->validate([
             'saldo' => 'required|string',
         ]);
+
+        // Validasi tabungan sesuai dengan school_id
+        $tabungan = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId)
+            ->first();
+
+        if (!$tabungan) {
+            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
+        }
 
         // Bersihkan input saldo dari separator ribuan
         $saldo = str_replace('.', '', $request->saldo);
@@ -215,6 +284,25 @@ class TabunganController extends Controller
      */
     public function destroy($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
+        // Validasi tabungan sesuai dengan school_id
+        $tabungan = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId)
+            ->first();
+
+        if (!$tabungan) {
+            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
+        }
+
         DB::table('tabungan')->where('tabungan_id', $id)->delete();
 
         return redirect()->route('manage.tabungan.index')->with('success', 'Tabungan berhasil dihapus.');
@@ -225,10 +313,19 @@ class TabunganController extends Controller
      */
     public function setoran($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -252,10 +349,30 @@ class TabunganController extends Controller
      */
     public function storeSetoran(Request $request, $id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $request->validate([
             'jumlah' => 'required|string',
             'keterangan' => 'nullable|string|max:255',
         ]);
+
+        // Validasi tabungan sesuai dengan school_id
+        $tabungan = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId)
+            ->select('t.*')
+            ->first();
+        
+        if (!$tabungan) {
+            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
+        }
 
         // Bersihkan input jumlah dari separator ribuan
         $jumlah = str_replace('.', '', $request->jumlah);
@@ -263,12 +380,6 @@ class TabunganController extends Controller
 
         if ($jumlah <= 0) {
             return back()->withErrors(['jumlah' => 'Jumlah setoran harus lebih dari 0.']);
-        }
-
-        $tabungan = DB::table('tabungan')->where('tabungan_id', $id)->first();
-        
-        if (!$tabungan) {
-            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
         }
 
         DB::transaction(function () use ($jumlah, $id, $tabungan, $request) {
@@ -320,10 +431,19 @@ class TabunganController extends Controller
      */
     public function penarikan($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -346,10 +466,30 @@ class TabunganController extends Controller
      */
     public function storePenarikan(Request $request, $id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $request->validate([
             'jumlah' => 'required|string',
             'keterangan' => 'nullable|string|max:255',
         ]);
+
+        // Validasi tabungan sesuai dengan school_id
+        $tabungan = DB::table('tabungan as t')
+            ->join('students as s', 't.student_student_id', '=', 's.student_id')
+            ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId)
+            ->select('t.*')
+            ->first();
+        
+        if (!$tabungan) {
+            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
+        }
 
         // Bersihkan input jumlah dari separator ribuan
         $jumlah = str_replace('.', '', $request->jumlah);
@@ -357,12 +497,6 @@ class TabunganController extends Controller
 
         if ($jumlah <= 0) {
             return back()->withErrors(['jumlah' => 'Jumlah penarikan harus lebih dari 0.']);
-        }
-
-        $tabungan = DB::table('tabungan')->where('tabungan_id', $id)->first();
-        
-        if (!$tabungan) {
-            return redirect()->route('manage.tabungan.index')->with('error', 'Tabungan tidak ditemukan.');
         }
 
         if ($jumlah > $tabungan->saldo) {
@@ -418,10 +552,19 @@ class TabunganController extends Controller
      */
     public function riwayat($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -449,10 +592,19 @@ class TabunganController extends Controller
      */
     public function exportMutasi($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -473,7 +625,7 @@ class TabunganController extends Controller
             ->get();
 
         // Ambil identitas sekolah
-        $school = \App\Models\SchoolProfile::first();
+        $school = currentSchool() ?? \App\Models\School::first();
 
         // Generate PDF menggunakan DomPDF
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.tabungan.mutasi-pdf', compact('tabungan', 'riwayat', 'school'));
@@ -488,10 +640,19 @@ class TabunganController extends Controller
      */
     public function cetakKuitansi($id, Request $request)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $tabungan = DB::table('tabungan as t')
             ->join('students as s', 't.student_student_id', '=', 's.student_id')
             ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.tabungan_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.tabungan_id',
                 't.saldo',
@@ -532,7 +693,7 @@ class TabunganController extends Controller
         $saldoAkhir = $totalSetoran - $totalPenarikan;
 
         // Ambil identitas sekolah
-        $school = \App\Models\SchoolProfile::first();
+        $school = currentSchool() ?? \App\Models\School::first();
 
         // Data untuk view
         $data = [

@@ -14,18 +14,33 @@ class BulkWhatsAppController extends Controller
      */
     public function index()
     {
-        // Ambil data periode (semua periode)
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+
+        // Ambil data periode berdasarkan school_id
         $periods = DB::table('periods')
+            ->where('school_id', $currentSchoolId)
             ->orderBy('period_id', 'desc')
             ->get();
 
-        // Ambil data pos pembayaran
+        // Ambil data pos pembayaran berdasarkan school_id
         $posPembayaran = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
             ->orderBy('pos_name', 'asc')
             ->get();
 
-        // Ambil data kelas
+        // Ambil data kelas berdasarkan school_id
         $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
             ->orderBy('class_name', 'asc')
             ->get();
 
@@ -40,6 +55,16 @@ class BulkWhatsAppController extends Controller
         $startTime = microtime(true);
         
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
+            if (!$currentSchoolId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.'
+                ], 403);
+            }
+            
             // Log incoming request
             Log::info('Bulk WhatsApp getBills called with:', $request->all());
             
@@ -79,6 +104,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->whereNotNull('be.bebas_id') // Pastikan ada data tagihan bebas
                     ->whereNotNull('p.payment_id') // Pastikan ada data payment
                     ->whereRaw('(be.bebas_bill - COALESCE(be.bebas_total_pay, 0)) > 0') // Hanya yang belum lunas
@@ -108,6 +134,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->whereNotNull('b.bulan_id')
                     ->whereNull('b.bulan_date_pay')
                     ->select(
@@ -135,6 +162,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->whereNotNull('be.bebas_id')
                     ->whereRaw('(be.bebas_bill - COALESCE(be.bebas_total_pay, 0)) > 0')
                     ->select(
@@ -165,6 +193,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->whereNotNull('b.bulan_id') // Pastikan ada data tagihan
                     ->whereNotNull('p.payment_id') // Pastikan ada data payment
                     ->whereNull('b.bulan_date_pay') // Hanya tampilkan yang belum lunas
@@ -306,6 +335,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->where('s.student_status', 1)
                     ->whereNotNull('b.bulan_id')
                     ->whereNull('b.bulan_date_pay')
@@ -350,6 +380,7 @@ class BulkWhatsAppController extends Controller
                     ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                     ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                     ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                    ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                     ->where('s.student_status', 1)
                     ->whereNotNull('be.bebas_id')
                     ->whereRaw('(be.bebas_bill - COALESCE(be.bebas_total_pay, 0)) > 0')
@@ -574,6 +605,16 @@ class BulkWhatsAppController extends Controller
     public function sendBulkBills(Request $request)
     {
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
+            if (!$currentSchoolId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.'
+                ], 403);
+            }
+            
             $request->validate([
                 'bills' => 'required|array',
                 'bills.*.student_id' => 'required|exists:students,student_id',
@@ -600,6 +641,7 @@ class BulkWhatsAppController extends Controller
                             ->join('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                             ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                             ->join('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                            ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                             ->where('be.bebas_id', $bill['bill_id'])
                             ->select(
                                 's.student_full_name',
@@ -620,6 +662,7 @@ class BulkWhatsAppController extends Controller
                             ->join('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                             ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                             ->join('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                            ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                             ->where('b.bulan_id', $bill['bill_id'])
                             ->select(
                                 's.student_full_name',
@@ -747,6 +790,16 @@ class BulkWhatsAppController extends Controller
     public function sendConsolidatedBills(Request $request)
     {
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
+            if (!$currentSchoolId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.'
+                ], 403);
+            }
+            
             $request->validate([
                 'bills' => 'required|array',
                 'bills.*.student_id' => 'required|exists:students,student_id',
@@ -770,6 +823,7 @@ class BulkWhatsAppController extends Controller
                     // Get student info
                     $student = DB::table('students as s')
                         ->leftJoin('class_models as c', 's.class_class_id', '=', 'c.class_id')
+                        ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                         ->where('s.student_id', $studentId)
                         ->select('s.student_full_name', 's.student_parent_phone', 'c.class_name')
                         ->first();
@@ -791,9 +845,11 @@ class BulkWhatsAppController extends Controller
                     foreach ($studentBillList as $bill) {
                         if ($bill['bill_type'] === 'bebas') {
                             $billDetail = DB::table('bebas as be')
+                                ->join('students as s', 'be.student_student_id', '=', 's.student_id')
                                 ->join('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                                 ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                 ->join('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                                ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                                 ->where('be.bebas_id', $bill['bill_id'])
                                 ->select(
                                     'be.bebas_desc',
@@ -817,9 +873,11 @@ class BulkWhatsAppController extends Controller
                             }
                         } else {
                             $billDetail = DB::table('bulan as b')
+                                ->join('students as s', 'b.student_student_id', '=', 's.student_id')
                                 ->join('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                                 ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                 ->join('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                                ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                                 ->where('b.bulan_id', $bill['bill_id'])
                                 ->select(
                                     'b.month_month_id',

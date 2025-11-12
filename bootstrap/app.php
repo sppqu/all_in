@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'spmb.admin' => \App\Http\Middleware\SPMBAdminMiddleware::class,
             'bk.only' => \App\Http\Middleware\BKMiddleware::class,
             'check.subscription' => \App\Http\Middleware\CheckSubscription::class,
+            'school.context' => \App\Http\Middleware\SchoolContext::class,
         ]);
         
         // Completely disable CSRF middleware for all routes
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
                     // \App\Http\Middleware\VerifyCsrfToken::class, // Disabled for webhook compatibility
                     \Illuminate\Routing\Middleware\SubstituteBindings::class,
+                    \App\Http\Middleware\SchoolContext::class,
                 ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

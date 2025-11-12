@@ -14,24 +14,40 @@ class LaporanTunggakanSiswaController extends Controller
      */
     public function index(Request $request)
     {
-        // Ambil data untuk filter
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+
+        // Ambil data untuk filter berdasarkan school_id
         $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
             ->select('class_id', 'class_name')
             ->orderBy('class_name')
             ->get();
 
         $posList = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
             ->select('pos_id', 'pos_name')
             ->orderBy('pos_name')
             ->get();
 
         $students = DB::table('students')
+            ->where('school_id', $currentSchoolId)
             ->select('student_id', 'student_full_name', 'student_nis')
             ->orderBy('student_full_name')
             ->get();
 
-        // Ambil data tahun pelajaran
+        // Ambil data tahun pelajaran berdasarkan school_id
         $periods = DB::table('periods')
+            ->where('school_id', $currentSchoolId)
             ->select('period_id', DB::raw('CONCAT(period_start, "/", period_end) as period_name'))
             ->orderBy('period_start', 'desc')
             ->get();
@@ -60,6 +76,9 @@ class LaporanTunggakanSiswaController extends Controller
         $classId = $request->filled('class_id') ? $request->class_id : null;
         $studentStatus = $request->filled('student_status') ? $request->student_status : null;
         
+        // Cek apakah ada filter yang dipilih (minimal period_id wajib)
+        $hasFilter = $request->has('filter') || $periodId !== null || $studentId !== null || $posId !== null || $classId !== null || $studentStatus !== null;
+        
         // Debug: Log filter parameters
         \Log::info('Filter Parameters:', [
             'periodId' => $periodId,
@@ -67,18 +86,24 @@ class LaporanTunggakanSiswaController extends Controller
             'studentId' => $studentId,
             'posId' => $posId,
             'classId' => $classId,
-            'studentStatus' => $studentStatus
+            'studentStatus' => $studentStatus,
+            'hasFilter' => $hasFilter
         ]);
 
-        // Query untuk data tunggakan
-        $tunggakanData = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus);
+        // Query untuk data tunggakan - hanya jika ada filter yang dipilih
+        if ($hasFilter) {
+            $tunggakanData = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus, $currentSchoolId);
+        } else {
+            // Jika tidak ada filter, data kosong
+            $tunggakanData = collect([]);
+        }
 
         // Hitung total tunggakan
         $totalTunggakan = $tunggakanData->sum('total_tunggakan');
         $totalSiswa = $tunggakanData->count();
         $rataRataTunggakan = $totalSiswa > 0 ? $totalTunggakan / $totalSiswa : 0;
 
-        $school_profile = \App\Models\SchoolProfile::first();
+        $school_profile = currentSchool() ?? \App\Models\School::first();
 
         return view('admin.laporan.tunggakan-siswa.index', compact(
             'tunggakanData',
@@ -103,9 +128,19 @@ class LaporanTunggakanSiswaController extends Controller
     /**
      * Ambil data tunggakan siswa
      */
-    private function getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus)
+    private function getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus, $currentSchoolId = null)
     {
         try {
+            // Pastikan currentSchoolId sudah di-set
+            if (!$currentSchoolId) {
+                $currentSchoolId = currentSchoolId();
+            }
+            
+            if (!$currentSchoolId) {
+                \Log::error('currentSchoolId is null in getTunggakanData');
+                return collect([]);
+            }
+
             $result = collect();
 
             // Query untuk bulanan - menggunakan LEFT JOIN untuk menangani foreign key yang tidak valid
@@ -115,6 +150,7 @@ class LaporanTunggakanSiswaController extends Controller
                 ->leftJoin('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                 ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                 ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                 ->whereRaw('CAST(b.bulan_bill AS DECIMAL(10,2)) > 0')
                 ->whereNull('b.bulan_date_pay'); // bulan_date_pay NULL berarti belum dibayar
 
@@ -125,6 +161,7 @@ class LaporanTunggakanSiswaController extends Controller
                 ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                 ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                 ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
+                ->where('s.school_id', $currentSchoolId) // Filter berdasarkan school_id
                 ->where('be.bebas_bill', '>', 0)
                 ->whereRaw('CAST(be.bebas_total_pay AS DECIMAL(10,2)) < CAST(be.bebas_bill AS DECIMAL(10,2))'); // Total pay < bill berarti belum lunas
 
@@ -298,10 +335,16 @@ class LaporanTunggakanSiswaController extends Controller
         $classId = $request->filled('class_id') ? $request->class_id : null;
         $studentStatus = $request->filled('student_status') ? $request->student_status : null;
 
-        $tunggakanData = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus);
+        $currentSchoolId = currentSchoolId();
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
+        $tunggakanData = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus, $currentSchoolId);
         
         // Ambil identitas sekolah
-        $school = DB::table('school_profiles')->first();
+        $school = DB::table('schools')->where('id', $currentSchoolId)->first();
 
         // Get filter info
         $filterInfo = $this->getFilterInfo($periodId, $monthId, $studentId, $posId, $classId, $studentStatus);
@@ -346,8 +389,14 @@ class LaporanTunggakanSiswaController extends Controller
         $classId = $request->filled('class_id') ? $request->class_id : null;
         $studentStatus = $request->filled('student_status') ? $request->student_status : null;
 
+        $currentSchoolId = currentSchoolId();
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         // Ambil hanya data untuk siswa ini
-        $data = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus);
+        $data = $this->getTunggakanData($periodId, $monthId, $studentId, $posId, $classId, $studentStatus, $currentSchoolId);
         $studentData = $data->first();
         // Normalisasi struktur agar mudah dipakai di view
         if (is_array($studentData)) {
@@ -375,7 +424,7 @@ class LaporanTunggakanSiswaController extends Controller
         }
 
         // Identitas sekolah
-        $school = DB::table('school_profiles')->first();
+        $school = DB::table('schools')->where('id', $currentSchoolId)->first();
 
         // Jika tidak ada data, buat PDF kosong dengan info siswa
         $pdf = Pdf::loadView('admin.laporan.tunggakan-siswa.pdf-student', [

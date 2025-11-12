@@ -266,7 +266,7 @@ class CashflowController extends Controller
         $cashflowData = $this->getCashflowData($startDate, $endDate, $kasId);
         
         // Ambil data sekolah
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
         
         if ($format == 'pdf') {
             return view('accounting.cashflow.export-pdf', compact(
@@ -308,7 +308,7 @@ class CashflowController extends Controller
         ];
         
         // Ambil data sekolah
-        $schoolData = DB::table('school_profiles')->first();
+        $schoolData = DB::table('schools')->first();
         
         return view('accounting.cashflow.export-excel', compact(
             'cashflowData',

@@ -80,6 +80,61 @@
     </div>
     @endif
 
+    <!-- Purchased but Not Active Add-ons -->
+    @if(isset($purchasedButInactive) && $purchasedButInactive->count() > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Add-ons Terbeli Belum Aktif
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Anda memiliki add-on yang sudah terbeli namun belum aktif. Klik tombol "Aktifkan" untuk mengaktifkannya.
+                    </div>
+                    <div class="row">
+                        @foreach($purchasedButInactive as $userAddon)
+                            @if($userAddon->addon)
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <div class="mb-2">
+                                            <i class="fas fa-exclamation-circle text-warning" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <h6 class="card-title">{{ $userAddon->addon->name }}</h6>
+                                        <p class="card-text text-muted small">
+                                            @if($userAddon->purchased_at)
+                                                Dibeli: {{ $userAddon->purchased_at->format('d M Y') }}
+                                            @else
+                                                Status: {{ ucfirst($userAddon->status) }}
+                                            @endif
+                                        </p>
+                                        <span class="badge bg-warning text-dark mb-2">
+                                            <i class="fas fa-clock me-1"></i>{{ ucfirst($userAddon->status) }}
+                                        </span>
+                                        <div class="d-grid mt-2">
+                                            <button class="btn btn-primary btn-sm activate-purchased-btn" 
+                                                    data-user-addon-id="{{ $userAddon->id }}"
+                                                    data-addon-name="{{ $userAddon->addon->name }}">
+                                                <i class="fas fa-power-off me-2"></i>Aktifkan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Available Add-ons -->
     <div class="row">
         <div class="col-12">
@@ -134,24 +189,24 @@
                                         </small>
                                     </div>
                                     <div class="mb-3">
+                                        @php
+                                            $isPurchased = isset($allPurchasedAddons) && in_array($addon->id, $allPurchasedAddons);
+                                            $isActive = $userAddons->where('addon_id', $addon->id)->count() > 0;
+                                        @endphp
                                         @if(in_array($addon->slug, ['inventaris']))
                                             <span class="badge bg-secondary">
                                                 <i class="fas fa-clock me-1"></i>Segera
                                             </span>
-                                        @elseif($addon->slug === 'spmb')
-                                            @if($userAddons->where('addon_id', $addon->id)->count() > 0)
+                                        @elseif($isPurchased)
+                                            @if($isActive)
                                                 <span class="badge bg-success">
-                                                    <i class="fas fa-check me-1"></i>Sudah Dimiliki
+                                                    <i class="fas fa-check me-1"></i>Sudah Dimiliki & Aktif
                                                 </span>
                                             @else
-                                                <span class="badge bg-warning">
-                                                    <i class="fas fa-lock me-1"></i>Belum Dimiliki
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-clock me-1"></i>Sudah Dimiliki (Belum Aktif)
                                                 </span>
                                             @endif
-                                        @elseif($userAddons->where('addon_id', $addon->id)->count() > 0)
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>Sudah Dimiliki
-                                            </span>
                                         @else
                                             <span class="badge bg-warning">
                                                 <i class="fas fa-lock me-1"></i>Belum Dimiliki
@@ -163,20 +218,16 @@
                                             <button class="btn btn-secondary" disabled>
                                                 <i class="fas fa-clock me-2"></i>Segera
                                             </button>
-                                        @elseif($addon->slug === 'spmb')
-                                            @if($userAddons->where('addon_id', $addon->id)->count() > 0)
+                                        @elseif($isPurchased)
+                                            @if($isActive)
                                                 <button class="btn btn-success" disabled>
                                                     <i class="fas fa-check me-2"></i>Sudah Dimiliki
                                                 </button>
                                             @else
-                                                <a href="{{ route('manage.addons.show', $addon->slug) }}" class="btn btn-primary">
-                                                    <i class="fas fa-shopping-cart me-2"></i>Beli Sekarang
-                                                </a>
+                                                <button class="btn btn-warning" disabled>
+                                                    <i class="fas fa-clock me-2"></i>Menunggu Aktivasi
+                                                </button>
                                             @endif
-                                        @elseif($userAddons->where('addon_id', $addon->id)->count() > 0)
-                                            <button class="btn btn-success" disabled>
-                                                <i class="fas fa-check me-2"></i>Sudah Dimiliki
-                                            </button>
                                         @else
                                             <a href="{{ route('manage.addons.show', $addon->slug) }}" class="btn btn-primary">
                                                 <i class="fas fa-shopping-cart me-2"></i>Beli Sekarang
@@ -286,6 +337,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Reset button state
                 button.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Refresh Status';
                 button.disabled = false;
+            });
+        });
+    });
+
+    // Activate purchased addon button functionality
+    document.querySelectorAll('.activate-purchased-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const userAddonId = this.getAttribute('data-user-addon-id');
+            const addonName = this.getAttribute('data-addon-name');
+            const buttonElement = this;
+            
+            if (!confirm(`Apakah Anda yakin ingin mengaktifkan addon "${addonName}"?`)) {
+                return;
+            }
+            
+            // Show loading state
+            const originalHtml = buttonElement.innerHTML;
+            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Mengaktifkan...';
+            buttonElement.disabled = true;
+            
+            // Send request to activate
+            fetch('{{ route("manage.addons.activate-purchased") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    user_addon_id: userAddonId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Activate purchased addon response:', data);
+                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    // Reload page to reflect changes
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert('❌ ' + (data.error || data.message || 'Gagal mengaktifkan addon'));
+                    buttonElement.innerHTML = originalHtml;
+                    buttonElement.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Activate purchased addon error:', error);
+                alert('❌ Terjadi kesalahan saat mengaktifkan addon');
+                buttonElement.innerHTML = originalHtml;
+                buttonElement.disabled = false;
             });
         });
     });

@@ -103,6 +103,7 @@
                                             
                                             <!-- Action Buttons -->
                                             <div class="col-md-6 mb-3 d-flex align-items-end">
+                                                <input type="hidden" name="filter" value="1">
                                                 <button type="submit" class="btn btn-primary me-2">
                                                     <i class="fa fa-search me-1"></i>
                                                     Filter
@@ -123,7 +124,16 @@
                         </div>
                     </div>
 
-                    <!-- Summary Cards -->
+                    <!-- Alert jika belum ada filter -->
+                    @if(!request()->has('filter') && !request()->filled('period_id') && !request()->filled('student_id') && !request()->filled('pos_id') && !request()->filled('class_id') && !request()->filled('student_status'))
+                        <div class="alert alert-info mb-4" role="alert">
+                            <i class="fa fa-info-circle me-2"></i>
+                            <strong>Silakan pilih filter terlebih dahulu</strong> untuk menampilkan data tunggakan siswa. Klik tombol <strong>"Filter"</strong> setelah memilih filter yang diinginkan.
+                        </div>
+                    @endif
+
+                    <!-- Summary Cards - hanya tampilkan jika ada filter -->
+                    @if(request()->has('filter') || request()->filled('period_id') || request()->filled('student_id') || request()->filled('pos_id') || request()->filled('class_id') || request()->filled('student_status'))
                     <div class="row mb-4">
                         <div class="col-md-4">
                             <div class="card bg-primary text-white">
@@ -171,8 +181,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <!-- Data Table -->
+                    <!-- Data Table - hanya tampilkan jika ada filter -->
+                    @if(request()->has('filter') || request()->filled('period_id') || request()->filled('student_id') || request()->filled('pos_id') || request()->filled('class_id') || request()->filled('student_status'))
                     <div class="table-responsive">
                         <table class="table table-striped table-hover" id="tunggakanTable">
                             <thead class="table-dark">
@@ -222,6 +234,7 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -257,13 +270,8 @@
     let currentStudentData = null;
     
     function resetFilter() {
-        document.getElementById('period_id').value = '';
-        document.getElementById('month_id').value = '';
-        document.getElementById('student_id').value = '';
-        document.getElementById('pos_id').value = '';
-        document.getElementById('class_id').value = '';
-        document.getElementById('student_status').value = '';
-        document.getElementById('filterForm').submit();
+        // Reset form ke URL tanpa parameter
+        window.location.href = '{{ route("manage.laporan.tunggakan-siswa") }}';
     }
 
     function exportPdf() {

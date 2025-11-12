@@ -12,11 +12,18 @@ class Payment extends Model
 
     protected $fillable = [
         'payment_type',
+        'is_for_spmb',
         'period_period_id',
         'pos_pos_id',
+        'school_id',
         'payment_input_date',
         'payment_last_update',
     ];
+
+    public function school()
+    {
+        return $this->belongsTo(School::class, 'school_id', 'id');
+    }
 
     public function period()
     {
@@ -26,4 +33,8 @@ class Payment extends Model
     {
         return $this->belongsTo(\App\Models\Pos::class, 'pos_pos_id', 'pos_id');
     }
+
+    protected $casts = [
+        'is_for_spmb' => 'boolean',
+    ];
 } 

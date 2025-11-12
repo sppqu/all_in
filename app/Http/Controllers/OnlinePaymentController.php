@@ -22,14 +22,47 @@ class OnlinePaymentController extends Controller
      */
     public function index()
     {
-        $activePeriod = Period::where('period_status', 1)->first();
-        $payments = Payment::with(['pos', 'period'])->get();
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
         
-        // Statistik pembayaran online
-        $totalPayments = DB::table('transfer')->count();
-        $successPayments = DB::table('transfer')->where('status', 1)->count();
-        $pendingPayments = DB::table('transfer')->where('status', 0)->count();
-        $failedPayments = DB::table('transfer')->where('status', 2)->count();
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
+        // Filter active period by school_id
+        $activePeriod = Period::where('period_status', 1)
+            ->where('school_id', $currentSchoolId)
+            ->first();
+        
+        // Filter payments by school_id
+        $payments = Payment::with(['pos', 'period'])
+            ->where('school_id', $currentSchoolId)
+            ->get();
+        
+        // Statistik pembayaran online - filter by school_id
+        $totalPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->count();
+        
+        $successPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 1)
+            ->count();
+        
+        $pendingPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 0)
+            ->count();
+        
+        $failedPayments = DB::table('transfer as t')
+            ->join('students as s', 't.student_id', '=', 's.student_id')
+            ->where('s.school_id', $currentSchoolId)
+            ->where('t.status', 2)
+            ->count();
         
         return view('online-payment.index', compact(
             'activePeriod', 
@@ -321,6 +354,17 @@ class OnlinePaymentController extends Controller
                 route('ipaymu.callback'),
                 route('student.payment.history')
             );
+
+            // Handle error jika gateway tidak aktif
+            if (!$ipaymuResponse['success']) {
+                if (isset($ipaymuResponse['error_code']) && $ipaymuResponse['error_code'] === 'GATEWAY_INACTIVE') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $ipaymuResponse['message'] ?? 'Metode pembayaran yang Anda pilih sedang offline atau tidak aktif. Silakan pilih metode pembayaran lain.'
+                    ], 400);
+                }
+                throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
+            }
 
             Log::info('🔵 iPaymu API Response', [
                 'success' => $ipaymuResponse['success'] ?? false,
@@ -784,10 +828,19 @@ class OnlinePaymentController extends Controller
      */
     public function paymentHistory(Request $request)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         // Query untuk transfer manual (existing)
         $transferQuery = DB::table('transfer as t')
             ->join('students as s', 't.student_id', '=', 's.student_id')
             ->leftJoin('class_models as c', 's.class_class_id', '=', 'c.class_id')
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select(
                 't.transfer_id',
                 't.student_id',
@@ -863,8 +916,18 @@ class OnlinePaymentController extends Controller
             'filters' => $request->only(['status', 'payment_type', 'date_from', 'date_to', 'search', 'per_page'])
         ]);
 
-        // Sort and paginate
-        $allTransfers = $allTransfers->sortByDesc('created_at');
+        // Sort: status menunggu (0) paling atas, kemudian yang lain diurutkan berdasarkan created_at desc
+        $allTransfers = $allTransfers->sort(function($a, $b) {
+            // Prioritas: status 0 (menunggu) di atas
+            if ($a->status == 0 && $b->status != 0) {
+                return -1; // a lebih dulu
+            }
+            if ($a->status != 0 && $b->status == 0) {
+                return 1; // b lebih dulu
+            }
+            // Jika status sama, urutkan berdasarkan created_at desc (terbaru dulu)
+            return strtotime($b->created_at) - strtotime($a->created_at);
+        });
         
         // Manual pagination
         $perPage = $request->get('per_page', 20);
@@ -1243,13 +1306,28 @@ class OnlinePaymentController extends Controller
      */
     public function verifyPayment(Request $request, $id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sekolah belum dipilih'
+            ], 403);
+        }
+
         $request->validate([
             'verification_status' => 'required|in:verified,rejected',
             'verification_notes' => 'nullable|string'
         ]);
 
         try {
-            $transfer = DB::table('transfer')->where('transfer_id', $id)->first();
+            $transfer = DB::table('transfer as t')
+                ->join('students as s', 't.student_id', '=', 's.student_id')
+                ->where('t.transfer_id', $id)
+                ->where('s.school_id', $currentSchoolId) // Filter by school_id
+                ->select('t.*')
+                ->first();
             
             if (!$transfer) {
                 return response()->json([
@@ -1404,11 +1482,18 @@ class OnlinePaymentController extends Controller
                 // Jangan gagalkan proses verifikasi jika notifikasi gagal
             }
 
+            // Jika verified, return dengan redirect URL ke halaman cetak kuitansi
+            if ($request->verification_status === 'verified') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pembayaran berhasil diverifikasi',
+                    'redirect' => route('online-payment.receipt', $id)
+                ]);
+            }
+            
             return response()->json([
                 'success' => true,
-                'message' => $request->verification_status === 'verified' 
-                    ? 'Pembayaran berhasil diverifikasi' 
-                    : 'Pembayaran ditolak'
+                'message' => 'Pembayaran ditolak'
             ]);
 
         } catch (\Exception $e) {
@@ -1426,6 +1511,13 @@ class OnlinePaymentController extends Controller
     public function paymentDetail($id)
     {
         try {
+            // Get current school_id from session
+            $currentSchoolId = session('current_school_id');
+            
+            if (!$currentSchoolId) {
+                return response()->json(['error' => 'Sekolah belum dipilih'], 403);
+            }
+
             \Log::info('Payment detail requested for ID: ' . $id);
             \Log::info('User authenticated: ' . (auth()->check() ? 'Yes' : 'No'));
             \Log::info('Request method: ' . request()->method());
@@ -1435,6 +1527,7 @@ class OnlinePaymentController extends Controller
                 ->join('students as s', 't.student_id', '=', 's.student_id')
                 ->leftJoin('class_models as c', 's.class_class_id', '=', 'c.class_id')
                 ->where('t.transfer_id', $id)
+                ->where('s.school_id', $currentSchoolId) // Filter by school_id
                 ->select(
                     't.*',
                     's.student_nis',
@@ -1515,10 +1608,19 @@ class OnlinePaymentController extends Controller
      */
     public function downloadReceipt($id)
     {
+        // Get current school_id from session
+        $currentSchoolId = session('current_school_id');
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.general.setting')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+
         $payment = DB::table('transfer as t')
             ->join('students as s', 't.student_id', '=', 's.student_id')
             ->leftJoin('class_models as c', 's.class_class_id', '=', 'c.class_id')
             ->where('t.transfer_id', $id)
+            ->where('s.school_id', $currentSchoolId) // Filter by school_id
             ->select('t.*', 's.student_nis', 's.student_full_name', 'c.class_name')
             ->first();
 
@@ -1576,7 +1678,7 @@ class OnlinePaymentController extends Controller
         }
 
         // Ambil data sekolah
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
 
         // Ambil informasi petugas dari verif_user atau gunakan default
         $officerName = 'Sistem Pembayaran Online';

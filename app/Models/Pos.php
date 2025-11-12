@@ -13,5 +13,11 @@ class Pos extends Model
     protected $fillable = [
         'pos_name',
         'pos_description',
+        'school_id',
     ];
+
+    public function school()
+    {
+        return $this->belongsTo(School::class, 'school_id', 'id');
+    }
 } 

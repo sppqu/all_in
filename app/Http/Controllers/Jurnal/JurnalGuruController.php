@@ -226,7 +226,7 @@ class JurnalGuruController extends Controller
 
         $siswa = Student::with('class')->findOrFail($request->siswa_id);
         $kategori = JurnalKategori::active()->orderBy('urutan')->get();
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         $query = JurnalHarian::with(['entries.kategori'])
             ->where('siswa_id', $request->siswa_id);
@@ -342,7 +342,7 @@ class JurnalGuruController extends Controller
 
         $kelas = ClassModel::findOrFail($request->kelas_id);
         $kategori = JurnalKategori::active()->orderBy('urutan')->get();
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         // Get all students in class
         $students = Student::where('class_class_id', $request->kelas_id)

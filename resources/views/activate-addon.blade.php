@@ -99,7 +99,7 @@
                                     <option value="">Pilih Addon</option>
                                     <option value="spmb">SPMB (Sistem Penerimaan Mahasiswa Baru)</option>
                                     <option value="bk">Bimbingan Konseling (BK) - Pencatatan Pelanggaran Siswa</option>
-                                    <option value="e-jurnal">E-Jurnal Harian 7KAIH</option>
+                                    <option value="ejurnal-7kaih">E-Jurnal Harian 7KAIH</option>
                                     <option value="library">E-Perpustakaan Digital</option>
                                     <option value="payment-gateway">Payment Gateway</option>
                                     <option value="whatsapp-gateway">WhatsApp Gateway</option>

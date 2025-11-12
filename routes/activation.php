@@ -15,38 +15,54 @@ Route::get('/activate/{userId}/{addonSlug}', function($userId, $addonSlug) {
             return response()->json(['error' => "User ID $userId tidak ditemukan"], 404);
         }
 
-        $userAddon = \App\Models\UserAddon::where('user_id', $userId)
+        // For inheritance: if user is not superadmin, activate for superadmin instead
+        $targetUserId = ($user->role === 'superadmin') ? $userId : getSuperadminId();
+        
+        if (!$targetUserId) {
+            return response()->json(['error' => 'Superadmin tidak ditemukan'], 404);
+        }
+
+        $targetUser = \App\Models\User::find($targetUserId);
+        if (!$targetUser) {
+            return response()->json(['error' => "Target user ID $targetUserId tidak ditemukan"], 404);
+        }
+
+        $userAddon = \App\Models\UserAddon::where('user_id', $targetUserId)
             ->where('addon_id', $addon->id)
             ->first();
 
         if (!$userAddon) {
             // Create new user addon
             \App\Models\UserAddon::create([
-                'user_id' => $userId,
+                'user_id' => $targetUserId,
                 'addon_id' => $addon->id,
                 'status' => 'active',
                 'purchased_at' => now(),
                 'amount_paid' => $addon->price,
                 'payment_method' => 'web_activation',
+                'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             
-            $message = "Addon '{$addon->name}' berhasil dibuat dan diaktifkan untuk user '{$user->name}'";
+            $message = "Addon '{$addon->name}' berhasil dibuat dan diaktifkan untuk user '{$targetUser->name}'" . 
+                      ($targetUserId !== $userId ? " (inherited from user '{$user->name}')" : '');
         } else {
             // Update existing user addon
             $userAddon->update([
                 'status' => 'active',
+                'expires_at' => $addon->type === 'one_time' ? null : now()->addYear(),
                 'updated_at' => now()
             ]);
             
-            $message = "Addon '{$addon->name}' berhasil diaktifkan untuk user '{$user->name}'";
+            $message = "Addon '{$addon->name}' berhasil diaktifkan untuk user '{$targetUser->name}'" . 
+                      ($targetUserId !== $userId ? " (inherited from user '{$user->name}')" : '');
         }
 
         return response()->json([
             'success' => true,
             'message' => $message,
-            'user' => $user->name,
+            'user' => $targetUser->name,
             'addon' => $addon->name,
             'activation_date' => now()->format('Y-m-d H:i:s')
         ]);

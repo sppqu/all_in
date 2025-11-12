@@ -19,27 +19,27 @@
             <div class="card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0"><i class="fas fa-search"></i> Cari Transaksi Pembayaran</h4>
-        </div>
-        <div class="card-body">
-                    <form id="searchForm">
-                        <div class="row">
-                <div class="col-md-3">
-                    <label for="student_status" class="form-label">Status Siswa</label>
-                                <select class="form-control" id="student_status" name="student_status">
-                                    <option value="1">Aktif</option>
-                        <option value="0">Tidak Aktif</option>
-                    </select>
                 </div>
-                <div class="col-md-6">
-                    <label for="student_search" class="form-label">Peserta Didik</label>
-                                <select class="form-control" id="student_search" name="student_id">
+                <div class="card-body">
+                    <form id="searchForm">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label for="student_status" class="form-label">Status Siswa</label>
+                                <select class="form-select" id="student_status" name="student_status">
+                                    <option value="1">Aktif</option>
+                                    <option value="0">Tidak Aktif</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="student_search" class="form-label">Peserta Didik</label>
+                                <select class="form-select" id="student_search" name="student_id">
                                     <option value="">Pilih Peserta Didik</option>
                                 </select>
-                </div>
-                <div class="col-md-3">
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
-                                <button type="button" class="btn btn-primary d-block w-100 text-white" id="btnCariData">
-                                    <i class="fas fa-search"></i> Cari Data
+                                <button type="button" class="btn btn-primary w-100" id="btnCariData">
+                                    <i class="fas fa-search me-2"></i>Cari Data
                                 </button>
                             </div>
                         </div>

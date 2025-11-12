@@ -19,17 +19,28 @@ class RekapitulasiTabunganController extends Controller
                      $request->filled('payment_method') || $request->filled('class_id') ||
                      $request->has('filter_submitted');
         
+        // Filter berdasarkan school_id dari session
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('manage.foundation.dashboard')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+        
         $startDate = $request->filled('start_date') ? $request->start_date : Carbon::now()->startOfMonth()->format('Y-m-d');
         $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->format('Y-m-d');
         $paymentMethod = $request->filled('payment_method') ? $request->payment_method : null;
         $classId = $request->filled('class_id') ? $request->class_id : null;
         
-        // Ambil data kelas untuk filter
-        $classes = DB::table('class_models')->orderBy('class_name')->get();
+        // Ambil data kelas untuk filter - filter berdasarkan school_id
+        $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
         
         // Hanya ambil data rekapitulasi jika ada filter yang di-submit
         if ($hasFilters) {
-            $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId);
+            $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId, $currentSchoolId);
             
             // Hitung total
             $totalSetoran = $rekapitulasiData->sum('total_setoran');
@@ -60,19 +71,26 @@ class RekapitulasiTabunganController extends Controller
     /**
      * Ambil data rekapitulasi tabungan
      */
-    private function getRekapitulasiData($startDate, $endDate, $paymentMethod = null, $classId = null)
+    private function getRekapitulasiData($startDate, $endDate, $paymentMethod = null, $classId = null, $currentSchoolId = null)
     {
         try {
             $result = collect();
+            
+            // Jika currentSchoolId tidak diberikan, ambil dari helper
+            if (!$currentSchoolId) {
+                $currentSchoolId = currentSchoolId();
+            }
             
             Log::info('Starting getRekapitulasiData with params:', [
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'paymentMethod' => $paymentMethod,
-                'classId' => $classId
+                'classId' => $classId,
+                'currentSchoolId' => $currentSchoolId
             ]);
 
             // 1. Data dari tabel tabungan (saldo akhir)
+            // Filter berdasarkan school_id untuk memastikan data sesuai dengan school_id yang dipilih
             $tabunganQuery = DB::table('tabungan as t')
                 ->join('students as s', 't.student_student_id', '=', 's.student_id')
                 ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
@@ -84,6 +102,11 @@ class RekapitulasiTabunganController extends Controller
                     't.saldo as saldo_akhir',
                     't.tabungan_last_update'
                 );
+
+            // Filter berdasarkan school_id - WAJIB diterapkan
+            if ($currentSchoolId) {
+                $tabunganQuery->where('s.school_id', $currentSchoolId);
+            }
 
             if ($classId) {
                 $tabunganQuery->where('s.class_class_id', $classId);
@@ -537,15 +560,23 @@ class RekapitulasiTabunganController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        // Filter berdasarkan school_id dari session
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            return redirect()->route('rekapitulasi-tabungan.index')
+                ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+        }
+        
         $startDate = $request->filled('start_date') ? $request->start_date : Carbon::now()->startOfMonth()->format('Y-m-d');
         $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->format('Y-m-d');
         $paymentMethod = $request->filled('payment_method') ? $request->payment_method : null;
         $classId = $request->filled('class_id') ? $request->class_id : null;
 
-        $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId);
+        $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId, $currentSchoolId);
         
         // Ambil identitas sekolah
-        $school = DB::table('school_profiles')->first();
+        $school = DB::table('schools')->first();
 
         // Generate PDF
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.rekapitulasi-tabungan.pdf', compact(
@@ -628,12 +659,22 @@ class RekapitulasiTabunganController extends Controller
     public function exportExcel(Request $request)
     {
         try {
+            // Filter berdasarkan school_id dari session
+            $currentSchoolId = currentSchoolId();
+            
+            if (!$currentSchoolId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.'
+                ], 400);
+            }
+            
             $startDate = $request->filled('start_date') ? $request->start_date : Carbon::now()->startOfMonth()->format('Y-m-d');
             $endDate = $request->filled('end_date') ? $request->end_date : Carbon::now()->endOfMonth()->format('Y-m-d');
             $paymentMethod = $request->filled('payment_method') ? $request->payment_method : null;
             $classId = $request->filled('class_id') ? $request->class_id : null;
 
-            $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId);
+            $rekapitulasiData = $this->getRekapitulasiData($startDate, $endDate, $paymentMethod, $classId, $currentSchoolId);
             
             // Hitung total
             $totalSetoran = $rekapitulasiData->sum('total_setoran');

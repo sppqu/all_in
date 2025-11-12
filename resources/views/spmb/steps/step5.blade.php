@@ -77,9 +77,17 @@
                     </div>
                     <div class="step-body">
                         <div class="payment-info text-center">
-                            <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya SPMB</h5>
+                            @if($spmbPayment && $spmbPayment->pos)
+                                <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">
+                                    {{ $spmbPayment->pos->pos_name }}
+                                    <span class="badge bg-{{ $spmbPayment->payment_type === 'BULAN' ? 'danger' : 'primary' }} ms-2">
+                                        {{ $spmbPayment->payment_type === 'BULAN' ? 'Bulanan' : 'Bebas' }}
+                                    </span>
+                                </h6>
+                            @else
+                                <h6 class="mb-2" style="font-size: 0.95rem; font-weight: 600;">Biaya SPMB</h6>
+                            @endif
                             <div class="amount-display">Rp {{ number_format($settings->biaya_spmb ?? 200000, 0, ',', '.') }}</div>
-                        
                         </div>
 
                         @if($additionalFees && $additionalFees->count() > 0)
@@ -130,7 +138,13 @@
                                             <h6 class="mb-2">Rincian Biaya:</h6>
                                             <ul class="list-unstyled mb-0">
                                                 <li class="d-flex justify-content-between">
-                                                    <span>Biaya SPMB:</span>
+                                                    <span>
+                                                        @if($spmbPayment && $spmbPayment->pos)
+                                                            {{ $spmbPayment->pos->pos_name }}:
+                                                        @else
+                                                            Biaya SPMB:
+                                                        @endif
+                                                    </span>
                                                     <span>Rp {{ number_format($settings->biaya_spmb ?? 200000, 0, ',', '.') }}</span>
                                                 </li>
                                                 <li class="d-flex justify-content-between" id="additional-fees-list">

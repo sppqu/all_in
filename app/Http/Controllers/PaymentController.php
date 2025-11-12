@@ -12,46 +12,174 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\SetupGateway;
-use App\Models\SchoolProfile;
+use App\Models\School;
+use App\Models\SchoolProfile; // @deprecated - kept for backward compatibility
 use App\Models\ClassModel;
 
 class PaymentController extends Controller
 {
     public function index()
     {
-        $payments = Payment::with(['period', 'pos'])->orderBy('payment_id', 'desc')->get();
+        // Filter Payment berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $payments = Payment::where('school_id', $currentSchoolId)
+            ->with(['period', 'pos'])
+            ->orderBy('payment_id', 'desc')
+            ->get();
+        
         return view('payment.index', compact('payments'));
     }
 
     public function create()
     {
-        $periods = Period::orderBy('period_start')->get();
-        $posList = Pos::orderBy('pos_name')->get();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Filter periode berdasarkan sekolah yang sedang aktif
+        $periods = Period::where('school_id', $currentSchoolId)
+            ->orderBy('period_start')
+            ->get();
+        
+        // Jika tidak ada periode, buat periode default untuk sekolah ini
+        if ($periods->count() == 0) {
+            $currentYear = date('Y');
+            $nextYear = $currentYear + 1;
+            
+            Period::create([
+                'period_start' => $currentYear,
+                'period_end' => $nextYear,
+                'period_status' => 1,
+                'school_id' => $currentSchoolId,
+            ]);
+            
+            // Reload periods
+            $periods = Period::where('school_id', $currentSchoolId)
+                ->orderBy('period_start')
+                ->get();
+        }
+        
+        $posList = Pos::where('school_id', $currentSchoolId)
+            ->orderBy('pos_name')
+            ->get();
+        
         return view('payment.create', compact('periods', 'posList'));
     }
 
     public function store(Request $request)
     {
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
         $request->validate([
             'payment_type' => 'required|in:BEBAS,BULAN',
-            'period_period_id' => 'required|exists:periods,period_id',
-            'pos_pos_id' => 'required|exists:pos_pembayaran,pos_id',
+            'period_period_id' => [
+                'required',
+                'exists:periods,period_id',
+                function ($attribute, $value, $fail) use ($currentSchoolId) {
+                    $period = Period::where('period_id', $value)
+                        ->where('school_id', $currentSchoolId)
+                        ->first();
+                    if (!$period) {
+                        $fail('Periode yang dipilih tidak tersedia di sekolah ini.');
+                    }
+                }
+            ],
+            'pos_pos_id' => [
+                'required',
+                'exists:pos_pembayaran,pos_id',
+                function ($attribute, $value, $fail) use ($currentSchoolId) {
+                    $pos = Pos::where('pos_id', $value)
+                        ->where('school_id', $currentSchoolId)
+                        ->first();
+                    if (!$pos) {
+                        $fail('POS yang dipilih tidak tersedia di sekolah ini.');
+                    }
+                }
+            ],
         ]);
+        
         Payment::create([
             'payment_type' => $request->payment_type,
+            'is_for_spmb' => $request->has('is_for_spmb') && $request->is_for_spmb,
             'period_period_id' => $request->period_period_id,
             'pos_pos_id' => $request->pos_pos_id,
+            'school_id' => $currentSchoolId,
             'payment_input_date' => now(),
             'payment_last_update' => now(),
         ]);
+        
         return redirect()->route('payment.index')->with('success', 'Jenis Pembayaran berhasil ditambahkan!');
     }
 
     public function edit($id)
     {
-        $payment = Payment::findOrFail($id);
-        $periods = Period::orderBy('period_start')->get();
-        $posList = Pos::orderBy('pos_name')->get();
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $payment = Payment::where('school_id', $currentSchoolId)->findOrFail($id);
+        
+        // Filter periode berdasarkan sekolah yang sedang aktif
+        $periods = Period::where('school_id', $currentSchoolId)
+            ->orderBy('period_start')
+            ->get();
+        
+        // Jika tidak ada periode, buat periode default untuk sekolah ini
+        if ($periods->count() == 0) {
+            $currentYear = date('Y');
+            $nextYear = $currentYear + 1;
+            
+            Period::create([
+                'period_start' => $currentYear,
+                'period_end' => $nextYear,
+                'period_status' => 1,
+                'school_id' => $currentSchoolId,
+            ]);
+            
+            // Reload periods
+            $periods = Period::where('school_id', $currentSchoolId)
+                ->orderBy('period_start')
+                ->get();
+        }
+        
+        $posList = Pos::where('school_id', $currentSchoolId)
+            ->orderBy('pos_name')
+            ->get();
+        
         return view('payment.edit', compact('payment', 'periods', 'posList'));
     }
 
@@ -65,6 +193,7 @@ class PaymentController extends Controller
         $payment = Payment::findOrFail($id);
         $payment->update([
             'payment_type' => $request->payment_type,
+            'is_for_spmb' => $request->has('is_for_spmb') && $request->is_for_spmb,
             'period_period_id' => $request->period_period_id,
             'pos_pos_id' => $request->pos_pos_id,
             'payment_last_update' => now(),
@@ -81,16 +210,43 @@ class PaymentController extends Controller
 
     public function setting($id, Request $request)
     {
-        $payment = Payment::with(['period', 'pos'])->findOrFail($id);
-        $classes = \App\Models\ClassModel::orderBy('class_name')->get();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Pastikan payment milik sekolah yang sedang aktif
+        $payment = Payment::where('school_id', $currentSchoolId)
+            ->with(['period', 'pos'])
+            ->findOrFail($id);
+        
+        // Filter kelas berdasarkan sekolah yang sedang aktif - INI YANG PENTING!
+        $classes = \App\Models\ClassModel::where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
+        
         $selectedClass = $request->input('class_id');
+        
         // Cek apakah ada tarif untuk payment dan kelas yang dipilih
         $hasTarif = false;
         $students = collect();
+        
         if ($selectedClass) {
-            // Ambil siswa dari kelas yang dipilih
+            // Pastikan kelas yang dipilih adalah milik sekolah yang sedang aktif
+            $class = \App\Models\ClassModel::where('school_id', $currentSchoolId)
+                ->findOrFail($selectedClass);
+            
+            // Ambil siswa dari kelas yang dipilih, filter berdasarkan sekolah yang sedang aktif
             $studentsQuery = Student::where('student_status', 1)
-                                   ->where('class_class_id', $selectedClass);
+                                   ->where('class_class_id', $selectedClass)
+                                   ->where('school_id', $currentSchoolId);
             $students = $studentsQuery->get();
             if ($students->count() > 0) {
                 $studentIds = $students->pluck('student_id');
@@ -152,11 +308,30 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-        $payment = Payment::findOrFail($id);
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
         
-        // Ambil semua siswa dari kelas yang dipilih
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sekolah belum dipilih.'
+                ], 403);
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $payment = Payment::where('school_id', $currentSchoolId)->findOrFail($id);
+        
+        // Pastikan kelas milik sekolah yang sedang aktif
+        $class = \App\Models\ClassModel::where('school_id', $currentSchoolId)
+            ->findOrFail($class_id);
+        
+        // Ambil semua siswa dari kelas yang dipilih, filter berdasarkan sekolah yang sedang aktif
         $students = Student::where('class_class_id', $class_id)
                           ->where('student_status', 1) // hanya siswa aktif
+                          ->where('school_id', $currentSchoolId) // Filter berdasarkan sekolah
                           ->get();
 
         $savedCount = 0;
@@ -309,16 +484,40 @@ class PaymentController extends Controller
     {
         \Log::info('storeTarifBulanan: ' . json_encode($request->all()));
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
+            $user = auth()->user();
+            if (!$currentSchoolId) {
+                if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                    return redirect()->route('manage.foundation.dashboard')
+                        ->with('error', 'Sekolah belum dipilih.');
+                }
+                abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+            }
+            
             $request->validate([
                 'class_id' => 'required|exists:class_models,class_id',
                 'tarif_sama' => 'required|numeric|min:0',
                 'bulan_tarif' => 'required|array',
             ]);
+            
             $classId = $request->class_id;
             $tarifSama = $request->tarif_sama;
             $bulanTarif = $request->bulan_tarif;
-            $payment = \App\Models\Payment::findOrFail($id);
-            $students = \App\Models\Student::where('class_class_id', $classId)->where('student_status', 1)->get();
+            
+            // Pastikan payment milik sekolah yang sedang aktif
+            $payment = \App\Models\Payment::where('school_id', $currentSchoolId)->findOrFail($id);
+            
+            // Pastikan kelas milik sekolah yang sedang aktif
+            $class = \App\Models\ClassModel::where('school_id', $currentSchoolId)
+                ->findOrFail($classId);
+            
+            // Ambil siswa dari kelas yang dipilih, filter berdasarkan sekolah yang sedang aktif
+            $students = \App\Models\Student::where('class_class_id', $classId)
+                ->where('student_status', 1)
+                ->where('school_id', $currentSchoolId)
+                ->get();
             $bulanList = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
             $inserted = 0;
             foreach ($students as $student) {
@@ -520,6 +719,18 @@ class PaymentController extends Controller
     public function updateTarifBulananMasal(Request $request, $payment_id)
     {
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
+            $user = auth()->user();
+            if (!$currentSchoolId) {
+                if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                    return redirect()->route('manage.foundation.dashboard')
+                        ->with('error', 'Sekolah belum dipilih.');
+                }
+                abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+            }
+            
             \Log::info('updateTarifBulananMasal called with payment_id: ' . $payment_id);
             \Log::info('Request URL: ' . $request->url());
             \Log::info('Request method: ' . $request->method());
@@ -530,8 +741,17 @@ class PaymentController extends Controller
                 'bulan' => 'required|array',
             ]);
             
+            // Pastikan kelas milik sekolah yang sedang aktif
+            $class = \App\Models\ClassModel::where('school_id', $currentSchoolId)
+                ->findOrFail($request->class_id);
+            
             $bulanList = ['Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni'];
-            $students = \App\Models\Student::where('class_class_id', $request->class_id)->where('student_status', 1)->get();
+            
+            // Ambil siswa dari kelas yang dipilih, filter berdasarkan sekolah yang sedang aktif
+            $students = \App\Models\Student::where('class_class_id', $request->class_id)
+                ->where('student_status', 1)
+                ->where('school_id', $currentSchoolId)
+                ->get();
             
             \Log::info('Found students: ' . $students->count());
             \Log::info('Student IDs: ' . json_encode($students->pluck('student_id')->toArray()));
@@ -584,16 +804,29 @@ class PaymentController extends Controller
 
     public function searchStudent(Request $request)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json(['results' => []], 403);
+            }
+            return response()->json(['results' => []], 403);
+        }
+
         $search = $request->input('term', '');
         $status = $request->input('status', 1); // Default to active students
 
         \Log::info('Search student request:', [
             'search' => $search,
-            'status' => $status
+            'status' => $status,
+            'current_school_id' => $currentSchoolId
         ]);
 
         $query = Student::query()
             ->where('student_status', $status)
+            ->where('school_id', $currentSchoolId) // Filter berdasarkan school_id
             ->where(function($q) use ($search) {
                 $q->where('student_full_name', 'LIKE', "%{$search}%")
                 ->orWhere('student_nis', 'LIKE', "%{$search}%");
@@ -604,6 +837,7 @@ class PaymentController extends Controller
 
         \Log::info('Search student results:', [
             'count' => $query->count(),
+            'current_school_id' => $currentSchoolId,
             'results' => $query->toArray()
         ]);
 
@@ -612,13 +846,31 @@ class PaymentController extends Controller
 
     public function studentDetail($id)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+            }
+            return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+        }
+
         $student = \App\Models\Student::with(['class', 'major'])
+            ->where('school_id', $currentSchoolId) // Filter berdasarkan school_id
             ->select('student_id', 'student_nis', 'student_full_name', 'class_class_id', 'student_status', 'student_born_place', 'student_born_date')
             ->find($id);
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan'], 404);
         }
-        $tahunAjaran = \App\Models\Period::orderBy('period_status', 'desc')->orderBy('period_start', 'desc')->first();
+        
+        // Ambil periode berdasarkan sekolah yang sedang aktif
+        $tahunAjaran = \App\Models\Period::where('school_id', $currentSchoolId)
+            ->orderBy('period_status', 'desc')
+            ->orderBy('period_start', 'desc')
+            ->first();
+            
         return response()->json([
             'success' => true,
             'student' => [
@@ -635,9 +887,32 @@ class PaymentController extends Controller
 
     public function studentTagihan($id)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+            }
+            return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+        }
+
+        // Validasi bahwa siswa milik sekolah yang sedang aktif
+        $student = \App\Models\Student::where('student_id', $id)
+            ->where('school_id', $currentSchoolId)
+            ->first();
+            
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Siswa tidak ditemukan atau tidak memiliki akses'], 404);
+        }
+
         try {
-            // Ambil data tahun ajaran dari tabel periods
-            $activePeriod = \DB::table('periods')->where('period_status', 1)->first();
+            // Ambil data tahun ajaran dari tabel periods berdasarkan school_id
+            $activePeriod = \DB::table('periods')
+                ->where('school_id', $currentSchoolId)
+                ->where('period_status', 1)
+                ->first();
             $studentTahunAjaran = $activePeriod ? $activePeriod->period_start . '/' . $activePeriod->period_end : 'Tahun Ajaran';
             
             // Tagihan Bulanan - Query yang diperbaiki untuk menampilkan semua pos
@@ -698,6 +973,7 @@ class PaymentController extends Controller
                 ->join('pos_pembayaran', 'payment.pos_pos_id', '=', 'pos_pembayaran.pos_id')
                 ->leftJoin('periods', 'payment.period_period_id', '=', 'periods.period_id')
                 ->where('bebas.student_student_id', $id)
+                ->where('payment.school_id', $currentSchoolId) // Filter berdasarkan school_id
                 ->select(
                     'payment.payment_id',
                     'payment.payment_type',
@@ -749,6 +1025,17 @@ class PaymentController extends Controller
 
     public function processPayment(Request $request)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+            }
+            return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+        }
+
         try {
             $request->validate([
                 'student_id' => 'required|exists:students,student_id',
@@ -759,7 +1046,32 @@ class PaymentController extends Controller
                 // payment_date tidak diperlukan karena akan menggunakan tanggal server
             ]);
 
-            \Log::info('Processing payment:', $request->all());
+            // Validasi bahwa siswa dan payment milik sekolah yang sedang aktif
+            $student = \App\Models\Student::where('student_id', $request->student_id)
+                ->where('school_id', $currentSchoolId)
+                ->first();
+                
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Siswa tidak ditemukan atau tidak memiliki akses'
+                ], 404);
+            }
+
+            $payment = \App\Models\Payment::where('payment_id', $request->payment_id)
+                ->where('school_id', $currentSchoolId)
+                ->first();
+                
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jenis pembayaran tidak ditemukan atau tidak memiliki akses'
+                ], 404);
+            }
+
+            \Log::info('Processing payment:', array_merge($request->all(), [
+                'current_school_id' => $currentSchoolId
+            ]));
 
             // Mulai database transaction
             \DB::beginTransaction();
@@ -948,21 +1260,36 @@ class PaymentController extends Controller
                 ->where('month_month_id', $request->month_id)
                 ->first();
 
-            // Insert ke log_trx untuk riwayat transaksi
+            // Insert ke log_trx untuk riwayat transaksi - cek duplikasi dulu
             if ($bulanRecord) {
-                \DB::table('log_trx')->insert([
-                    'student_student_id' => $request->student_id,
-                    'bulan_bulan_id' => $bulanRecord->bulan_id,
-                    'bebas_pay_bebas_pay_id' => null, // null karena ini pembayaran bulanan
-                    'log_trx_input_date' => now(),
-                    'log_trx_last_update' => now()
-                ]);
+                // Cek apakah sudah ada record di log_trx untuk bulan_id ini
+                $existingLogTrx = \DB::table('log_trx')
+                    ->where('bulan_bulan_id', $bulanRecord->bulan_id)
+                    ->where('student_student_id', $request->student_id)
+                    ->first();
                 
-                \Log::info('Transaction logged to log_trx:', [
-                    'student_id' => $request->student_id,
-                    'bulan_id' => $bulanRecord->bulan_id,
-                    'payment_number' => $paymentNumber
-                ]);
+                if (!$existingLogTrx) {
+                    \DB::table('log_trx')->insert([
+                        'student_student_id' => $request->student_id,
+                        'bulan_bulan_id' => $bulanRecord->bulan_id,
+                        'bebas_pay_bebas_pay_id' => null, // null karena ini pembayaran bulanan
+                        'log_trx_input_date' => now(),
+                        'log_trx_last_update' => now()
+                    ]);
+                    
+                    \Log::info('Transaction logged to log_trx:', [
+                        'student_id' => $request->student_id,
+                        'bulan_id' => $bulanRecord->bulan_id,
+                        'payment_number' => $paymentNumber
+                    ]);
+                } else {
+                    \Log::warning('Duplicate log_trx entry prevented:', [
+                        'student_id' => $request->student_id,
+                        'bulan_id' => $bulanRecord->bulan_id,
+                        'payment_number' => $paymentNumber,
+                        'existing_log_trx_id' => $existingLogTrx->log_trx_id
+                    ]);
+                }
             }
 
             // Jika pembayaran dengan tabungan, kurangi saldo dan catat mutasi
@@ -2114,9 +2441,28 @@ class PaymentController extends Controller
      */
     public function laporanPerpos(Request $request)
     {
-        $periods = Period::orderBy('period_start', 'desc')->get();
-        $posList = Pos::orderBy('pos_name')->get();
-        $classes = DB::table('class_models')->orderBy('class_name')->get();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $periods = Period::where('school_id', $currentSchoolId)
+            ->orderBy('period_start', 'desc')
+            ->get();
+        $posList = Pos::where('school_id', $currentSchoolId)
+            ->orderBy('pos_name')
+            ->get();
+        $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
         
         $selectedPeriod = $request->get('period_id');
         $selectedPos = $request->get('pos_id');
@@ -2195,7 +2541,7 @@ class PaymentController extends Controller
         ]);
         $period = Period::find($request->period_id);
         $pos = Pos::find($request->pos_id);
-        $school = SchoolProfile::first();
+        $school = currentSchool() ?? School::first();
         
         // Ambil filter tambahan dari request
         $classId = $request->get('class_id');
@@ -2254,7 +2600,7 @@ class PaymentController extends Controller
 
         $filename = 'Laporan_' . ucfirst($type) . '_' . $pos->pos_name . '_' . $period->period_start . '-' . $period->period_end . '_' . date('Y-m-d') . '.xlsx';
 
-        $school = SchoolProfile::first();
+        $school = currentSchool() ?? School::first();
         $meta = [
             'school_name' => $school->nama_sekolah ?? '',
             'printed_at' => now()->format('d/m/Y H:i'),
@@ -2274,12 +2620,21 @@ class PaymentController extends Controller
     private function getBulananData($periodId, $posId, $classId = null, $status = null, $studentStatus = null)
     {
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
             $query = DB::table('bulan as b')
                 ->join('students as s', 'b.student_student_id', '=', 's.student_id')
                 ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
                 ->join('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                 ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                 ;
+            
+            // Filter berdasarkan school_id
+            if ($currentSchoolId) {
+                $query->where('p.school_id', $currentSchoolId)
+                      ->where('s.school_id', $currentSchoolId);
+            }
 
             // Terapkan filter periode/pos hanya jika diisi
             if ($periodId) {
@@ -2346,12 +2701,21 @@ class PaymentController extends Controller
     private function getBebasData($periodId, $posId, $classId = null, $status = null, $studentStatus = null)
     {
         try {
+            // Filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            
             $query = DB::table('bebas as be')
                 ->join('students as s', 'be.student_student_id', '=', 's.student_id')
                 ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
                 ->join('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
                 ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                 ;
+            
+            // Filter berdasarkan school_id
+            if ($currentSchoolId) {
+                $query->where('p.school_id', $currentSchoolId)
+                      ->where('s.school_id', $currentSchoolId);
+            }
 
             // Terapkan filter periode/pos hanya jika diisi
             if ($periodId) {
@@ -2407,9 +2771,28 @@ class PaymentController extends Controller
      */
     public function laporanPerkelas(Request $request)
     {
-        $periods = Period::orderBy('period_start', 'desc')->get();
-        $classes = DB::table('class_models')->orderBy('class_name')->get();
-        $posList = DB::table('pos_pembayaran')->get();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $periods = Period::where('school_id', $currentSchoolId)
+            ->orderBy('period_start', 'desc')
+            ->get();
+        $classes = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
+        $posList = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
+            ->get();
         $months = [
             1 => 'Juli', 2 => 'Agustus', 3 => 'September', 4 => 'Oktober', 
             5 => 'November', 6 => 'Desember', 7 => 'Januari', 8 => 'Februari',
@@ -2475,8 +2858,13 @@ class PaymentController extends Controller
                 ->orderBy('s.student_full_name')
                 ->get();
             
-            // Ambil semua pos pembayaran
-            $posList = DB::table('pos_pembayaran')->get();
+            // Ambil semua pos pembayaran - filter berdasarkan sekolah yang sedang aktif
+            $currentSchoolId = currentSchoolId();
+            $posQuery = DB::table('pos_pembayaran');
+            if ($currentSchoolId) {
+                $posQuery->where('school_id', $currentSchoolId);
+            }
+            $posList = $posQuery->get();
             
             $result = collect();
             
@@ -2577,9 +2965,16 @@ class PaymentController extends Controller
             'month' => 'required|integer|min:1|max:12'
         ]);
         
-        $period = Period::find($request->period_id);
-        $class = DB::table('class_models')->where('class_id', $request->class_id)->first();
-        $school = SchoolProfile::first();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $period = Period::where('school_id', $currentSchoolId)
+            ->findOrFail($request->period_id);
+        $class = DB::table('class_models')
+            ->where('class_id', $request->class_id)
+            ->where('school_id', $currentSchoolId)
+            ->firstOrFail();
+        $school = currentSchool() ?? School::first();
         $months = [
             1 => 'Juli', 2 => 'Agustus', 3 => 'September', 4 => 'Oktober', 
             5 => 'November', 6 => 'Desember', 7 => 'Januari', 8 => 'Februari',
@@ -2587,7 +2982,9 @@ class PaymentController extends Controller
         ];
         
         $data = $this->getPerkelasData($request->period_id, $request->class_id, $request->month, $request->student_status);
-        $posList = DB::table('pos_pembayaran')->get();
+        $posList = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
+            ->get();
         $selectedMonth = $request->month;
         
         $pdf = Pdf::loadView('payment.laporan-perkelas-pdf', compact(
@@ -2610,6 +3007,18 @@ class PaymentController extends Controller
      */
     public function laporanRekapitulasi(Request $request)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
         $data = collect();
         $startDate = null;
         $endDate = null;
@@ -2617,9 +3026,15 @@ class PaymentController extends Controller
         $posId = null;
         $classId = null;
         
-        // Ambil data untuk filter dropdown
-        $posList = DB::table('pos_pembayaran')->orderBy('pos_name')->get();
-        $classList = DB::table('class_models')->orderBy('class_name')->get();
+        // Ambil data untuk filter dropdown - filter berdasarkan sekolah yang sedang aktif
+        $posList = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('pos_name')
+            ->get();
+        $classList = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
         
         // Hanya butuh tanggal
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -2641,7 +3056,8 @@ class PaymentController extends Controller
             ]);
             
             // Ambil data real dari database - tanpa filter periode
-            $data = $this->getRekapitulasiData(null, $startDate, $endDate, $paymentType, $posId, $classId);
+            // Pass currentSchoolId untuk filter berdasarkan school_id
+            $data = $this->getRekapitulasiData(null, $startDate, $endDate, $paymentType, $posId, $classId, $currentSchoolId);
             
             // Debug: Log data untuk troubleshooting
             \Log::info('Laporan Rekapitulasi Debug:', [
@@ -2671,10 +3087,15 @@ class PaymentController extends Controller
     /**
      * Ambil data laporan rekapitulasi
      */
-    public function getRekapitulasiData($periodId, $startDate, $endDate, $paymentType = null, $posId = null, $classId = null)
+    public function getRekapitulasiData($periodId, $startDate, $endDate, $paymentType = null, $posId = null, $classId = null, $currentSchoolId = null)
     {
         try {
             $result = collect();
+            
+            // Jika currentSchoolId tidak diberikan, ambil dari helper
+            if (!$currentSchoolId) {
+                $currentSchoolId = currentSchoolId();
+            }
             
             \Log::info('Starting getRekapitulasiData with params:', [
                 'periodId' => $periodId,
@@ -2682,7 +3103,8 @@ class PaymentController extends Controller
                 'endDate' => $endDate,
                 'paymentType' => $paymentType,
                 'posId' => $posId,
-                'classId' => $classId
+                'classId' => $classId,
+                'currentSchoolId' => $currentSchoolId
             ]);
             
             // Cek apakah ada data di tabel payment
@@ -2707,9 +3129,21 @@ class PaymentController extends Controller
                         ->join('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                         ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                         ->whereNotNull('b.bulan_date_pay') // Hanya yang sudah dibayar
-                        ->whereRaw('DATE(b.bulan_date_pay) >= ? AND DATE(b.bulan_date_pay) <= ?', [$startDate, $endDate])
-                        // Jangan exclude POS apapun saat memilih "Semua Pos"
-                        ;
+                        ->whereRaw('DATE(b.bulan_date_pay) >= ? AND DATE(b.bulan_date_pay) <= ?', [$startDate, $endDate]);
+                    
+                    // Filter berdasarkan school_id - WAJIB diterapkan
+                    // Filter pada students, payment, dan pos_pembayaran untuk memastikan data sesuai
+                    if ($currentSchoolId) {
+                        $bulanPayments->where('s.school_id', $currentSchoolId)
+                                      ->where(function($q) use ($currentSchoolId) {
+                                          $q->where('p.school_id', $currentSchoolId)
+                                            ->orWhereNull('p.school_id'); // Backward compatibility
+                                      })
+                                      ->where(function($q) use ($currentSchoolId) {
+                                          $q->where('pos.school_id', $currentSchoolId)
+                                            ->orWhereNull('pos.school_id'); // Backward compatibility
+                                      });
+                    }
                     
                     // Filter pos pembayaran
                     if ($posId) {
@@ -2793,12 +3227,25 @@ class PaymentController extends Controller
                         ->join('bebas as be', 'bp.bebas_bebas_id', '=', 'be.bebas_id')
                         ->join('students as s', 'be.student_student_id', '=', 's.student_id')
                         ->join('class_models as c', 's.class_class_id', '=', 'c.class_id')
-                        ->join('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
-                        ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
+                        ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id') // Left join untuk fleksibilitas
+                        ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id') // Left join untuk fleksibilitas
                         ->whereNotNull('bp.bebas_pay_input_date') // Hanya yang sudah dibayar
-                        ->whereRaw('DATE(bp.bebas_pay_input_date) >= ? AND DATE(bp.bebas_pay_input_date) <= ?', [$startDate, $endDate])
-                        // Jangan exclude POS apapun saat memilih "Semua Pos"
-                        ;
+                        ->whereRaw('DATE(bp.bebas_pay_input_date) >= ? AND DATE(bp.bebas_pay_input_date) <= ?', [$startDate, $endDate]);
+                    
+                    // Filter berdasarkan school_id - WAJIB diterapkan
+                    // Filter utama hanya pada students, karena payment dan pos sudah terikat dengan bebas
+                    // yang terikat dengan student. Jika student benar, payment dan pos-nya juga benar.
+                    if ($currentSchoolId) {
+                        // Student harus dari school_id yang aktif (WAJIB)
+                        // Ini sudah cukup karena bebas terikat dengan student, dan payment terikat dengan bebas
+                        $bebasPayments->where('s.school_id', $currentSchoolId);
+                        
+                        // Payment dan pos TIDAK perlu difilter karena:
+                        // - Jika student sudah benar, bebas yang terikat dengan student juga benar
+                        // - Payment terikat dengan bebas, jadi payment juga benar
+                        // - Pos terikat dengan payment, jadi pos juga benar
+                        // - Filter tambahan bisa menghilangkan data yang seharusnya muncul
+                    }
                     
                     // Filter pos pembayaran
                     if ($posId) {
@@ -2826,7 +3273,7 @@ class PaymentController extends Controller
                         ->select(
                             's.student_full_name',
                             'c.class_name',
-                            DB::raw("CONCAT(pos.pos_name, '-', COALESCE(CONCAT(per.period_start, '/', per.period_end), '2025/2026')) as pos_name"),
+                            DB::raw("CONCAT(COALESCE(pos.pos_name, 'Pembayaran Bebas'), '-', COALESCE(CONCAT(per.period_start, '/', per.period_end), '2025/2026')) as pos_name"),
                             'bp.bebas_pay_input_date as payment_date',
                             'bp.bebas_pay_bill as payment_amount',
                             DB::raw("'Tunai' as payment_method"),
@@ -2836,9 +3283,49 @@ class PaymentController extends Controller
                         
                     \Log::info('Bebas payments query result:', [
                         'count' => $bebasPayments->count(),
+                        'currentSchoolId' => $currentSchoolId,
                         'sample_dates' => $bebasPayments->pluck('payment_date')->take(5)->toArray(),
-                        'pos_names' => $bebasPayments->pluck('pos_name')->unique()->toArray()
+                        'pos_names' => $bebasPayments->pluck('pos_name')->unique()->toArray(),
+                        'sample_data' => $bebasPayments->take(3)->map(function($item) {
+                            return [
+                                'student' => $item->student_full_name,
+                                'class' => $item->class_name,
+                                'pos_name' => $item->pos_name,
+                                'amount' => $item->payment_amount
+                            ];
+                        })->toArray()
                     ]);
+                    
+                    // Debug: Cek apakah ada data bebas_pay yang tidak muncul
+                    if ($bebasPayments->isEmpty() && $currentSchoolId) {
+                        $debugCount = DB::table('bebas_pay as bp')
+                            ->join('bebas as be', 'bp.bebas_bebas_id', '=', 'be.bebas_id')
+                            ->join('students as s', 'be.student_student_id', '=', 's.student_id')
+                            ->where('s.school_id', $currentSchoolId)
+                            ->whereNotNull('bp.bebas_pay_input_date')
+                            ->whereRaw('DATE(bp.bebas_pay_input_date) >= ? AND DATE(bp.bebas_pay_input_date) <= ?', [$startDate, $endDate])
+                            ->count();
+                        
+                        // Debug lebih detail: cek payment dan pos
+                        $debugWithPayment = DB::table('bebas_pay as bp')
+                            ->join('bebas as be', 'bp.bebas_bebas_id', '=', 'be.bebas_id')
+                            ->join('students as s', 'be.student_student_id', '=', 's.student_id')
+                            ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
+                            ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
+                            ->where('s.school_id', $currentSchoolId)
+                            ->whereNotNull('bp.bebas_pay_input_date')
+                            ->whereRaw('DATE(bp.bebas_pay_input_date) >= ? AND DATE(bp.bebas_pay_input_date) <= ?', [$startDate, $endDate])
+                            ->select('bp.bebas_pay_id', 'be.payment_payment_id', 'p.payment_id', 'p.school_id as payment_school_id', 'p.pos_pos_id', 'pos.pos_id', 'pos.school_id as pos_school_id')
+                            ->get();
+                        
+                        \Log::warning('Bebas payments is empty but there are bebas_pay records:', [
+                            'currentSchoolId' => $currentSchoolId,
+                            'startDate' => $startDate,
+                            'endDate' => $endDate,
+                            'bebas_pay_count_with_student_filter' => $debugCount,
+                            'debug_with_payment' => $debugWithPayment->toArray()
+                        ]);
+                    }
                     
                     foreach ($bebasPayments as $payment) {
                         $result->push([
@@ -2879,6 +3366,11 @@ class PaymentController extends Controller
                         }) // Include transfer bank dan payment method kosong
                         ->whereRaw('DATE(t.updated_at) >= ? AND DATE(t.updated_at) <= ?', [$startDate, $endDate]);
                     
+                    // Filter berdasarkan school_id - WAJIB diterapkan
+                    if ($currentSchoolId) {
+                        $transferPayments->where('s.school_id', $currentSchoolId);
+                    }
+                    
                     // Filter kelas
                     if ($classId) {
                         $transferPayments->where('s.class_class_id', $classId);
@@ -2896,6 +3388,34 @@ class PaymentController extends Controller
                         })
                         ->leftJoin('periods as per_bulan', 'p_bulan.period_period_id', '=', 'per_bulan.period_id')
                         ->leftJoin('periods as per_bebas', 'p_bebas.period_period_id', '=', 'per_bebas.period_id');
+                    
+                    // Filter payment dan pos berdasarkan school_id untuk memastikan data sesuai
+                    // Ini penting untuk memastikan nama pos yang muncul sesuai dengan school_id
+                    if ($currentSchoolId) {
+                        $transferPayments->where(function($q) use ($currentSchoolId) {
+                            // Filter payment bulanan
+                            $q->where(function($subQ) use ($currentSchoolId) {
+                                $subQ->where(function($pq) use ($currentSchoolId) {
+                                    $pq->where('p_bulan.school_id', $currentSchoolId)
+                                       ->orWhereNull('p_bulan.school_id'); // Backward compatibility
+                                })
+                                ->orWhereNull('p_bulan.payment_id'); // Jika tidak ada payment bulanan
+                            })
+                            // Filter payment bebas
+                            ->where(function($subQ) use ($currentSchoolId) {
+                                $subQ->where(function($pq) use ($currentSchoolId) {
+                                    $pq->where('p_bebas.school_id', $currentSchoolId)
+                                       ->orWhereNull('p_bebas.school_id'); // Backward compatibility
+                                })
+                                ->orWhereNull('p_bebas.payment_id'); // Jika tidak ada payment bebas
+                            })
+                            // Filter pos
+                            ->where(function($subQ) use ($currentSchoolId) {
+                                $subQ->where('pos.school_id', $currentSchoolId)
+                                     ->orWhereNull('pos.school_id'); // Backward compatibility
+                            });
+                        });
+                    }
                     
                     // Filter pos pembayaran (untuk transfer, kita perlu join dengan tabel payment untuk mendapatkan pos_id)
                     if ($posId) {
@@ -2978,6 +3498,11 @@ class PaymentController extends Controller
                         // Biarkan semua POS tampil saat "Semua Pos" dipilih
                         ->whereIn('t.payment_method', ['midtrans', 'tripay', 'payment_gateway'])
                         ->whereRaw('DATE(t.updated_at) >= ? AND DATE(t.updated_at) <= ?', [$startDate, $endDate]);
+                    
+                    // Filter berdasarkan school_id - WAJIB diterapkan
+                    if ($currentSchoolId) {
+                        $gatewayPayments->where('s.school_id', $currentSchoolId);
+                    }
                     
                     // Filter kelas
                     if ($classId) {
@@ -3071,20 +3596,29 @@ class PaymentController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date'
         ]);
         
-        $school = SchoolProfile::first();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $school = currentSchool() ?? School::first();
         
         $paymentType = $request->get('payment_type');
         $posId = $request->get('pos_id');
         $classId = $request->get('class_id');
         
-        $data = $this->getRekapitulasiData(null, $request->start_date, $request->end_date, $paymentType, $posId, $classId);
+        $data = $this->getRekapitulasiData(null, $request->start_date, $request->end_date, $paymentType, $posId, $classId, $currentSchoolId);
         
         $startDate = $request->start_date;
         $endDate = $request->end_date;
         
-        // Ambil data untuk filter info
-        $posList = DB::table('pos_pembayaran')->orderBy('pos_name')->get();
-        $classList = DB::table('class_models')->orderBy('class_name')->get();
+        // Ambil data untuk filter info - filter berdasarkan sekolah yang sedang aktif
+        $posList = DB::table('pos_pembayaran')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('pos_name')
+            ->get();
+        $classList = DB::table('class_models')
+            ->where('school_id', $currentSchoolId)
+            ->orderBy('class_name')
+            ->get();
         
         $pdf = Pdf::loadView('payment.laporan-rekapitulasi-pdf', compact(
             'data', 
@@ -3315,10 +3849,22 @@ class PaymentController extends Controller
      */
     public function processMultiCashPayment(Request $request)
     {
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+            }
+            return response()->json(['success' => false, 'message' => 'Sekolah belum dipilih'], 403);
+        }
+
         try {
             \Log::info('Starting multi cash payment process:', [
                 'request_data' => $request->all(),
-                'request_headers' => $request->headers->all()
+                'request_headers' => $request->headers->all(),
+                'current_school_id' => $currentSchoolId
             ]);
 
             $request->validate([
@@ -3332,6 +3878,18 @@ class PaymentController extends Controller
                 'items.*.month_id' => 'nullable|integer|min:1|max:12',
                 'items.*.description' => 'nullable|string|max:500'
             ]);
+
+            // Validasi bahwa siswa milik sekolah yang sedang aktif
+            $student = \App\Models\Student::where('student_id', $request->student_id)
+                ->where('school_id', $currentSchoolId)
+                ->first();
+                
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Siswa tidak ditemukan atau tidak memiliki akses'
+                ], 404);
+            }
 
             \Log::info('Validation passed for multi cash payment');
 
@@ -3376,6 +3934,19 @@ class PaymentController extends Controller
                         ], 422);
                     }
 
+                    // Validasi bahwa payment milik sekolah yang sedang aktif
+                    $payment = \App\Models\Payment::where('payment_id', $paymentId)
+                        ->where('school_id', $currentSchoolId)
+                        ->first();
+                        
+                    if (!$payment) {
+                        \DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Jenis pembayaran tidak ditemukan atau tidak memiliki akses untuk item index ' . $idx
+                        ], 422);
+                    }
+
                     // Pastikan record bulan ada
                     $bulan = \DB::table('bulan')
                         ->where('student_student_id', $studentId)
@@ -3413,14 +3984,34 @@ class PaymentController extends Controller
                             'bulan_last_update' => now()
                         ]);
 
-                    // Log transaksi untuk bulanan (mengikuti skema log_trx yang ada)
-                    \DB::table('log_trx')->insert([
-                        'student_student_id' => $studentId,
-                        'bulan_bulan_id' => $bulan->bulan_id,
-                        'bebas_pay_bebas_pay_id' => null,
-                        'log_trx_input_date' => now(),
-                        'log_trx_last_update' => now()
-                    ]);
+                    // Log transaksi untuk bulanan (mengikuti skema log_trx yang ada) - cek duplikasi dulu
+                    $existingLogTrx = \DB::table('log_trx')
+                        ->where('bulan_bulan_id', $bulan->bulan_id)
+                        ->where('student_student_id', $studentId)
+                        ->first();
+                    
+                    if (!$existingLogTrx) {
+                        \DB::table('log_trx')->insert([
+                            'student_student_id' => $studentId,
+                            'bulan_bulan_id' => $bulan->bulan_id,
+                            'bebas_pay_bebas_pay_id' => null,
+                            'log_trx_input_date' => now(),
+                            'log_trx_last_update' => now()
+                        ]);
+                        
+                        \Log::info('Multi cash payment - Transaction logged to log_trx:', [
+                            'student_id' => $studentId,
+                            'bulan_id' => $bulan->bulan_id,
+                            'payment_number' => $paymentNumber
+                        ]);
+                    } else {
+                        \Log::warning('Multi cash payment - Duplicate log_trx entry prevented:', [
+                            'student_id' => $studentId,
+                            'bulan_id' => $bulan->bulan_id,
+                            'payment_number' => $paymentNumber,
+                            'existing_log_trx_id' => $existingLogTrx->log_trx_id
+                        ]);
+                    }
 
                     $processed[] = [
                         'index' => $idx,
@@ -3434,6 +4025,19 @@ class PaymentController extends Controller
 
                     $totalAmount += $amount;
                 } elseif ($type === 'bebas') {
+                    // Validasi bahwa payment milik sekolah yang sedang aktif
+                    $payment = \App\Models\Payment::where('payment_id', $paymentId)
+                        ->where('school_id', $currentSchoolId)
+                        ->first();
+                        
+                    if (!$payment) {
+                        \DB::rollback();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Jenis pembayaran tidak ditemukan atau tidak memiliki akses untuk item index ' . $idx
+                        ], 422);
+                    }
+
                     // Ambil record bebas untuk siswa & payment
                     $bebas = \DB::table('bebas')
                         ->where('student_student_id', $studentId)
@@ -3514,11 +4118,14 @@ class PaymentController extends Controller
 
             // Kirim notifikasi WhatsApp rekap multi pembayaran tunai (jika diaktifkan)
             try {
-                $gateway = \DB::table('setup_gateways')->first();
+                    $gateway = \DB::table('setup_gateways')->first();
                 if ($gateway && $gateway->enable_wa_notification && $gateway->apikey_wagateway && $gateway->url_wagateway) {
                     $student = \DB::table('students')->where('student_id', $studentId)->first();
                     if ($student && $student->student_parent_phone) {
                         $wa = new \App\Services\WhatsAppService();
+                        
+                        // Ambil school_id dari siswa yang melakukan pembayaran (lebih akurat daripada dari session)
+                        $studentSchoolId = $student->school_id ?? $currentSchoolId;
 
                         // Bangun ringkasan item untuk pesan
                         $summaryLines = [];
@@ -3528,15 +4135,18 @@ class PaymentController extends Controller
                             try {
                                 if ($it['type'] === 'bulanan') {
                                     // Ambil data pos dan periode untuk bulanan dari tabel pos_pembayaran
+                                    // Filter berdasarkan school_id dari siswa untuk memastikan data sesuai
                                     $paymentData = \DB::table('payment as p')
                                         ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                         ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
                                         ->where('p.payment_id', $it['payment_id'])
+                                        ->where('p.school_id', $studentSchoolId) // Filter by school_id dari siswa
                                         ->select('pos.pos_name', 'per.period_start', 'per.period_end')
                                         ->first();
                                     
                                     \Log::info("Payment data for bulanan:", [
                                         'payment_id' => $it['payment_id'],
+                                        'student_school_id' => $studentSchoolId,
                                         'data' => $paymentData
                                     ]);
                                     
@@ -3548,11 +4158,15 @@ class PaymentController extends Controller
                                         $summaryLines[] = "• {$posName} - {$periodInfo} ({$monthName}) - Rp " . number_format($it['amount'] ?? 0, 0, ',', '.');
                                     } else {
                                         // Fallback: ambil data dari tabel bulan jika payment data tidak ada
+                                        // Join dengan students untuk memastikan school_id sesuai dengan siswa yang melakukan pembayaran
                                         $bulanData = \DB::table('bulan as b')
+                                            ->join('students as s', 'b.student_student_id', '=', 's.student_id')
                                             ->leftJoin('payment as p', 'b.payment_payment_id', '=', 'p.payment_id')
                                             ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                             ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
                                             ->where('b.bulan_id', $it['bulan_id'] ?? null)
+                                            ->where('s.student_id', $studentId) // Pastikan bulan milik siswa yang benar
+                                            ->where('p.school_id', $studentSchoolId) // Filter by school_id dari siswa
                                             ->select('pos.pos_name', 'per.period_start', 'per.period_end')
                                             ->first();
                                         
@@ -3568,38 +4182,48 @@ class PaymentController extends Controller
                                         }
                                     }
                                 } elseif ($it['type'] === 'bebas') {
-                                    // Ambil data pos dan periode untuk bebas dari tabel pos_pembayaran
-                                    $paymentData = \DB::table('payment as p')
-                                        ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
+                                    // Ambil data pos dan periode untuk bebas dari tabel bebas
+                                    // Gunakan bebas_id yang sudah tersimpan di processed untuk mendapatkan data yang benar
+                                    // Join dengan students untuk memastikan school_id sesuai dengan siswa yang melakukan pembayaran
+                                    $bebasData = \DB::table('bebas as be')
+                                        ->join('students as s', 'be.student_student_id', '=', 's.student_id')
+                                        ->join('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
+                                        ->join('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                         ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
-                                        ->where('p.payment_id', $it['payment_id'])
+                                        ->where('be.bebas_id', $it['bebas_id'] ?? null)
+                                        ->where('s.student_id', $studentId) // Pastikan bebas milik siswa yang benar
+                                        ->where('p.school_id', $studentSchoolId) // Filter by school_id dari siswa
                                         ->select('pos.pos_name', 'per.period_start', 'per.period_end')
                                         ->first();
                                     
-                                    \Log::info("Payment data for bebas:", [
-                                        'payment_id' => $it['payment_id'],
-                                        'data' => $paymentData
+                                    \Log::info("Bebas data for notification:", [
+                                        'bebas_id' => $it['bebas_id'] ?? null,
+                                        'payment_id' => $it['payment_id'] ?? null,
+                                        'student_id' => $studentId,
+                                        'student_school_id' => $studentSchoolId,
+                                        'data' => $bebasData
                                     ]);
                                     
-                                    if ($paymentData && $paymentData->pos_name) {
-                                        $posName = $paymentData->pos_name;
-                                        $periodInfo = $paymentData->period_start && $paymentData->period_end ? 
-                                            $paymentData->period_start . '/' . $paymentData->period_end : '2025/2026';
+                                    if ($bebasData && $bebasData->pos_name) {
+                                        $posName = $bebasData->pos_name;
+                                        $periodInfo = $bebasData->period_start && $bebasData->period_end ? 
+                                            $bebasData->period_start . '/' . $bebasData->period_end : '2025/2026';
                                         $summaryLines[] = "• {$posName} - {$periodInfo} - Rp " . number_format($it['amount'] ?? 0, 0, ',', '.');
                                     } else {
-                                        // Fallback: ambil data dari tabel bebas jika payment data tidak ada
-                                        $bebasData = \DB::table('bebas as be')
-                                            ->leftJoin('payment as p', 'be.payment_payment_id', '=', 'p.payment_id')
+                                        // Fallback: ambil data dari payment_id jika bebas_id tidak ada
+                                        // Filter berdasarkan school_id dari siswa untuk memastikan data sesuai
+                                        $paymentData = \DB::table('payment as p')
                                             ->leftJoin('pos_pembayaran as pos', 'p.pos_pos_id', '=', 'pos.pos_id')
                                             ->leftJoin('periods as per', 'p.period_period_id', '=', 'per.period_id')
-                                            ->where('be.bebas_id', $it['bebas_id'] ?? null)
+                                            ->where('p.payment_id', $it['payment_id'] ?? null)
+                                            ->where('p.school_id', $studentSchoolId) // Filter by school_id dari siswa
                                             ->select('pos.pos_name', 'per.period_start', 'per.period_end')
                                             ->first();
                                         
-                                        if ($bebasData && $bebasData->pos_name) {
-                                            $posName = $bebasData->pos_name;
-                                            $periodInfo = $bebasData->period_start && $bebasData->period_end ? 
-                                                $bebasData->period_start . '/' . $bebasData->period_end : '2025/2026';
+                                        if ($paymentData && $paymentData->pos_name) {
+                                            $posName = $paymentData->pos_name;
+                                            $periodInfo = $paymentData->period_start && $paymentData->period_end ? 
+                                                $paymentData->period_start . '/' . $paymentData->period_end : '2025/2026';
                                             $summaryLines[] = "• {$posName} - {$periodInfo} - Rp " . number_format($it['amount'] ?? 0, 0, ',', '.');
                                         } else {
                                             $summaryLines[] = "• Pembayaran Bebas - Rp " . number_format($it['amount'] ?? 0, 0, ',', '.');

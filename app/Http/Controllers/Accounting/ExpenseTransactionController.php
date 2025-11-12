@@ -528,7 +528,7 @@ class ExpenseTransactionController extends Controller
                 ->get();
             
             // Ambil data sekolah dari general settings
-            $schoolProfile = DB::table('school_profiles')->first();
+            $schoolProfile = DB::table('schools')->first();
             
             // Ambil data kas
             $kasData = DB::table('kas')

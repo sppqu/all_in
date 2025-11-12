@@ -270,7 +270,7 @@ class PelanggaranSiswaController extends Controller
         $students = $students->sortByDesc('total_point');
 
         // Get school profile
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
 
         // Generate PDF
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('manage.bk.pelanggaran-siswa.report-pdf', [
@@ -336,7 +336,7 @@ class PelanggaranSiswaController extends Controller
         $pelanggaranSiswa = PelanggaranSiswa::with(['siswa.class', 'pelanggaran.kategori', 'creator'])
             ->findOrFail($id);
         
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         return view('manage.bk.pelanggaran-siswa.cetak-surat', compact('pelanggaranSiswa', 'schoolProfile'));
     }

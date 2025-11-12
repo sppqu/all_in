@@ -36,7 +36,8 @@ class Student extends Model
         'class_class_id',
         'majors_majors_id',
         'student_status',
-        'student_last_update'
+        'student_last_update',
+        'school_id'
     ];
 
     protected $casts = [
@@ -60,6 +61,12 @@ class Student extends Model
     public function major()
     {
         return $this->belongsTo(Major::class, 'majors_majors_id', 'majors_id');
+    }
+
+    // Relasi dengan School
+    public function school()
+    {
+        return $this->belongsTo(\App\Models\School::class, 'school_id', 'id');
     }
 
     // Accessor untuk gender text

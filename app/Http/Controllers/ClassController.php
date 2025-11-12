@@ -12,7 +12,24 @@ class ClassController extends Controller
      */
     public function index()
     {
-        $classes = ClassModel::withCount('students')->orderBy('class_name')->get();
+        // Filter berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        // Jika tidak ada school_id, redirect ke foundation dashboard untuk superadmin/admin_yayasan
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        $classes = ClassModel::where('school_id', $currentSchoolId)
+            ->withCount('students')
+            ->orderBy('class_name')
+            ->get();
+        
         return view('classes.index', compact('classes'));
     }
 
@@ -21,6 +38,18 @@ class ClassController extends Controller
      */
     public function create()
     {
+        // Pastikan ada school_id
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
         return view('classes.create');
     }
 
@@ -29,11 +58,38 @@ class ClassController extends Controller
      */
     public function store(Request $request)
     {
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Validasi: class_name harus unique per sekolah
         $request->validate([
-            'class_name' => 'required|string|max:45|unique:class_models,class_name'
+            'class_name' => [
+                'required',
+                'string',
+                'max:45',
+                function ($attribute, $value, $fail) use ($currentSchoolId) {
+                    $exists = ClassModel::where('school_id', $currentSchoolId)
+                        ->where('class_name', $value)
+                        ->exists();
+                    if ($exists) {
+                        $fail('Nama kelas sudah digunakan di sekolah ini.');
+                    }
+                }
+            ]
         ]);
 
-        ClassModel::create($request->all());
+        ClassModel::create([
+            'class_name' => $request->class_name,
+            'school_id' => $currentSchoolId,
+        ]);
 
         return redirect()->route('classes.index')
             ->with('success', 'Kelas berhasil ditambahkan!');
@@ -44,25 +100,28 @@ class ClassController extends Controller
      */
     public function show(ClassModel $class)
     {
-        $class->load(['students' => function($query) {
-            $query->orderBy('student_full_name');
-        }]);
+        // Pastikan kelas ini milik sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
         
-        // Debug: Log data yang di-load
-        \Log::info('Class show method called', [
-            'class_id' => $class->class_id,
-            'class_name' => $class->class_name,
-            'students_count' => $class->students->count(),
-            'students' => $class->students->map(function($student) {
-                return [
-                    'student_id' => $student->student_id,
-                    'student_nis' => $student->student_nis,
-                    'student_full_name' => $student->student_full_name,
-                    'student_gender' => $student->student_gender,
-                    'student_status' => $student->student_status
-                ];
-            })
-        ]);
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Cek apakah kelas ini milik sekolah yang sedang aktif
+        if ($class->school_id != $currentSchoolId) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki akses ke kelas ini.');
+        }
+        
+        // Filter siswa berdasarkan sekolah yang sedang aktif
+        $class->load(['students' => function($query) use ($currentSchoolId) {
+            $query->where('school_id', $currentSchoolId)
+                  ->orderBy('student_full_name');
+        }]);
         
         return view('classes.show', compact('class'));
     }
@@ -72,6 +131,23 @@ class ClassController extends Controller
      */
     public function edit(ClassModel $class)
     {
+        // Pastikan kelas ini milik sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Cek apakah kelas ini milik sekolah yang sedang aktif
+        if ($class->school_id != $currentSchoolId) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki akses ke kelas ini.');
+        }
+        
         return view('classes.edit', compact('class'));
     }
 
@@ -80,11 +156,44 @@ class ClassController extends Controller
      */
     public function update(Request $request, ClassModel $class)
     {
+        // Pastikan kelas ini milik sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Cek apakah kelas ini milik sekolah yang sedang aktif
+        if ($class->school_id != $currentSchoolId) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki akses ke kelas ini.');
+        }
+        
+        // Validasi: class_name harus unique per sekolah
         $request->validate([
-            'class_name' => 'required|string|max:45|unique:class_models,class_name,' . $class->class_id . ',class_id'
+            'class_name' => [
+                'required',
+                'string',
+                'max:45',
+                function ($attribute, $value, $fail) use ($currentSchoolId, $class) {
+                    $exists = ClassModel::where('school_id', $currentSchoolId)
+                        ->where('class_name', $value)
+                        ->where('class_id', '!=', $class->class_id)
+                        ->exists();
+                    if ($exists) {
+                        $fail('Nama kelas sudah digunakan di sekolah ini.');
+                    }
+                }
+            ]
         ]);
 
-        $class->update($request->all());
+        $class->update([
+            'class_name' => $request->class_name,
+        ]);
 
         return redirect()->route('classes.index')
             ->with('success', 'Kelas berhasil diperbarui!');
@@ -95,8 +204,25 @@ class ClassController extends Controller
      */
     public function destroy(ClassModel $class)
     {
+        // Pastikan kelas ini milik sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        
+        $user = auth()->user();
+        if (!$currentSchoolId) {
+            if (in_array($user->role, ['superadmin', 'admin_yayasan'])) {
+                return redirect()->route('manage.foundation.dashboard')
+                    ->with('error', 'Sekolah belum dipilih. Silakan pilih sekolah terlebih dahulu.');
+            }
+            abort(403, 'Akses ditolak: Sekolah belum dipilih.');
+        }
+        
+        // Cek apakah kelas ini milik sekolah yang sedang aktif
+        if ($class->school_id != $currentSchoolId) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki akses ke kelas ini.');
+        }
+        
         // Cek apakah ada siswa di kelas ini
-        if ($class->students()->count() > 0) {
+        if ($class->students()->where('school_id', $currentSchoolId)->count() > 0) {
             return redirect()->route('classes.index')
                 ->with('error', 'Tidak dapat menghapus kelas yang masih memiliki siswa!');
         }

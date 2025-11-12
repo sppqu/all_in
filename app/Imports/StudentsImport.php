@@ -125,6 +125,9 @@ class StudentsImport implements ToModel, WithHeadingRow, WithBatchInserts, WithC
 
             $this->successCount++;
 
+            // Set school_id dari kelas yang dipilih
+            $schoolId = $class->school_id ?? currentSchoolId();
+
             return new Student([
                 'student_nis' => $nis,
                 'student_nisn' => $nisn,
@@ -142,6 +145,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithBatchInserts, WithC
                 'class_class_id' => $class->class_id,
                 'majors_majors_id' => null,
                 'student_status' => 1,
+                'school_id' => $schoolId,
             ]);
 
         } catch (\Exception $e) {

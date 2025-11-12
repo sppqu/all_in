@@ -1,5 +1,5 @@
 @php
-    $profile = \App\Models\SchoolProfile::first();
+    $profile = currentSchool() ?? \App\Models\School::first();
 @endphp
 <!DOCTYPE html>
 <html lang="id">

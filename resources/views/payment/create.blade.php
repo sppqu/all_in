@@ -44,6 +44,18 @@
                             </select>
                             @error('payment_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_for_spmb" name="is_for_spmb" value="1" {{ old('is_for_spmb') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_for_spmb">
+                                    <strong>Aktifkan untuk SPMB</strong>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block mt-1">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Jika dicentang, payment ini akan digunakan untuk membuat tagihan biaya SPMB saat transfer siswa yang diterima. Bisa digunakan untuk jenis Bulanan atau Bebas.
+                            </small>
+                        </div>
                         <div class="text-muted small mb-3">*) Kolom wajib diisi.</div>
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{{ route('payment.index') }}" class="btn btn-secondary">Batal</a>

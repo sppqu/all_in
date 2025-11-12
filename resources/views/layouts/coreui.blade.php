@@ -25,6 +25,179 @@
         .app-sidebar { 
             min-height: 100vh; 
             background: linear-gradient(135deg, #008060 0%, #006d52 100%) !important;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        /* Sidebar minimized state */
+        .app-sidebar.sidebar-narrow {
+            width: 70px !important;
+            min-width: 70px !important;
+        }
+        
+        /* Hide text when sidebar is narrow - keep icons visible */
+        .app-sidebar.sidebar-narrow .nav-link {
+            position: relative;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-height: 40px;
+            width: 100%;
+            padding: 0.5rem !important;
+        }
+        
+        /* Hide text content but keep icons - use text-indent for text nodes only */
+        .app-sidebar.sidebar-narrow .nav-link {
+            text-indent: -9999px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        /* Make icons visible and properly sized - reset text-indent for icons */
+        .app-sidebar.sidebar-narrow .nav-link i,
+        .app-sidebar.sidebar-narrow .nav-link .fa,
+        .app-sidebar.sidebar-narrow .nav-link .fas,
+        .app-sidebar.sidebar-narrow .nav-link .far,
+        .app-sidebar.sidebar-narrow .nav-link .fal,
+        .app-sidebar.sidebar-narrow .nav-link .fab {
+            font-size: 1.25rem !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: auto !important;
+            height: auto !important;
+            color: rgba(255, 255, 255, 0.8) !important;
+            text-indent: 0 !important;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .app-sidebar.sidebar-narrow .nav-link:hover i,
+        .app-sidebar.sidebar-narrow .nav-link:hover .fa,
+        .app-sidebar.sidebar-narrow .nav-link:hover .fas,
+        .app-sidebar.sidebar-narrow .nav-link:hover .far,
+        .app-sidebar.sidebar-narrow .nav-link:hover .fal,
+        .app-sidebar.sidebar-narrow .nav-link:hover .fab {
+            color: #fff !important;
+        }
+        
+        .app-sidebar.sidebar-narrow .nav-link.active i,
+        .app-sidebar.sidebar-narrow .nav-link.active .fa,
+        .app-sidebar.sidebar-narrow .nav-link.active .fas,
+        .app-sidebar.sidebar-narrow .nav-link.active .far,
+        .app-sidebar.sidebar-narrow .nav-link.active .fal,
+        .app-sidebar.sidebar-narrow .nav-link.active .fab {
+            color: #fff !important;
+        }
+        
+        /* Hide nav titles */
+        .app-sidebar.sidebar-narrow .nav-title {
+            display: none !important;
+        }
+        
+        /* Hide sidebar header text */
+        .app-sidebar.sidebar-narrow .sidebar-header h6 {
+            display: none !important;
+        }
+        
+        /* Hide arrow indicators in nav-group-toggle */
+        .app-sidebar.sidebar-narrow .nav-group-toggle .ms-auto {
+            display: none !important;
+        }
+        
+        /* Hide collapse indicators */
+        .app-sidebar.sidebar-narrow .nav-link .ms-auto {
+            display: none !important;
+        }
+        
+        /* Center icons when sidebar is narrow - already defined above */
+        
+        /* Hide sidebar header text when narrow - keep logo visible */
+        .app-sidebar.sidebar-narrow .sidebar-header {
+            padding: 0.5rem !important;
+        }
+        
+        .app-sidebar.sidebar-narrow .sidebar-header .d-flex {
+            justify-content: center !important;
+        }
+        
+        /* Keep logo image visible when narrow */
+        .app-sidebar.sidebar-narrow .sidebar-header img {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 20px !important;
+            height: 20px !important;
+            margin: 0 !important;
+        }
+        
+        /* Toggle button styling */
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 128, 96, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 0.875rem;
+        }
+        
+        .sidebar-toggle-btn:hover {
+            background: rgba(0, 128, 96, 1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .app-sidebar.sidebar-narrow .sidebar-toggle-btn {
+            position: absolute;
+            top: 10px;
+            right: 50%;
+            transform: translateX(50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .app-sidebar.sidebar-narrow .sidebar-toggle-btn:hover {
+            transform: translateX(50%) scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Ensure sidebar header doesn't cover toggle button */
+        .sidebar-header {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Adjust nav items when narrow */
+        .app-sidebar.sidebar-narrow .nav-group-items {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            border-left: none !important;
+            display: none !important; /* Hide submenu when narrow */
+        }
+        
+        .app-sidebar.sidebar-narrow .nav-group-items .nav-link {
+            margin-left: 0 !important;
+            justify-content: center !important;
+        }
+        
+        /* Hide all collapse menus when narrow */
+        .app-sidebar.sidebar-narrow .collapse {
+            display: none !important;
         }
         
         /* Sidebar Header Styling */
@@ -459,7 +632,11 @@
             </style>
             
             <!-- Sidebar Header with Logo and App Name -->
-            <div class="sidebar-header text-center p-3 mb-4 rounded-3" style="background: white !important; border: 1px solid #e9ecef !important;">
+            <div class="sidebar-header text-center p-3 mb-4 rounded-3" style="background: white !important; border: 1px solid #e9ecef !important; position: relative;">
+                <!-- Sidebar Toggle Button - inside header to avoid overlap -->
+                <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Minimize/Maximize Sidebar" style="top: 5px; right: 5px;">
+                    <i class="fa fa-bars" id="sidebarToggleIcon"></i>
+                </button>
                 <div class="d-flex align-items-center justify-content-center mb-2">
                     <img src="{{ asset('images/logo.png') }}" alt="SPPQU Logo" style="width: 20px; height: 20px; object-fit: contain;" class="me-2">
                     <h6 class="mb-0 fw-bold" style="color: #198754 !important;">SPPQU</h6>
@@ -467,6 +644,87 @@
             </div>
             
             <!-- Navigation Menu -->
+            
+            <!-- YAYASAN Menu (Superadmin & Admin Yayasan) -->
+            @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan')
+            <div class="nav-title">YAYASAN</div>
+            <ul class="nav flex-column mb-4">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('manage.foundation.dashboard') ? 'active' : '' }}" href="{{ route('manage.foundation.dashboard') }}">
+                        <i class="fa fa-building me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('manage.foundation.schools.*') ? 'active' : '' }}" href="{{ route('manage.foundation.schools.index') }}">
+                        <i class="fa fa-school me-2"></i> Kelola Sekolah
+                    </a>
+                </li>
+                @if(auth()->user()->role === 'superadmin')
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('*tahun-pelajaran*') ? 'active' : '' }}" href="{{ url('/tahun-pelajaran') }}">
+                        <i class="fa fa-calendar me-2"></i> Tahun Ajaran
+                    </a>
+                </li>
+                @endif
+                
+                {{-- Kelola Pengguna --}}
+                @if(function_exists('menuCan') && menuCan('menu.users'))
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('manage.users.*') ? 'active' : '' }}" href="{{ route('manage.users.index') }}">
+                        <i class="fa fa-user-cog me-2"></i> Kelola Pengguna
+                    </a>
+                </li>
+                @endif
+                
+                {{-- Monitoring Keuangan --}}
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#monitoringKeuangan" role="button" aria-expanded="false" aria-controls="monitoringKeuangan">
+                        <i class="fa fa-chart-line me-2"></i> Monitoring Keuangan
+                        <i class="fa fa-chevron-down ms-auto"></i>
+                    </a>
+                    <div class="collapse" id="monitoringKeuangan">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('manage.foundation.laporan.pemasukan') ? 'active' : '' }}" href="{{ route('manage.foundation.laporan.pemasukan') }}">
+                                    <i class="fa fa-arrow-down me-2"></i> Laporan Pemasukan
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('manage.foundation.laporan.tunggakan') ? 'active' : '' }}" href="{{ route('manage.foundation.laporan.tunggakan') }}">
+                                    <i class="fa fa-exclamation-triangle me-2"></i> Tunggakan
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('manage.foundation.laporan.jenis-biaya') ? 'active' : '' }}" href="{{ route('manage.foundation.laporan.jenis-biaya') }}">
+                                    <i class="fa fa-list me-2"></i> Laporan Jenis Biaya
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                
+                {{-- Berlangganan --}}
+                @if(function_exists('menuCan') && menuCan('menu.billing'))
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('manage.subscription.*') ? 'active' : '' }}" href="{{ route('manage.subscription.index') }}">
+                        <i class="fa fa-file-invoice-dollar me-2"></i> Berlangganan
+                    </a>
+                </li>
+                @endif
+                
+                {{-- Add-ons Premium --}}
+                @if(function_exists('menuCan') && menuCan('menu.billing'))
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('manage.addons.*') ? 'active' : '' }}" href="{{ route('manage.addons.index') }}">
+                        <i class="fa fa-puzzle-piece me-2"></i> Add-ons Premium
+                    </a>
+                </li>
+                @endif
+            </ul>
+            @endif
+            
+            {{-- APLIKASI Menu - Hidden for Yayasan users --}}
+            @if(auth()->user()->role !== 'superadmin' && auth()->user()->role !== 'admin_yayasan')
             <div class="nav-title">APLIKASI</div>
             <ul class="nav flex-column">
                 @php
@@ -666,20 +924,56 @@
                 @endif
                 
             </ul>
+            @endif
             
+            {{-- ADD-ONS Menu - Hidden for Yayasan users --}}
+            @if(auth()->user()->role !== 'superadmin' && auth()->user()->role !== 'admin_yayasan')
             <div class="nav-title">ADD-ONS</div>
             <ul class="nav flex-column">
                 <!-- SPMB Menu - HIDE for BK Users & Admin Jurnal (UNLESS Superadmin) -->
                 @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal' || auth()->user()->role == 'superadmin') && hasSPMBAddon())
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('manage.spmb.index') }}">
+                    <a class="nav-link nav-group-toggle {{ request()->routeIs('manage.spmb.*') ? 'active' : '' }}" href="#spmbSubmenu" data-bs-toggle="collapse" role="button" aria-expanded="{{ request()->routeIs('manage.spmb.*') ? 'true' : 'false' }}" aria-controls="spmbSubmenu">
                         <i class="fa fa-user-graduate me-2"></i> SPMB
+                        <i class="fa fa-angle-right nav-group-toggle-icon ms-auto"></i>
                     </a>
+                    <ul class="nav-group-items collapse {{ request()->routeIs('manage.spmb.*') ? 'show' : '' }}" id="spmbSubmenu">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.index') ? 'active' : '' }}" href="{{ route('manage.spmb.index') }}">
+                                <i class="fa fa-tachometer-alt me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.registrations*') ? 'active' : '' }}" href="{{ route('manage.spmb.registrations') }}">
+                                <i class="fa fa-list me-2"></i> Data Pendaftaran
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.settings*') ? 'active' : '' }}" href="{{ route('manage.spmb.settings') }}">
+                                <i class="fa fa-cog me-2"></i> Pengaturan
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.transfer-to-students*') ? 'active' : '' }}" href="{{ route('manage.spmb.transfer-to-students') }}">
+                                <i class="fa fa-exchange-alt me-2"></i> Transfer ke Students
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.form-settings*') ? 'active' : '' }}" href="{{ route('manage.spmb.form-settings.index') }}">
+                                <i class="fa fa-edit me-2"></i> Pengaturan Form
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('manage.spmb.payments*') ? 'active' : '' }}" href="{{ route('manage.spmb.payments') }}">
+                                <i class="fa fa-credit-card me-2"></i> Lihat Pembayaran
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 @endif
                 
-                <!-- BK Menu - Visible for BK admins and Superadmin -->
-                @if(hasBKAddon() && (auth()->user()->is_bk || auth()->user()->role == 'superadmin'))
+                <!-- BK Menu - Visible for users with BK addon -->
+                @if(hasBKAddon())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('manage/bk*') ? 'active' : '' }}" href="{{ route('manage.bk.dashboard') }}">
                         <i class="fa fa-clipboard-list me-2"></i> Bimbingan Konseling
@@ -687,8 +981,8 @@
                 </li>
                 @endif
                 
-                <!-- E-Jurnal Menu - Visible for Admin Jurnal and Superadmin -->
-                @if(hasEJurnalAddon() && (auth()->user()->role == 'admin_jurnal' || auth()->user()->role == 'superadmin'))
+                <!-- E-Jurnal Menu - Visible for users with E-Jurnal addon -->
+                @if(hasEJurnalAddon())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('jurnal/*') ? 'active' : '' }}" href="{{ route('jurnal.guru.index') }}">
                         <i class="fa fa-book me-2" style="color: #ffffff;"></i> E-Jurnal
@@ -705,7 +999,10 @@
                 </li>
                 @endif
             </ul>
+            @endif
             
+            {{-- LAINNYA Menu - Hidden for Yayasan users --}}
+            @if(auth()->user()->role !== 'superadmin' && auth()->user()->role !== 'admin_yayasan')
             @if((!auth()->user()->is_bk && auth()->user()->role !== 'admin_jurnal') || auth()->user()->role == 'superadmin')
             <div class="nav-title">LAINNYA</div>
             <ul class="nav flex-column">
@@ -749,6 +1046,7 @@
                 @endif
             </ul>
             @endif
+            @endif
             
             <hr class="my-3">
             <ul class="nav flex-column">
@@ -762,13 +1060,38 @@
         <div class="wrapper">
             <!-- Topbar/Header -->
             <div class="header bg-white border-bottom d-flex align-items-center px-3" style="height:56px;">
-                <button class="btn btn-link text-dark fs-4 me-3" id="sidebarToggle"><i class="fa fa-bars"></i></button>
-                <!-- <nav class="d-flex align-items-center flex-grow-1">
-                    <a href="#" class="me-4 text-dark text-decoration-none">Dashboard</a>
-                    <a href="#" class="me-4 text-dark text-decoration-none">Users</a>
-                    <a href="#" class="me-4 text-dark text-decoration-none">Settings</a>
-                </nav> -->
+                <!-- Sidebar toggle button removed - now using button in sidebar header -->
                 <div class="d-flex align-items-center gap-3 ms-auto">
+                    @if(auth()->check() && (auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan'))
+                        @php
+                            $foundationId = session('foundation_id');
+                            $foundation = $foundationId ? \App\Models\Foundation::find($foundationId) : null;
+                            $schools = $foundation ? $foundation->activeSchools()->get() : collect();
+                            $currentSchool = currentSchool();
+                        @endphp
+                        @if($foundation && $schools->count() > 0)
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fa fa-school me-1"></i>
+                                {{ $currentSchool ? Str::limit($currentSchool->nama_sekolah, 20) : 'Pilih Sekolah' }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">{{ Str::limit($foundation->nama_yayasan, 30) }}</h6></li>
+                                @foreach($schools as $school)
+                                <li>
+                                    <form action="{{ route('manage.foundation.schools.switch', $school->id) }}" method="POST" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item {{ session('current_school_id') == $school->id ? 'active' : '' }}">
+                                            <i class="fa fa-check me-2 {{ session('current_school_id') == $school->id ? '' : 'invisible' }}"></i>
+                                            {{ $school->nama_sekolah }}
+                                        </button>
+                                    </form>
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @endif
+                    @endif
                     <div class="dropdown">
                         <a href="#" class="dropdown-toggle" id="themeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="color:inherit;">
                             <i class="fa fa-sun"></i>
@@ -847,11 +1170,6 @@
     <script src="{{ asset('assets/vendor/js/coreui.bundle.min.js') }}"></script>
     
     <script>
-        // Sidebar toggle (opsional, jika ingin sidebar collapse)
-        document.getElementById('sidebarToggle').onclick = function() {
-            document.querySelector('.app-sidebar').classList.toggle('d-none');
-        };
-
         // CoreUI Navigation Initialization
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize all collapse elements
@@ -1496,7 +1814,72 @@
                 }
     
                     // Check for session messages and show toast
+                // Sidebar Toggle Functionality
                 document.addEventListener('DOMContentLoaded', function() {
+                    const sidebar = document.querySelector('.app-sidebar');
+                    const toggleBtn = document.getElementById('sidebarToggleBtn');
+                    const toggleIcon = document.getElementById('sidebarToggleIcon');
+                    
+                    // Load saved state from localStorage
+                    const savedState = localStorage.getItem('sidebarMinimized');
+                    if (savedState === 'true') {
+                        sidebar.classList.add('sidebar-narrow');
+                        toggleIcon.classList.remove('fa-bars');
+                        toggleIcon.classList.add('fa-chevron-right');
+                    }
+                    
+                    // Toggle sidebar on button click
+                    if (toggleBtn) {
+                        toggleBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const isNarrow = sidebar.classList.contains('sidebar-narrow');
+                            
+                            if (!isNarrow) {
+                                // Minimize: Close all submenus
+                                const allCollapses = sidebar.querySelectorAll('.collapse.show');
+                                allCollapses.forEach(function(collapse) {
+                                    const bsCollapse = bootstrap.Collapse.getInstance(collapse);
+                                    if (bsCollapse) {
+                                        bsCollapse.hide();
+                                    }
+                                });
+                                
+                                // Update aria-expanded on all toggles
+                                const allToggles = sidebar.querySelectorAll('.nav-group-toggle[aria-expanded="true"]');
+                                allToggles.forEach(function(toggle) {
+                                    toggle.setAttribute('aria-expanded', 'false');
+                                });
+                            }
+                            
+                            sidebar.classList.toggle('sidebar-narrow');
+                            
+                            // Update icon
+                            if (sidebar.classList.contains('sidebar-narrow')) {
+                                toggleIcon.classList.remove('fa-bars');
+                                toggleIcon.classList.add('fa-chevron-right');
+                                localStorage.setItem('sidebarMinimized', 'true');
+                            } else {
+                                toggleIcon.classList.remove('fa-chevron-right');
+                                toggleIcon.classList.add('fa-bars');
+                                localStorage.setItem('sidebarMinimized', 'false');
+                            }
+                        });
+                    }
+                    
+                    // Prevent submenu expansion when sidebar is narrow
+                    const navGroupToggles = sidebar.querySelectorAll('.nav-group-toggle');
+                    navGroupToggles.forEach(function(toggle) {
+                        toggle.addEventListener('click', function(e) {
+                            if (sidebar.classList.contains('sidebar-narrow')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                return false;
+                            }
+                        });
+                    });
+                    
                     @if(session('success'))
                         showToast('{{ session('success') }}', 'success');
                     @endif

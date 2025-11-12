@@ -504,7 +504,7 @@ class StudentAuthController extends Controller
 
 
         // Get school profile data
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
 
         // Set cache headers untuk mencegah browser caching
         $response = response()->view('student.dashboard', compact(
@@ -777,7 +777,7 @@ class StudentAuthController extends Controller
             ->get();
         
         // Get school profile
-        $schoolProfile = DB::table('school_profiles')->first();
+        $schoolProfile = DB::table('schools')->first();
         
         return view('student.library', compact(
             'student', 
@@ -2143,10 +2143,21 @@ class StudentAuthController extends Controller
 
             Log::info('🔵 iPaymu tabungan API Response', [
                 'success' => $ipaymuResponse['success'] ?? false,
+                'error_code' => $ipaymuResponse['error_code'] ?? null,
                 'data' => $ipaymuResponse['data'] ?? null
             ]);
 
             if (!$ipaymuResponse['success']) {
+                // Jika error karena gateway tidak aktif, tampilkan pesan yang lebih user-friendly
+                if (isset($ipaymuResponse['error_code']) && $ipaymuResponse['error_code'] === 'GATEWAY_INACTIVE') {
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $ipaymuResponse['message'] ?? 'Metode pembayaran yang Anda pilih sedang offline atau tidak aktif. Silakan pilih metode pembayaran lain.'
+                        ], 400);
+                    }
+                    return back()->with('error', $ipaymuResponse['message'] ?? 'Metode pembayaran yang Anda pilih sedang offline atau tidak aktif. Silakan pilih metode pembayaran lain.');
+                }
                 throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
             }
             
@@ -2382,10 +2393,15 @@ class StudentAuthController extends Controller
 
             Log::info('🔵 iPaymu API Response', [
                 'success' => $ipaymuResponse['success'] ?? false,
+                'error_code' => $ipaymuResponse['error_code'] ?? null,
                 'data' => $ipaymuResponse['data'] ?? null
             ]);
 
             if (!$ipaymuResponse['success']) {
+                // Jika error karena gateway tidak aktif, tampilkan pesan yang lebih user-friendly
+                if (isset($ipaymuResponse['error_code']) && $ipaymuResponse['error_code'] === 'GATEWAY_INACTIVE') {
+                    return back()->with('error', $ipaymuResponse['message'] ?? 'Metode pembayaran yang Anda pilih sedang offline atau tidak aktif. Silakan pilih metode pembayaran lain.');
+                }
                 throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
             }
 
@@ -3458,10 +3474,18 @@ class StudentAuthController extends Controller
 
             Log::info('🔵 iPaymu cart payment response', [
                 'success' => $ipaymuResponse['success'] ?? false,
+                'error_code' => $ipaymuResponse['error_code'] ?? null,
                 'reference_id' => $referenceId
             ]);
 
             if (!$ipaymuResponse['success']) {
+                // Jika error karena gateway tidak aktif, tampilkan pesan yang lebih user-friendly
+                if (isset($ipaymuResponse['error_code']) && $ipaymuResponse['error_code'] === 'GATEWAY_INACTIVE') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $ipaymuResponse['message'] ?? 'Metode pembayaran yang Anda pilih sedang offline atau tidak aktif. Silakan pilih metode pembayaran lain.'
+                    ], 400);
+                }
                 throw new \Exception($ipaymuResponse['message'] ?? 'Gagal membuat transaksi pembayaran');
             }
 

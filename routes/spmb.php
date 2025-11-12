@@ -73,6 +73,7 @@ Route::get('/test-payment-proof/{id}', [App\Http\Controllers\Admin\SPMBAdminCont
 // SPMB Admin Routes (within manage prefix)
 Route::prefix('manage/spmb')->name('manage.spmb.')->middleware(['auth', 'spmb.admin'])->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\SPMBAdminController::class, 'index'])->name('index');
+    Route::get('/registrations', [App\Http\Controllers\Admin\SPMBAdminController::class, 'registrations'])->name('registrations');
     Route::get('/create', [App\Http\Controllers\Admin\SPMBAdminController::class, 'create'])->name('create');
     Route::post('/', [App\Http\Controllers\Admin\SPMBAdminController::class, 'store'])->name('store');
     

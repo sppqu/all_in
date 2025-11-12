@@ -429,7 +429,7 @@ class ReceiptController extends Controller
             ];
             
             // Ambil data profil sekolah
-            $schoolProfile = \App\Models\SchoolProfile::first();
+            $schoolProfile = currentSchool() ?? \App\Models\School::first();
             
             // Jika tidak ada data profil sekolah, gunakan data default
             if (!$schoolProfile) {

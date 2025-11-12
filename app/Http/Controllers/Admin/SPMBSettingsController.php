@@ -15,7 +15,20 @@ class SPMBSettingsController extends Controller
      */
     public function index()
     {
-        $settings = SPMBSettings::orderBy('tahun_pelajaran', 'desc')->get();
+        // Ambil pengaturan yang ada atau buat default jika belum ada
+        $setting = SPMBSettings::first();
+        
+        // Jika belum ada pengaturan, buat default
+        if (!$setting) {
+            $setting = SPMBSettings::create([
+                'tahun_pelajaran' => date('Y') . '/' . (date('Y') + 1),
+                'pendaftaran_dibuka' => false,
+                'biaya_pendaftaran' => 50000,
+                'biaya_spmb' => 200000,
+                'deskripsi' => 'Pengaturan SPMB'
+            ]);
+        }
+        
         $kejuruan = SPMBKejuruan::orderBy('nama_kejuruan')->get();
         
         $stats = [
@@ -25,7 +38,7 @@ class SPMBSettingsController extends Controller
             'ditolak' => SPMBRegistration::where('status_pendaftaran', 'ditolak')->count(),
         ];
 
-        return view('admin.spmb.settings', compact('settings', 'kejuruan', 'stats'));
+        return view('admin.spmb.settings', compact('setting', 'kejuruan', 'stats'));
     }
 
     /**
@@ -38,11 +51,18 @@ class SPMBSettingsController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * (Tidak digunakan lagi karena hanya ada satu pengaturan)
      */
     public function store(Request $request)
     {
+        // Redirect ke update karena hanya ada satu pengaturan
+        $setting = SPMBSettings::first();
+        if ($setting) {
+            return $this->update($request, $setting->id);
+        }
+        
         $request->validate([
-            'tahun_pelajaran' => 'required|string|unique:s_p_m_b_settings,tahun_pelajaran',
+            'tahun_pelajaran' => 'required|string',
             'pendaftaran_dibuka' => 'boolean',
             'tanggal_buka' => 'nullable|date',
             'tanggal_tutup' => 'nullable|date|after_or_equal:tanggal_buka',
@@ -78,12 +98,22 @@ class SPMBSettingsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id = null)
     {
+        // Jika tidak ada ID, ambil pengaturan yang ada
+        if (!$id) {
+            $settings = SPMBSettings::first();
+            if (!$settings) {
+                return redirect()->route('manage.spmb.settings')
+                    ->with('error', 'Pengaturan SPMB tidak ditemukan.');
+            }
+            $id = $settings->id;
+        }
+        
         $settings = SPMBSettings::findOrFail($id);
         
         $request->validate([
-            'tahun_pelajaran' => 'required|string|unique:s_p_m_b_settings,tahun_pelajaran,' . $id,
+            'tahun_pelajaran' => 'required|string',
             'pendaftaran_dibuka' => 'boolean',
             'tanggal_buka' => 'nullable|date',
             'tanggal_tutup' => 'nullable|date|after_or_equal:tanggal_buka',

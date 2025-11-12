@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\SPMBRegistration;
 use App\Models\SPMBDocument;
 use App\Models\SPMBPayment;
+use App\Models\Bebas;
+use App\Models\Payment;
+use App\Models\Pos;
+use App\Helpers\WaveHelper;
 use Illuminate\Support\Facades\Storage;
 
 class SPMBAdminController extends Controller
@@ -15,6 +19,29 @@ class SPMBAdminController extends Controller
      * Show SPMB dashboard
      */
     public function index(Request $request)
+    {
+        $stats = [
+            'total' => SPMBRegistration::count(),
+            'completed' => SPMBRegistration::where('status_pendaftaran', 'diterima')->count(),
+            'pending' => SPMBRegistration::where('status_pendaftaran', 'pending')->count(),
+            'ditolak' => SPMBRegistration::where('status_pendaftaran', 'ditolak')->count(),
+            'paid_registration' => SPMBRegistration::where('registration_fee_paid', true)->count(),
+            'paid_spmb' => SPMBRegistration::where('spmb_fee_paid', true)->count(),
+            'status_pending' => SPMBRegistration::where('status_pendaftaran', 'pending')->count(),
+            'status_diterima' => SPMBRegistration::where('status_pendaftaran', 'diterima')->count(),
+            'status_ditolak' => SPMBRegistration::where('status_pendaftaran', 'ditolak')->count(),
+        ];
+        
+        // Get SPMB settings
+        $spmbSettings = \App\Models\SPMBSettings::first();
+
+        return view('admin.spmb.index', compact('stats', 'spmbSettings'));
+    }
+
+    /**
+     * Show registrations list
+     */
+    public function registrations(Request $request)
     {
         $query = SPMBRegistration::with(['documents', 'payments', 'kejuruan']);
 
@@ -40,21 +67,10 @@ class SPMBAdminController extends Controller
 
         $registrations = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        $stats = [
-            'total' => SPMBRegistration::count(),
-            'completed' => SPMBRegistration::where('status_pendaftaran', 'diterima')->count(),
-            'pending' => SPMBRegistration::where('status_pendaftaran', 'pending')->count(),
-            'paid_registration' => SPMBRegistration::where('registration_fee_paid', true)->count(),
-            'paid_spmb' => SPMBRegistration::where('spmb_fee_paid', true)->count(),
-            'status_pending' => SPMBRegistration::where('status_pendaftaran', 'pending')->count(),
-            'status_diterima' => SPMBRegistration::where('status_pendaftaran', 'diterima')->count(),
-            'status_ditolak' => SPMBRegistration::where('status_pendaftaran', 'ditolak')->count(),
-        ];
-
         // Get kejuruan for filter
         $kejuruan = \App\Models\SPMBKejuruan::getActive();
 
-        return view('admin.spmb.index', compact('registrations', 'stats', 'kejuruan'));
+        return view('admin.spmb.registrations', compact('registrations', 'kejuruan'));
     }
 
     /**
@@ -568,7 +584,7 @@ class SPMBAdminController extends Controller
     public function printForm($id)
     {
         $registration = SPMBRegistration::with(['kejuruan'])->findOrFail($id);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         $printFields = \App\Models\SPMBFormSettings::getPrintFieldsBySection();
         
         return view('admin.spmb.print-form', compact('registration', 'schoolProfile', 'printFields'));
@@ -580,7 +596,7 @@ class SPMBAdminController extends Controller
     public function editDocuments($id)
     {
         $registration = SPMBRegistration::with(['documents'])->findOrFail($id);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         return view('admin.spmb.edit-documents', compact('registration', 'schoolProfile'));
     }
@@ -640,7 +656,7 @@ class SPMBAdminController extends Controller
     public function editPaymentRegistration($id)
     {
         $registration = SPMBRegistration::with(['payments'])->findOrFail($id);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         return view('admin.spmb.edit-payment-registration', compact('registration', 'schoolProfile'));
     }
@@ -651,7 +667,7 @@ class SPMBAdminController extends Controller
     public function editPaymentSpmb($id)
     {
         $registration = SPMBRegistration::with(['payments'])->findOrFail($id);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         // Get gateway information from setup_gateways table
         $gatewayInfo = \DB::table('setup_gateways')->first();
@@ -721,7 +737,7 @@ class SPMBAdminController extends Controller
     public function printInvoice($id)
     {
         $payment = \App\Models\SPMBPayment::with(['registration'])->findOrFail($id);
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         return view('admin.spmb.print-invoice', compact('payment', 'schoolProfile'));
     }
@@ -754,7 +770,7 @@ class SPMBAdminController extends Controller
         }
         
         $registrations = $query->orderBy('created_at', 'desc')->get();
-        $schoolProfile = \App\Models\SchoolProfile::first();
+        $schoolProfile = currentSchool() ?? \App\Models\School::first();
         
         $pdf = \App::make('dompdf.wrapper');
         $pdf->loadView('admin.spmb.export-pdf', compact('registrations', 'schoolProfile'));
@@ -1087,16 +1103,25 @@ class SPMBAdminController extends Controller
             'registration_ids' => 'required|array|min:1',
             'registration_ids.*' => 'exists:spmb_registrations,id',
             'class_id' => 'required|exists:class_models,class_id',
-            'period_id' => 'required|exists:periods,period_id'
+            'period_id' => 'required|exists:periods,period_id',
+            'create_spmb_bill' => 'nullable|boolean' // Opsi untuk membuat tagihan SPMB
         ]);
 
         try {
             $classId = $request->class_id;
             $periodId = $request->period_id;
             $registrationIds = $request->registration_ids;
+            $createSpmbBill = $request->has('create_spmb_bill') && $request->create_spmb_bill;
             
             $transferredCount = 0;
             $errors = [];
+            $billsCreated = 0;
+
+            // Setup untuk tagihan SPMB (jika opsi diaktifkan)
+            $spmbPaymentId = null;
+            if ($createSpmbBill) {
+                $spmbPaymentId = $this->getOrCreateSpmbPayment($periodId);
+            }
 
             foreach ($registrationIds as $registrationId) {
                 $registration = SPMBRegistration::findOrFail($registrationId);
@@ -1121,12 +1146,23 @@ class SPMBAdminController extends Controller
                 $gender = $registration->form_data['gender'] ?? 'male';
                 $studentGender = ($gender === 'female') ? 'P' : 'L';
 
+                // Get class to get school_id
+                $class = \App\Models\ClassModel::find($classId);
+                $currentSchoolId = currentSchoolId();
+                $schoolId = $class->school_id ?? $currentSchoolId;
+
+                if (!$schoolId) {
+                    $errors[] = "Siswa {$registration->name}: School ID tidak ditemukan";
+                    continue;
+                }
+
                 // Create student record
                 $student = \App\Models\Student::create([
                     'student_nis' => $nis,
                     'student_full_name' => $registration->name,
                     'student_phone' => $registration->phone,
                     'class_class_id' => $classId,
+                    'school_id' => $schoolId,
                     'student_status' => 1, // Active
                     'student_gender' => $studentGender,
                     'student_born_date' => $registration->form_data['birth_date'] ?? null,
@@ -1136,6 +1172,56 @@ class SPMBAdminController extends Controller
                     'student_parent_phone' => $registration->form_data['parent_phone'] ?? null,
                 ]);
 
+                // Buat tagihan SPMB jika opsi diaktifkan dan siswa belum membayar
+                if ($createSpmbBill && $spmbPaymentId && !$registration->spmb_fee_paid) {
+                    $spmbFee = WaveHelper::getSpmbFee($registration);
+                    
+                    if ($spmbFee > 0) {
+                        // Ambil payment untuk cek jenisnya
+                        $payment = Payment::find($spmbPaymentId);
+                        
+                        if ($payment->payment_type === 'BEBAS') {
+                            // Cek apakah sudah ada tagihan bebas untuk biaya SPMB
+                            $existingBebas = Bebas::where('student_student_id', $student->student_id)
+                                ->where('payment_payment_id', $spmbPaymentId)
+                                ->first();
+                            
+                            if (!$existingBebas) {
+                                Bebas::create([
+                                    'student_student_id' => $student->student_id,
+                                    'payment_payment_id' => $spmbPaymentId,
+                                    'bebas_bill' => $spmbFee,
+                                    'bebas_total_pay' => 0, // Belum dibayar
+                                    'bebas_desc' => 'Biaya SPMB - ' . ($registration->nomor_pendaftaran ?? 'No. ' . $registration->id),
+                                    'bebas_input_date' => now(),
+                                    'bebas_last_update' => now()
+                                ]);
+                                $billsCreated++;
+                            }
+                        } elseif ($payment->payment_type === 'BULAN') {
+                            // Untuk bulanan, buat tagihan di bulan pertama (month_id = 1)
+                            $existingBulan = \DB::table('bulan')
+                                ->where('student_student_id', $student->student_id)
+                                ->where('payment_payment_id', $spmbPaymentId)
+                                ->where('month_month_id', 1)
+                                ->first();
+                            
+                            if (!$existingBulan) {
+                                \DB::table('bulan')->insert([
+                                    'student_student_id' => $student->student_id,
+                                    'payment_payment_id' => $spmbPaymentId,
+                                    'month_month_id' => 1, // Bulan pertama
+                                    'bulan_bill' => $spmbFee,
+                                    'bulan_status' => 0, // Belum dibayar
+                                    'bulan_input_date' => now(),
+                                    'bulan_last_update' => now()
+                                ]);
+                                $billsCreated++;
+                            }
+                        }
+                    }
+                }
+
                 // Mark as transferred (add this field to spmb_registrations table)
                 $registration->update(['transferred_to_students' => true]);
                 
@@ -1143,6 +1229,9 @@ class SPMBAdminController extends Controller
             }
 
             $message = "Berhasil mentransfer {$transferredCount} siswa ke tabel students.";
+            if ($createSpmbBill && $billsCreated > 0) {
+                $message .= " Tagihan SPMB dibuat untuk {$billsCreated} siswa.";
+            }
             if (!empty($errors)) {
                 $message .= " Error: " . implode(', ', $errors);
             }
@@ -1154,5 +1243,29 @@ class SPMBAdminController extends Controller
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Get Payment record yang aktif untuk SPMB berdasarkan period
+     */
+    private function getOrCreateSpmbPayment($periodId)
+    {
+        $currentSchoolId = currentSchoolId();
+        
+        if (!$currentSchoolId) {
+            throw new \Exception('School ID tidak ditemukan. Silakan pilih sekolah terlebih dahulu.');
+        }
+
+        // Cari payment yang sudah dikonfigurasi untuk SPMB dengan period yang sesuai
+        $payment = Payment::where('is_for_spmb', true)
+            ->where('period_period_id', $periodId)
+            ->where('school_id', $currentSchoolId)
+            ->first();
+
+        if (!$payment) {
+            throw new \Exception('Payment untuk SPMB belum dikonfigurasi. Silakan buat payment dengan opsi "Aktifkan untuk SPMB" di menu Setting Tarif Pos untuk period ini.');
+        }
+
+        return $payment->payment_id;
     }
 }
