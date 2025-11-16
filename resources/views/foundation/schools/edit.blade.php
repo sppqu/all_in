@@ -116,7 +116,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="jenjang" class="form-label" style="font-size: 0.9rem;">Jenjang <span class="text-danger">*</span></label>
-                            <select class="form-select @error('jenjang') is-invalid @enderror" id="jenjang" name="jenjang" required>
+                            <select class="form-control select-primary @error('jenjang') is-invalid @enderror" id="jenjang" name="jenjang" required>
                                 <option value="">Pilih Jenjang</option>
                                 <option value="TK" {{ old('jenjang', $school->jenjang) == 'TK' ? 'selected' : '' }}>TK</option>
                                 <option value="SD" {{ old('jenjang', $school->jenjang) == 'SD' ? 'selected' : '' }}>SD</option>
