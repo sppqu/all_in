@@ -700,6 +700,12 @@ class StudentAuthController extends Controller
         $studentId = session('student_id');
         $student = Student::with(['class'])->find($studentId);
         
+        // Check if student exists
+        if (!$student) {
+            return redirect()->route('student.login')
+                ->with('error', 'Data siswa tidak ditemukan. Silakan login kembali.');
+        }
+        
         // Get or create user for library features
         $userEmail = $student->student_email ?? 'student' . $student->student_id . '@temp.com';
         
@@ -714,6 +720,7 @@ class StudentAuthController extends Controller
                     'email' => $userEmail,
                     'password' => bcrypt('password'),
                     'role' => 'student',
+                    'school_id' => $student->school_id ?? null,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -722,6 +729,12 @@ class StudentAuthController extends Controller
                 // If insert fails (duplicate), try to get existing user
                 $user = DB::table('users')->where('email', $userEmail)->first();
             }
+        }
+        
+        // Check if user was created successfully
+        if (!$user) {
+            return redirect()->route('student.login')
+                ->with('error', 'Gagal membuat akun perpustakaan. Silakan hubungi administrator.');
         }
         
         // Get library statistics
@@ -790,7 +803,9 @@ class StudentAuthController extends Controller
             ->get();
         
         // Get school profile
-        $schoolProfile = DB::table('schools')->first();
+        $schoolProfile = DB::table('schools')
+            ->where('id', $student->school_id ?? null)
+            ->first() ?? DB::table('schools')->first();
         
         return view('student.library', compact(
             'student', 

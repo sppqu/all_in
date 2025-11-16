@@ -112,13 +112,13 @@
                                             </div>
                                             <div class="col-6 col-md-3">
                                                 <small class="text-muted d-block">Kembali</small>
-                                                <small class="fw-bold">{{ \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d/m/Y') }}</small>
+                                                <small class="fw-bold">{{ $loan->tanggal_kembali ? \Carbon\Carbon::parse($loan->tanggal_kembali)->format('d/m/Y') : '-' }}</small>
                                             </div>
                                             <div class="col-6 col-md-3">
                                                 <small class="text-muted d-block">Status</small>
                                                 @if($loan->status == 'dipinjam')
                                                     @php
-                                                        $isOverdue = \Carbon\Carbon::parse($loan->tanggal_kembali)->isPast();
+                                                        $isOverdue = $loan->tanggal_kembali ? \Carbon\Carbon::parse($loan->tanggal_kembali)->isPast() : false;
                                                     @endphp
                                                     @if($isOverdue)
                                                         <span class="badge bg-danger">Terlambat</span>
@@ -131,7 +131,7 @@
                                                     <span class="badge bg-secondary">{{ ucfirst($loan->status) }}</span>
                                                 @endif
                                             </div>
-                                            @if($loan->status == 'dipinjam' && \Carbon\Carbon::parse($loan->tanggal_kembali)->isPast())
+                                            @if($loan->status == 'dipinjam' && $loan->tanggal_kembali && \Carbon\Carbon::parse($loan->tanggal_kembali)->isPast())
                                             <div class="col-6 col-md-3">
                                                 <small class="text-muted d-block">Denda</small>
                                                 @php
