@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -185,14 +186,56 @@ class UserController extends Controller
             $data['spmb_admin_access'] = false; // Admin dengan addon aktif bisa akses melalui logika addon
         }
         
+        // Simpan school_ids untuk relasi many-to-many sebelum dihapus dari data
+        $schoolIds = $request->has('school_ids') && !empty($request->school_ids) 
+            ? $request->school_ids 
+            : [];
+        
+        // Set school_id untuk kolom school_id di tabel users (required field)
+        // Untuk foundation level, ambil dari school_ids pertama
+        // Untuk non-foundation level, gunakan currentSchoolId
+        // Untuk superadmin/admin_yayasan, gunakan sekolah pertama sebagai default
+        if ($isFoundationLevel && !empty($schoolIds)) {
+            $data['school_id'] = $schoolIds[0]; // Ambil sekolah pertama
+        } else {
+            $currentSchoolId = currentSchoolId();
+            if ($currentSchoolId) {
+                $data['school_id'] = $currentSchoolId;
+            } else if (!empty($schoolIds)) {
+                $data['school_id'] = $schoolIds[0]; // Gunakan sekolah pertama dari school_ids
+            } else {
+                // Fallback: ambil sekolah pertama yang ada (wajib ada untuk NOT NULL constraint)
+                $firstSchool = DB::table('schools')->orderBy('id')->first();
+                if ($firstSchool) {
+                    $data['school_id'] = $firstSchool->id;
+                } else {
+                    // Jika tidak ada sekolah sama sekali, throw error
+                    return redirect()->back()
+                        ->withInput()
+                        ->withErrors(['school_ids' => 'Tidak ada sekolah yang tersedia. Silakan buat sekolah terlebih dahulu.']);
+                }
+            }
+        }
+        
+        // Pastikan school_id sudah di-set
+        if (!isset($data['school_id']) || empty($data['school_id'])) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['school_ids' => 'Sekolah harus dipilih.']);
+        }
+        
+        // Hapus school_ids dari data karena ini untuk relasi many-to-many, bukan kolom di users
+        unset($data['school_ids']);
+        
         $user = User::create($data);
         
         // Assign sekolah jika role bukan superadmin atau admin_yayasan
         if (!in_array($user->role, ['superadmin', 'admin_yayasan'])) {
-            $schoolIds = $request->has('school_ids') ? $request->school_ids : [];
-            
-            // Jika tidak ada school_ids dari request, gunakan school_id dari admin yang membuat
-            if (empty($schoolIds)) {
+            // Gunakan schoolIds yang sudah disimpan sebelumnya
+            // Jika tidak ada school_ids, gunakan school_id yang sudah di-set
+            if (empty($schoolIds) && isset($data['school_id'])) {
+                $schoolIds = [$data['school_id']];
+            } else if (empty($schoolIds)) {
                 $currentSchoolId = currentSchoolId();
                 if ($currentSchoolId) {
                     $schoolIds = [$currentSchoolId];
