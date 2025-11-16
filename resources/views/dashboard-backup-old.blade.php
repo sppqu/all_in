@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
     <div class="row mb-4">

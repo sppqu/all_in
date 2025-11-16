@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('head')
 <title>Pindah Kelas - SPPQU</title>
@@ -54,7 +54,7 @@
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <label for="from_class_id" class="form-label">Pilih Kelas Asal <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="from_class_id" name="from_class_id" required>
+                                            <select class="form-control select-primary" id="from_class_id" name="from_class_id" required>
                                                 <option value="">Pilih Kelas</option>
                                                 @foreach($classes as $class)
                                                     <option value="{{ $class->class_id }}" {{ old('from_class_id') == $class->class_id ? 'selected' : '' }}>
@@ -102,7 +102,7 @@
                                     <div class="card-body">
                                         <div class="mb-3">
                                             <label for="to_class_id" class="form-label">Pilih Kelas Tujuan <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="to_class_id" name="to_class_id" required>
+                                            <select class="form-control select-primary" id="to_class_id" name="to_class_id" required>
                                                 <option value="">Pilih Kelas</option>
                                                 @foreach($classes as $class)
                                                     <option value="{{ $class->class_id }}" {{ old('to_class_id') == $class->class_id ? 'selected' : '' }}>

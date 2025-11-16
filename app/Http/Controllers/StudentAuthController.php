@@ -757,15 +757,28 @@ class StudentAuthController extends Controller
             ->limit(10)
             ->get();
         
-        // Get recent books catalog
+        // Get recent books catalog (group by books.id to avoid duplicates)
         $recentBooks = DB::table('books')
             ->join('book_categories', 'books.category_id', '=', 'book_categories.id')
             ->select(
-                'books.*', 
+                'books.id',
+                'books.judul',
+                'books.pengarang',
+                'books.penerbit',
+                'books.isbn',
+                'books.deskripsi',
+                'books.cover_image',
+                'books.file_path',
+                'books.status',
+                'books.category_id',
+                'books.created_at',
+                'books.updated_at',
                 'book_categories.nama_kategori', 
                 'book_categories.warna'
             )
             ->where('books.status', 'tersedia')
+            ->whereNull('books.deleted_at')
+            ->groupBy('books.id', 'books.judul', 'books.pengarang', 'books.penerbit', 'books.isbn', 'books.deskripsi', 'books.cover_image', 'books.file_path', 'books.status', 'books.category_id', 'books.created_at', 'books.updated_at', 'book_categories.nama_kategori', 'book_categories.warna')
             ->orderBy('books.created_at', 'desc')
             ->limit(12)
             ->get();

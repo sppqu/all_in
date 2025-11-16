@@ -14,7 +14,7 @@ class ExpensePosController extends Controller
      */
     public function index()
     {
-        $startDate = request()->get('start_date', date('Y-m-01'));
+        $startDate = request()->get('start_date', date('Y-m-d', strtotime('-3 months')));
         $endDate = request()->get('end_date', date('Y-m-d'));
         
         // Ambil data pos pengeluaran
@@ -22,10 +22,29 @@ class ExpensePosController extends Controller
             ->orderBy('pos_name')
             ->get();
         
+        // Ambil current school_id
+        $currentSchoolId = currentSchoolId();
+        
         // Ambil data pos penerimaan untuk dropdown sumber dana
-        $receiptPos = DB::table('pos_pembayaran')
-            ->orderBy('pos_name')
-            ->get();
+        // Filter berdasarkan school_id
+        $receiptPosQuery = DB::table('pos_pembayaran')
+            ->select('pos_id', 'pos_name', 'pos_description', 'school_id');
+        
+        if ($currentSchoolId) {
+            $receiptPosQuery->where(function($q) use ($currentSchoolId) {
+                $q->where('school_id', $currentSchoolId)
+                  ->orWhereNull('school_id'); // Backward compatibility untuk data lama
+            });
+        } else {
+            // Jika tidak ada school_id, hanya ambil yang school_id NULL
+            $receiptPosQuery->whereNull('school_id');
+        }
+        
+        $receiptPos = $receiptPosQuery->orderBy('pos_name')->get();
+        
+        // Log untuk debugging
+        Log::info('ExpensePos ReceiptPos Count: ' . $receiptPos->count());
+        Log::info('ExpensePos ReceiptPos Data: ', $receiptPos->toArray());
         
         // Ambil data metode pembayaran untuk dropdown
         $paymentMethods = DB::table('payment_methods')
@@ -34,10 +53,14 @@ class ExpensePosController extends Controller
             ->get();
         
         // Ambil data kas untuk dropdown
+        // Tampilkan semua kas (aktif dan tidak aktif) untuk memastikan semua muncul
         $kasList = DB::table('kas')
-            ->where('is_active', 1)
             ->orderBy('nama_kas')
             ->get();
+        
+        // Log untuk debugging
+        Log::info('ExpensePos Kas List Count: ' . $kasList->count());
+        Log::info('ExpensePos Kas List Data: ', $kasList->toArray());
         
         // Ambil data transaksi pengeluaran
         $transactions = DB::table('expense_transactions as et')
@@ -55,7 +78,25 @@ class ExpensePosController extends Controller
             ->orderBy('et.tanggal', 'desc')
             ->get();
         
-        return view('accounting.expense-pos.index', compact('expensePos', 'receiptPos', 'paymentMethods', 'kasList', 'transactions', 'startDate', 'endDate'));
+        // Pastikan kasList dikonversi ke array untuk JSON
+        $kasListArray = $kasList->map(function($kas) {
+            return [
+                'id' => $kas->id,
+                'nama_kas' => $kas->nama_kas,
+                'deskripsi' => $kas->deskripsi ?? null,
+                'is_active' => $kas->is_active ?? 1,
+                'jenis_kas' => $kas->jenis_kas ?? 'cash'
+            ];
+        })->values()->all();
+        
+        // Log untuk debugging
+        Log::info('ExpensePos Kas List Array Count: ' . count($kasListArray));
+        Log::info('ExpensePos Kas List Array: ', $kasListArray);
+        
+        // Ambil data profil sekolah untuk header kuitansi
+        $schoolProfile = DB::table('schools')->first();
+        
+        return view('accounting.expense-pos.index', compact('expensePos', 'receiptPos', 'paymentMethods', 'kasList', 'kasListArray', 'transactions', 'startDate', 'endDate', 'schoolProfile'));
     }
 
     /**

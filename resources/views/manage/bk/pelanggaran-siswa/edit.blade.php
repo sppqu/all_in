@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <!-- Select2 CSS -->
@@ -138,7 +138,7 @@
                             <!-- Status -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
-                                <select name="status" class="form-control @error('status') is-invalid @enderror" required>
+                                <select name="status" class="form-control select-primary @error('status') is-invalid @enderror" required>
                                     <option value="pending" {{ old('status', $pelanggaranSiswa->status) == 'pending' ? 'selected' : '' }}>
                                         Pending (Perlu Review)
                                     </option>

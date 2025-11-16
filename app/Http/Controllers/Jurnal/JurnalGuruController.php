@@ -64,6 +64,58 @@ class JurnalGuruController extends Controller
     }
 
     /**
+     * Lihat semua jurnal dengan filter
+     */
+    public function lihat(Request $request)
+    {
+        $query = JurnalHarian::with(['siswa.class', 'entries.kategori']);
+
+        // Filter by status
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by class
+        if ($request->has('kelas_id') && $request->kelas_id != '') {
+            $query->whereHas('siswa', function($q) use ($request) {
+                $q->where('class_class_id', $request->kelas_id);
+            });
+        }
+
+        // Filter by student ID
+        if ($request->has('siswa_id') && $request->siswa_id != '') {
+            $query->where('siswa_id', $request->siswa_id);
+        }
+
+        // Filter by date range
+        if ($request->has('tanggal_dari')) {
+            $query->where('tanggal', '>=', $request->tanggal_dari);
+        }
+        if ($request->has('tanggal_sampai')) {
+            $query->where('tanggal', '<=', $request->tanggal_sampai);
+        }
+
+        $jurnals = $query->orderBy('tanggal', 'desc')->paginate(20);
+
+        // Filter kelas dan siswa berdasarkan school_id
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : ClassModel::orderBy('class_name')->get();
+        
+        $students = Student::with('class')
+            ->where('student_status', 1);
+        
+        if ($currentSchoolId) {
+            $students->where('school_id', $currentSchoolId);
+        }
+        
+        $students = $students->orderBy('student_full_name')->get();
+
+        return view('jurnal.guru.lihat', compact('jurnals', 'classes', 'students'));
+    }
+
+    /**
      * View detail jurnal siswa
      */
     public function show($id)
@@ -264,6 +316,8 @@ class JurnalGuruController extends Controller
         $pdf->setPaper('A4', 'portrait');
         
         $filename = 'Jurnal_7KAIH_' . $siswa->student_nis . '_' . $siswa->student_full_name . '_' . date('Y-m-d') . '.pdf';
+        // Bersihkan karakter yang tidak valid untuk nama file
+        $filename = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $filename);
         
         return $pdf->stream($filename);
     }
@@ -392,6 +446,8 @@ class JurnalGuruController extends Controller
         $pdf->setPaper('A4', 'landscape');
         
         $filename = 'Jurnal_7KAIH_Kelas_' . str_replace(' ', '_', $kelas->class_name) . '_' . date('Y-m-d') . '.pdf';
+        // Bersihkan karakter yang tidak valid untuk nama file
+        $filename = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $filename);
         
         return $pdf->stream($filename);
     }

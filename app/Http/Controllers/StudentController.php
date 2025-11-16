@@ -375,7 +375,13 @@ class StudentController extends Controller
      */
     public function importForm()
     {
-        return view('students.import');
+        // Filter kelas berdasarkan sekolah yang sedang aktif
+        $currentSchoolId = currentSchoolId();
+        $classes = $currentSchoolId 
+            ? ClassModel::where('school_id', $currentSchoolId)->orderBy('class_name')->get()
+            : collect([]);
+        
+        return view('students.import', compact('classes'));
     }
 
     /**
@@ -600,11 +606,21 @@ class StudentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Password berhasil direset'
-            ]);
-        } catch (\Exception $e) {
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal reset password: ' . $e->getMessage()
+                'message' => 'Peserta didik tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Reset password error: ' . $e->getMessage(), [
+                'student_id' => $id,
+                'error' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal reset password. Silakan coba lagi.'
             ], 500);
         }
     }

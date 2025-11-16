@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Laporan Perpos')
 
@@ -16,7 +16,7 @@
                         <div class="row">
                             <div class="col-md-2">
                                 <label class="form-label">Tahun Ajaran</label>
-                                <select name="period_id" class="form-select" required>
+                                <select name="period_id" class="form-control select-primary" required>
                                     <option value="">Pilih Tahun Ajaran</option>
                                     @foreach($periods as $period)
                                         <option value="{{ $period->period_id }}" {{ $selectedPeriod == $period->period_id ? 'selected' : '' }}>
@@ -27,7 +27,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Pos Pembayaran</label>
-                                <select name="pos_id" class="form-select" required>
+                                <select name="pos_id" class="form-control select-primary" required>
                                     <option value="">Pilih Pos Pembayaran</option>
                                     @foreach($posList as $pos)
                                         <option value="{{ $pos->pos_id }}" {{ $selectedPos == $pos->pos_id ? 'selected' : '' }}>
@@ -38,7 +38,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Kelas</label>
-                                <select name="class_id" class="form-select">
+                                <select name="class_id" class="form-control select-primary">
                                     <option value="">Semua Kelas</option>
                                     @foreach($classes as $class)
                                         <option value="{{ $class->class_id }}" {{ $selectedClass == $class->class_id ? 'selected' : '' }}>
@@ -49,7 +49,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Status Pembayaran</label>
-                                <select name="status" class="form-select">
+                                <select name="status" class="form-control select-primary">
                                     <option value="">Semua Status</option>
                                     <option value="lunas" {{ $selectedStatus == 'lunas' ? 'selected' : '' }}>Lunas</option>
                                     <option value="belum_lunas" {{ $selectedStatus == 'belum_lunas' ? 'selected' : '' }}>Belum Lunas</option>
@@ -57,7 +57,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Status Siswa</label>
-                                <select name="student_status" class="form-select">
+                                <select name="student_status" class="form-control select-primary">
                                     <option value="">Semua Status</option>
                                     <option value="1" {{ $selectedStudentStatus == '1' ? 'selected' : '' }}>Aktif</option>
                                     <option value="0" {{ $selectedStudentStatus == '0' ? 'selected' : '' }}>Tidak Aktif</option>
@@ -65,7 +65,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Jenis Pembayaran</label>
-                                <select name="type" class="form-select" required>
+                                <select name="type" class="form-control select-primary" required>
                                     <option value="bulanan" {{ $selectedType == 'bulanan' ? 'selected' : '' }}>Bulanan</option>
                                     <option value="bebas" {{ $selectedType == 'bebas' ? 'selected' : '' }}>Bebas</option>
                                 </select>

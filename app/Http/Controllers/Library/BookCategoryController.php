@@ -17,7 +17,7 @@ class BookCategoryController extends Controller
             ->ordered()
             ->paginate(15);
         
-        return view('library.categories.index', compact('categories'));
+        return view('manage.library.categories.index', compact('categories'));
     }
 
     /**
@@ -25,7 +25,7 @@ class BookCategoryController extends Controller
      */
     public function create()
     {
-        return view('library.categories.create');
+        return view('manage.library.categories.create');
     }
 
     /**
@@ -39,18 +39,26 @@ class BookCategoryController extends Controller
             'deskripsi' => 'nullable|string',
             'icon' => 'nullable|string|max:50',
             'warna' => 'nullable|string|max:7',
-            'urutan' => 'nullable|integer',
-            'is_active' => 'nullable|boolean',
+            'urutan' => 'nullable|integer|min:0',
+            'is_active' => 'nullable',
         ]);
 
+        // Set default values
         $validated['icon'] = $validated['icon'] ?? 'fas fa-folder';
         $validated['warna'] = $validated['warna'] ?? '#3498db';
-        $validated['is_active'] = $request->has('is_active');
+        $validated['urutan'] = $validated['urutan'] ?? 0;
+        $validated['is_active'] = $request->has('is_active') ? 1 : 0;
 
-        BookCategory::create($validated);
+        try {
+            BookCategory::create($validated);
 
-        return redirect()->route('library.categories.index')
-            ->with('success', 'Kategori berhasil ditambahkan!');
+            return redirect()->route('manage.library.categories.index')
+                ->with('success', 'Kategori berhasil ditambahkan!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan kategori: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -59,7 +67,7 @@ class BookCategoryController extends Controller
     public function edit($id)
     {
         $category = BookCategory::findOrFail($id);
-        return view('library.categories.edit', compact('category'));
+        return view('manage.library.categories.edit', compact('category'));
     }
 
     /**
@@ -83,7 +91,7 @@ class BookCategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->route('library.categories.index')
+        return redirect()->route('manage.library.categories.index')
             ->with('success', 'Kategori berhasil diupdate!');
     }
 
@@ -96,13 +104,13 @@ class BookCategoryController extends Controller
 
         // Check if category has books
         if ($category->books()->count() > 0) {
-            return redirect()->route('library.categories.index')
+            return redirect()->route('manage.library.categories.index')
                 ->with('error', 'Kategori tidak bisa dihapus karena masih memiliki buku!');
         }
 
         $category->delete();
 
-        return redirect()->route('library.categories.index')
+        return redirect()->route('manage.library.categories.index')
             ->with('success', 'Kategori berhasil dihapus!');
     }
 }

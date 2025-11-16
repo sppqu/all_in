@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -51,7 +51,7 @@
 
                                 <div class="mb-3">
                                     <label for="student_gender" class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
-                                    <select class="form-select @error('student_gender') is-invalid @enderror" 
+                                    <select class="form-control select-primary @error('student_gender') is-invalid @enderror" 
                                             id="student_gender" 
                                             name="student_gender" 
                                             required>
@@ -103,7 +103,7 @@
                                 
                                 <div class="mb-3">
                                     <label for="class_class_id" class="form-label">Kelas <span class="text-danger">*</span></label>
-                                    <select class="form-select @error('class_class_id') is-invalid @enderror" 
+                                    <select class="form-control select-primary @error('class_class_id') is-invalid @enderror" 
                                             id="class_class_id" 
                                             name="class_class_id" 
                                             required>
@@ -149,8 +149,9 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label class="form-label d-block">Status</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" 
+                                        <input class="form-control form-check-input checkbox-primary" 
                                                type="checkbox" 
                                                id="student_status" 
                                                name="student_status" 
@@ -175,4 +176,31 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusCheckbox = document.getElementById('student_status');
+    
+    if (statusCheckbox) {
+        // Handle form submit - ensure value is sent correctly
+        const form = statusCheckbox.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // If checkbox is unchecked, we need to send 0
+                if (!statusCheckbox.checked) {
+                    // Disable checkbox and add hidden input with value 0
+                    statusCheckbox.disabled = true;
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'student_status';
+                    hiddenInput.value = '0';
+                    form.appendChild(hiddenInput);
+                }
+            });
+        }
+    }
+});
+</script>
 @endsection 

@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -36,24 +36,18 @@
                                     <td>{{ $period->period_start }}</td>
                                     <td>{{ $period->period_end }}</td>
                                     <td>
-                                        @if($period->period_status)
-                                            <span class="badge bg-success">{{ $period->status_text }}</span>
-                                        @else
-                                            <span class="badge bg-secondary">{{ $period->status_text }}</span>
-                                        @endif
+                                        <div class="form-check form-switch d-flex align-items-center">
+                                            <input class="form-check-input status-switch" 
+                                                   type="checkbox" 
+                                                   id="status_{{ $period->period_id }}" 
+                                                   data-period-id="{{ $period->period_id }}"
+                                                   {{ $period->period_status ? 'checked' : '' }}
+                                                   onchange="togglePeriodStatus({{ $period->period_id }}, this.checked)">
+                                            <label class="form-check-label ms-2" for="status_{{ $period->period_id }}"></label>
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            @if(!$period->period_status)
-                                                <form action="{{ route('periods.set-active', $period) }}" method="POST" class="d-inline activate-form">
-                                                    @csrf
-                                                    <button type="button" class="btn btn-success btn-sm action-btn btn-activate" 
-                                                            data-period-name="{{ $period->period_name }}"
-                                                            title="Aktifkan">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
                                             <a href="{{ route('periods.edit', $period) }}" class="btn btn-warning btn-sm action-btn" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
@@ -61,7 +55,7 @@
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="button" class="btn btn-danger btn-sm action-btn btn-delete" 
-                                                        data-period-name="{{ $period->period_name }}"
+                                                        data-period-name="{{ addslashes($period->period_name) }}"
                                                         title="Hapus">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -144,14 +138,16 @@
 </style>
 
 <!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-danger text-white border-0">
         <h5 class="modal-title" id="deleteModalLabel">
           <i class="fa fa-trash me-2"></i>Konfirmasi Hapus Tahun Pelajaran
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" onclick="closeDeleteModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
@@ -161,7 +157,7 @@
         <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" onclick="closeDeleteModal()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
         <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
@@ -172,14 +168,16 @@
   </div>
 </div>
 <!-- Modal Konfirmasi Aktifkan -->
-<div class="modal fade" id="activateModal" tabindex="-1" aria-labelledby="activateModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="activateModal" tabindex="-1" role="dialog" aria-labelledby="activateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-success text-white border-0">
         <h5 class="modal-title" id="activateModalLabel">
           <i class="fa fa-check me-2"></i>Konfirmasi Aktifkan Tahun Pelajaran
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" onclick="closeActivateModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
@@ -189,7 +187,7 @@
         <p class="text-muted mb-0">Tahun pelajaran lain akan dinonaktifkan.</p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" onclick="closeActivateModal()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
         <button type="button" class="btn btn-success px-4" id="confirmActivateBtn">
@@ -203,37 +201,96 @@
 
 @section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
+    $(document).ready(function() {
         let formToDelete = null;
-        document.querySelectorAll('.btn-delete').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const periodName = this.getAttribute('data-period-name');
-                formToDelete = this.closest('form');
-                document.getElementById('modalPeriodName').textContent = periodName;
-                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                modal.show();
-            });
-        });
-        document.getElementById('confirmDeleteBtn').onclick = function() {
-            if (formToDelete) formToDelete.submit();
-        };
 
-        let formToActivate = null;
-        document.querySelectorAll('.btn-activate').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const periodName = this.getAttribute('data-period-name');
-                formToActivate = this.closest('form');
-                document.getElementById('modalActivatePeriodName').textContent = periodName;
-                const modal = new bootstrap.Modal(document.getElementById('activateModal'));
-                modal.show();
-            });
+        // Delete button handler
+        $('.btn-delete').on('click', function(e) {
+            e.preventDefault();
+            const periodName = $(this).data('period-name');
+            formToDelete = $(this).closest('form');
+            $('#modalPeriodName').text(periodName);
+            $('#deleteModal').modal('show');
         });
-        document.getElementById('confirmActivateBtn').onclick = function() {
-            if (formToActivate) formToActivate.submit();
-        };
+
+        // Confirm delete
+        $('#confirmDeleteBtn').on('click', function() {
+            if (formToDelete) {
+                formToDelete.submit();
+            }
+        });
     });
+
+    // Close modal functions
+    function closeDeleteModal() {
+        $('#deleteModal').modal('hide');
+    }
+    
+    // Toggle period status
+    function togglePeriodStatus(periodId, isActive) {
+        const formData = new FormData();
+        formData.append('status', isActive ? 1 : 0);
+        formData.append('_token', '{{ csrf_token() }}');
+        
+        fetch('{{ url("periods") }}/' + periodId + '/toggle-status', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Allow multiple active periods - no need to deactivate others
+                // Show success notification
+                if (typeof showToast !== 'undefined') {
+                    showToast('success', 'Berhasil', data.message);
+                } else {
+                    alert(data.message);
+                }
+            } else {
+                // Revert switch state on error
+                $('#status_' + periodId).prop('checked', !isActive);
+                
+                if (typeof showToast !== 'undefined') {
+                    showToast('error', 'Gagal', data.message || 'Gagal memperbarui status');
+                } else {
+                    alert(data.message || 'Gagal memperbarui status');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert switch state on error
+            $('#status_' + periodId).prop('checked', !isActive);
+            
+            if (typeof showToast !== 'undefined') {
+                showToast('error', 'Gagal', 'Terjadi kesalahan saat memperbarui status');
+            } else {
+                alert('Terjadi kesalahan saat memperbarui status');
+            }
+        });
+    }
+    
+    // Make function global
+    window.togglePeriodStatus = togglePeriodStatus;
 </script>
+<style>
+    .form-check.form-switch {
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-check-input.status-switch {
+        width: 3rem;
+        height: 1.5rem;
+        cursor: pointer;
+    }
+    
+    .form-check-label {
+        margin-left: 0.5rem;
+    }
+</style>
 @endsection 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SchoolProfile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\SetupGateway;
 use App\Models\UserAddon;
 
@@ -59,20 +60,37 @@ class GeneralSettingController extends Controller
         ]);
         
         // Check if user has Payment Gateway add-on
-        $hasPaymentGatewayAddon = UserAddon::where('user_id', auth()->id())
-            ->whereHas('addon', function($query) {
-                $query->where('slug', 'payment-gateway');
-            })
-            ->where('status', 'active')
-            ->exists();
+        // Use getCheckUserId() to handle inheritance from superadmin
+        $checkUserId = getCheckUserId();
+        $hasPaymentGatewayAddon = false;
+        if ($checkUserId) {
+            $hasPaymentGatewayAddon = DB::table('user_addons')
+                ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
+                ->where('user_addons.user_id', $checkUserId)
+                ->where('addons.slug', 'payment-gateway')
+                ->where('user_addons.status', 'active')
+                ->where(function($query) {
+                    $query->whereNull('user_addons.expires_at')
+                          ->orWhere('user_addons.expires_at', '>', now());
+                })
+                ->exists();
+        }
         
         // Check if user has WhatsApp Gateway add-on
-        $hasWhatsAppGatewayAddon = UserAddon::where('user_id', auth()->id())
-            ->whereHas('addon', function($query) {
-                $query->where('slug', 'whatsapp-gateway');
-            })
-            ->where('status', 'active')
-            ->exists();
+        // Use getCheckUserId() to handle inheritance from superadmin
+        $hasWhatsAppGatewayAddon = false;
+        if ($checkUserId) {
+            $hasWhatsAppGatewayAddon = DB::table('user_addons')
+                ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
+                ->where('user_addons.user_id', $checkUserId)
+                ->where('addons.slug', 'whatsapp-gateway')
+                ->where('user_addons.status', 'active')
+                ->where(function($query) {
+                    $query->whereNull('user_addons.expires_at')
+                          ->orWhere('user_addons.expires_at', '>', now());
+                })
+                ->exists();
+        }
         
         \Log::info('General Setting data:', [
             'current_school_id' => $currentSchoolId,
@@ -95,20 +113,37 @@ class GeneralSettingController extends Controller
     public function updateGateway(Request $request)
     {
         // Check if user has Payment Gateway add-on
-        $hasPaymentGatewayAddon = UserAddon::where('user_id', auth()->id())
-            ->whereHas('addon', function($query) {
-                $query->where('slug', 'payment-gateway');
-            })
-            ->where('status', 'active')
-            ->exists();
+        // Use getCheckUserId() to handle inheritance from superadmin
+        $checkUserId = getCheckUserId();
+        $hasPaymentGatewayAddon = false;
+        if ($checkUserId) {
+            $hasPaymentGatewayAddon = DB::table('user_addons')
+                ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
+                ->where('user_addons.user_id', $checkUserId)
+                ->where('addons.slug', 'payment-gateway')
+                ->where('user_addons.status', 'active')
+                ->where(function($query) {
+                    $query->whereNull('user_addons.expires_at')
+                          ->orWhere('user_addons.expires_at', '>', now());
+                })
+                ->exists();
+        }
         
         // Check if user has WhatsApp Gateway add-on
-        $hasWhatsAppGatewayAddon = UserAddon::where('user_id', auth()->id())
-            ->whereHas('addon', function($query) {
-                $query->where('slug', 'whatsapp-gateway');
-            })
-            ->where('status', 'active')
-            ->exists();
+        // Use getCheckUserId() to handle inheritance from superadmin
+        $hasWhatsAppGatewayAddon = false;
+        if ($checkUserId) {
+            $hasWhatsAppGatewayAddon = DB::table('user_addons')
+                ->join('addons', 'user_addons.addon_id', '=', 'addons.id')
+                ->where('user_addons.user_id', $checkUserId)
+                ->where('addons.slug', 'whatsapp-gateway')
+                ->where('user_addons.status', 'active')
+                ->where(function($query) {
+                    $query->whereNull('user_addons.expires_at')
+                          ->orWhere('user_addons.expires_at', '>', now());
+                })
+                ->exists();
+        }
         
         // Determine what user is trying to update based on request fields
         $isUpdatingPaymentGateway = $request->has('ipaymu_va') || 

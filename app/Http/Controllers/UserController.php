@@ -9,8 +9,16 @@ class UserController extends Controller
 {
     public function roleMenu()
     {
-        // Hanya tampilkan role yang ada di tabel users (bukan admin/superadmin)
-        $roles = ['kasir','bendahara','spmb_admin','admin_perpustakaan'];
+        // Hanya tampilkan role yang ada di tabel users (bukan admin/superadmin/admin_yayasan)
+        // Semua role yang bisa diatur hak akses menunya
+        $roles = [
+            'kasir',
+            'bendahara',
+            'spmb_admin',
+            'admin_perpustakaan',
+            'admin_bk',
+            'admin_jurnal'
+        ];
         
         // Filter hanya menu yang valid (exclude array items)
         $allMenus = config('menus');
@@ -286,64 +294,87 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'password' => 'nullable|string|min:6',
-            'nomor_wa' => 'nullable|string|max:20',
-            'role' => 'required|string|in:superadmin,admin,admin_bk,admin_jurnal,admin_perpustakaan,spmb_admin,kasir,bendahara',
-            'is_bk' => 'nullable|boolean',
-            'spmb_admin_access' => 'nullable|boolean',
-        ]);
-        $data = $request->all();
-        if (!empty($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        } else {
-            unset($data['password']);
-        }
-        
-        // Set akses BK: otomatis true jika role adalah admin_bk, otherwise false
-        // Admin dengan addon BK aktif sudah bisa akses melalui logika addon, tidak perlu flag is_bk
-        if ($data['role'] === 'admin_bk') {
-            $data['is_bk'] = true; // Role admin_bk otomatis punya akses BK
-        } else {
-            $data['is_bk'] = false; // Admin dengan addon aktif bisa akses melalui logika addon
-        }
-        
-        // Set akses SPMB: otomatis true jika role adalah spmb_admin, otherwise false
-        // Admin dengan addon SPMB aktif sudah bisa akses melalui logika addon, tidak perlu flag spmb_admin_access
-        if ($data['role'] === 'spmb_admin') {
-            $data['spmb_admin_access'] = true; // Role spmb_admin otomatis punya akses SPMB
-        } else {
-            $data['spmb_admin_access'] = false; // Admin dengan addon aktif bisa akses melalui logika addon
-        }
-        $user->update($data);
-        
-        // Update assignment sekolah
-        $currentUser = auth()->user();
-        $isFoundationLevel = in_array($currentUser->role, ['superadmin', 'admin_yayasan']);
-        
-        if ($isFoundationLevel && $request->has('school_ids') && !empty($request->school_ids)) {
-            // Untuk superadmin/admin_yayasan, bisa update assignment sekolah
-            $schoolIds = $request->school_ids;
-            // Sync sekolah (hapus yang tidak ada, tambah yang baru)
-            $user->schools()->sync($schoolIds);
-        } elseif (!$isFoundationLevel) {
-            // Untuk admin sekolah, pastikan user tetap ter-assign ke sekolah yang sama dengan admin
-            $currentSchoolId = currentSchoolId();
-            if ($currentSchoolId) {
-                // Pastikan user ter-assign ke sekolah admin yang sedang login
-                if (!$user->schools()->where('schools.id', $currentSchoolId)->exists()) {
-                    $user->schools()->attach($currentSchoolId, [
-                        'role' => $user->role,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+        try {
+            $currentUser = auth()->user();
+            $isFoundationLevel = in_array($currentUser->role, ['superadmin', 'admin_yayasan']);
+            
+            $validationRules = [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email,'.$user->id,
+                'password' => 'nullable|string|min:6',
+                'nomor_wa' => 'nullable|string|max:20',
+                'is_bk' => 'nullable|boolean',
+                'spmb_admin_access' => 'nullable|boolean',
+            ];
+            
+            // Role hanya required jika user adalah superadmin/admin_yayasan
+            // Untuk user sekolah, role akan dikirim via hidden input dengan value yang sudah ada
+            if ($isFoundationLevel) {
+                $validationRules['role'] = 'required|string|in:superadmin,admin_yayasan,admin,admin_bk,admin_jurnal,admin_perpustakaan,spmb_admin,kasir,bendahara';
+            } else {
+                // Untuk user sekolah, gunakan role yang sudah ada jika tidak ada di request
+                if (!$request->has('role') || empty($request->role)) {
+                    $request->merge(['role' => $user->role]);
+                }
+                $validationRules['role'] = 'required|string|in:superadmin,admin_yayasan,admin,admin_bk,admin_jurnal,admin_perpustakaan,spmb_admin,kasir,bendahara';
+            }
+            
+            $request->validate($validationRules);
+            
+            $data = $request->all();
+            if (!empty($data['password'])) {
+                $data['password'] = bcrypt($data['password']);
+            } else {
+                unset($data['password']);
+            }
+            
+            // Set akses BK: otomatis true jika role adalah admin_bk, otherwise false
+            // Admin dengan addon BK aktif sudah bisa akses melalui logika addon, tidak perlu flag is_bk
+            if ($data['role'] === 'admin_bk') {
+                $data['is_bk'] = true; // Role admin_bk otomatis punya akses BK
+            } else {
+                $data['is_bk'] = false; // Admin dengan addon aktif bisa akses melalui logika addon
+            }
+            
+            // Set akses SPMB: otomatis true jika role adalah spmb_admin, otherwise false
+            // Admin dengan addon SPMB aktif sudah bisa akses melalui logika addon, tidak perlu flag spmb_admin_access
+            if ($data['role'] === 'spmb_admin') {
+                $data['spmb_admin_access'] = true; // Role spmb_admin otomatis punya akses SPMB
+            } else {
+                $data['spmb_admin_access'] = false; // Admin dengan addon aktif bisa akses melalui logika addon
+            }
+            $user->update($data);
+            
+            // Update assignment sekolah
+            // $currentUser dan $isFoundationLevel sudah didefinisikan di atas
+            
+            if ($isFoundationLevel && $request->has('school_ids') && !empty($request->school_ids)) {
+                // Untuk superadmin/admin_yayasan, bisa update assignment sekolah
+                $schoolIds = $request->school_ids;
+                // Sync sekolah (hapus yang tidak ada, tambah yang baru)
+                $user->schools()->sync($schoolIds);
+            } elseif (!$isFoundationLevel) {
+                // Untuk admin sekolah, pastikan user tetap ter-assign ke sekolah yang sama dengan admin
+                $currentSchoolId = currentSchoolId();
+                if ($currentSchoolId) {
+                    // Pastikan user ter-assign ke sekolah admin yang sedang login
+                    if (!$user->schools()->where('schools.id', $currentSchoolId)->exists()) {
+                        $user->schools()->attach($currentSchoolId, [
+                            'role' => $user->role,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
+            
+            return redirect()->route('manage.users.index')->with('success', 'Pengguna berhasil diperbarui!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors akan otomatis redirect back dengan errors
+            throw $e;
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memperbarui pengguna: ' . $e->getMessage());
         }
-        
-        return redirect()->route('manage.users.index')->with('success', 'Pengguna berhasil diperbarui!');
     }
 
     /**

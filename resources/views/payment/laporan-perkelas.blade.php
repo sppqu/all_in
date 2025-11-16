@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Laporan Perkelas')
 
@@ -16,7 +16,7 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <label class="form-label">Tahun Ajaran</label>
-                                <select name="period_id" class="form-select" required>
+                                <select name="period_id" class="form-control select-primary" required>
                                     <option value="">Pilih Tahun Ajaran</option>
                                     @foreach($periods as $period)
                                         <option value="{{ $period->period_id }}" {{ $selectedPeriod == $period->period_id ? 'selected' : '' }}>
@@ -27,7 +27,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Kelas</label>
-                                <select name="class_id" class="form-select" required>
+                                <select name="class_id" class="form-control select-primary" required>
                                     <option value="">Pilih Kelas</option>
                                     @foreach($classes as $class)
                                         <option value="{{ $class->class_id }}" {{ $selectedClass == $class->class_id ? 'selected' : '' }}>
@@ -38,7 +38,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Bulan</label>
-                                <select name="month" class="form-select" required>
+                                <select name="month" class="form-control select-primary" required>
                                     <option value="">Pilih Bulan</option>
                                     @foreach($months as $key => $month)
                                         <option value="{{ $key }}" {{ $selectedMonth == $key ? 'selected' : '' }}>
@@ -49,7 +49,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Status Siswa</label>
-                                <select name="student_status" class="form-select">
+                                <select name="student_status" class="form-control select-primary">
                                     <option value="">Semua Status</option>
                                     <option value="1" {{ $selectedStudentStatus == '1' ? 'selected' : '' }}>Aktif</option>
                                     <option value="0" {{ $selectedStudentStatus == '0' ? 'selected' : '' }}>Tidak Aktif</option>

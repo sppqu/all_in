@@ -66,12 +66,17 @@
                     $totalPay += (float)($item['pay'] ?? 0);
                     $totalArrear += (float)($item['tunggakan'] ?? 0);
                 @endphp
+                @php
+                    $bill = (float)($item['bill'] ?? 0);
+                    $pay = (float)($item['pay'] ?? 0);
+                    $tunggakan = (float)($item['tunggakan'] ?? 0);
+                @endphp
                 <tr>
                     <td class="text-center">{{ $i + 1 }}</td>
                     <td>{{ $item['pos_name'] ?? '' }}</td>
-                    <td class="text-right">Rp {{ number_format($item['bill'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($item['pay'] ?? 0, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($item['tunggakan'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($bill, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($pay, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($tunggakan, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr><td colspan="5" class="text-center">Tidak ada data</td></tr>

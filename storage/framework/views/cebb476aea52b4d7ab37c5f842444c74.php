@@ -1,0 +1,143 @@
+
+
+<?php $__env->startSection('title', $book->judul . ' - E-Perpustakaan'); ?>
+
+<?php $__env->startSection('content'); ?>
+<div class="container-fluid px-4 py-4">
+    <div class="mb-4">
+        <a href="<?php echo e(route('library.index')); ?>" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Kembali
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                <?php if($book->cover_image): ?>
+                    <img src="<?php echo e(asset('storage/' . $book->cover_image)); ?>" 
+                         class="card-img-top" 
+                         alt="<?php echo e($book->judul); ?>">
+                <?php else: ?>
+                    <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center"
+                         style="height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-book fa-5x text-white opacity-50"></i>
+                    </div>
+                <?php endif; ?>
+                <div class="card-body">
+                    <?php if($book->file_path): ?>
+                        <div class="d-flex flex-column" style="gap: 12px;">
+                            <a href="<?php echo e(route('library.serve-pdf', $book->id)); ?>" target="_blank" class="btn" style="background-color: #01a9ac; border-color: #01a9ac; color: #ffffff; border-radius: 6px;">
+                                <i class="fas fa-book-reader me-2" style="color: #ffffff;"></i>Baca Online
+                            </a>
+                            <a href="<?php echo e(route('library.download', $book->id)); ?>" class="btn" style="background-color: #ffffff; border: 2px solid #28a745; color: #28a745; border-radius: 6px;">
+                                <i class="fas fa-download me-2" style="color: #28a745;"></i>Download PDF
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>File PDF tidak tersedia
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="mb-3"><?php echo e($book->judul); ?></h2>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-user me-2"></i>Pengarang:</strong><br>
+                                <?php echo e($book->pengarang); ?>
+
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="fas fa-building me-2"></i>Penerbit:</strong><br>
+                                <?php echo e($book->penerbit ?? '-'); ?>
+
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="fas fa-calendar me-2"></i>Tahun Terbit:</strong><br>
+                                <?php echo e($book->tahun_terbit ?? '-'); ?>
+
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-barcode me-2"></i>ISBN:</strong><br>
+                                <?php echo e($book->isbn ?? '-'); ?>
+
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="fas fa-layer-group me-2"></i>Kategori:</strong><br>
+                                <span class="badge" style="background-color: <?php echo e($book->category->warna); ?>;">
+                                    <?php echo e($book->category->nama_kategori); ?>
+
+                                </span>
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="fas fa-file-pdf me-2"></i>Jumlah Halaman:</strong><br>
+                                <?php echo e($book->jumlah_halaman ?? '-'); ?> halaman
+                            </p>
+                        </div>
+                    </div>
+
+                    <?php if($book->deskripsi): ?>
+                    <div class="mb-3">
+                        <strong><i class="fas fa-align-left me-2"></i>Deskripsi:</strong>
+                        <p class="mt-2"><?php echo e($book->deskripsi); ?></p>
+                    </div>
+                    <?php endif; ?>
+
+                    <hr>
+
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="p-3">
+                                <i class="fas fa-eye fa-2x text-primary mb-2"></i>
+                                <h4><?php echo e(number_format($book->total_views)); ?></h4>
+                                <small class="text-muted">Dilihat</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3">
+                                <i class="fas fa-download fa-2x text-success mb-2"></i>
+                                <h4><?php echo e(number_format($book->total_downloads)); ?></h4>
+                                <small class="text-muted">Download</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3">
+                                <i class="fas fa-book fa-2x text-info mb-2"></i>
+                                <h4><?php echo e(number_format($book->total_loans)); ?></h4>
+                                <small class="text-muted">Peminjaman</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if($relatedBooks->count() > 0): ?>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-books me-2"></i>Buku Terkait</h5>
+                    <div class="row g-3">
+                        <?php $__currentLoopData = $relatedBooks; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $relatedBook): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <div class="col-md-3">
+                            <?php echo $__env->make('library.partials.book-card', ['book' => $relatedBook], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        </div>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+
+
+<?php echo $__env->make('layouts.adminty', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/library/show.blade.php ENDPATH**/ ?>

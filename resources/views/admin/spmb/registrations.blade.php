@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -104,11 +104,6 @@
         color: white;
     }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #008060;
-        box-shadow: 0 0 0 0.2rem rgba(0, 128, 96, 0.25);
-    }
 
     .table th {
         background: #f8f9fa;
@@ -168,19 +163,21 @@
                     <a href="{{ route('manage.spmb.create') }}" class="btn btn-success d-none">
                         <i class="fas fa-user-plus me-1"></i>Tambah Pendaftar
                     </a>
-                    <a href="{{ route('manage.spmb.export-excel', request()->query()) }}" class="btn btn-primary">
-                        <i class="fas fa-file-excel me-1"></i>Export Excel
-                    </a>
-                    <a href="{{ route('manage.spmb.export-pdf', request()->query()) }}" class="btn btn-danger">
-                        <i class="fas fa-file-pdf me-1"></i>Export PDF
-                    </a>
+                    <div class="btn-group">
+                        <a href="{{ route('manage.spmb.export-excel', request()->query()) }}" class="btn btn-success">
+                            <i class="fas fa-file-excel me-1"></i>Export Excel
+                        </a>
+                        <a href="{{ route('manage.spmb.export-pdf', request()->query()) }}" class="btn btn-danger">
+                            <i class="fas fa-file-pdf me-1"></i>Export PDF
+                        </a>
+                    </div>
                 </div>
             </div>
             
             <!-- Filter Form -->
             <form method="GET" class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <select name="status_pendaftaran" class="form-select">
+                    <select name="status_pendaftaran" class="form-control select-primary">
                         <option value="">Semua Status</option>
                         <option value="pending" {{ request('status_pendaftaran') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="diterima" {{ request('status_pendaftaran') == 'diterima' ? 'selected' : '' }}>Diterima</option>
@@ -188,7 +185,7 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select name="kejuruan_id" class="form-select">
+                    <select name="kejuruan_id" class="form-control select-primary">
                         <option value="">Semua Kejuruan</option>
                         @foreach($kejuruan as $k)
                             <option value="{{ $k->id }}" {{ request('kejuruan_id') == $k->id ? 'selected' : '' }}>
@@ -201,7 +198,7 @@
                     <input type="text" name="search" class="form-control" placeholder="Cari nama, phone, atau nomor pendaftaran..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-success w-100">
                         <i class="fas fa-search me-1"></i>Filter
                     </button>
                 </div>

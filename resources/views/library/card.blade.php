@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Kartu Perpustakaan Digital - E-Perpustakaan')
 

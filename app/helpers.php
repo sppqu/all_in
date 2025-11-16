@@ -25,8 +25,36 @@ if (!function_exists('getCheckUserId')) {
      * Get the user ID to check for subscription/addons
      * If user is superadmin, return their ID
      * Otherwise, return superadmin ID (inheritance)
+     * For students, check based on their school's admin
      */
     function getCheckUserId($userId = null) {
+        // Check if context is student (from session)
+        if (session('is_student')) {
+            $studentId = session('student_id');
+            if ($studentId) {
+                // Get student's school_id
+                $student = \DB::table('students')->where('student_id', $studentId)->first();
+                if ($student && $student->school_id) {
+                    // Find admin/superadmin associated with this school
+                    $adminUser = \DB::table('user_schools')
+                        ->join('users', 'user_schools.user_id', '=', 'users.id')
+                        ->where('user_schools.school_id', $student->school_id)
+                        ->whereIn('users.role', ['admin', 'superadmin'])
+                        ->select('users.id', 'users.role')
+                        ->first();
+                    
+                    if ($adminUser) {
+                        // If admin is superadmin, return their ID
+                        // Otherwise, return superadmin ID for inheritance
+                        return ($adminUser->role === 'superadmin') ? $adminUser->id : getSuperadminId();
+                    }
+                }
+            }
+            // Fallback to superadmin if no admin found
+            return getSuperadminId();
+        }
+        
+        // For regular users (non-student)
         if (!$userId) {
             $userId = auth()->id();
         }

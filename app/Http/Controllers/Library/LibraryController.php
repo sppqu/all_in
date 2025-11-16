@@ -56,16 +56,25 @@ class LibraryController extends Controller
             ->take(10)
             ->get();
         
-        // Monthly statistics
-        $monthlyStats = DB::table('book_reading_history')
-            ->select(
-                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-                DB::raw('COUNT(*) as total')
-            )
-            ->where('created_at', '>=', now()->subMonths(6))
-            ->groupBy('month')
-            ->orderBy('month', 'asc')
-            ->get();
+        // Daily loans statistics (last 30 days)
+        $dailyLoans = [];
+        $dailyLoanLabels = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dailyLoanLabels[] = now()->subDays($i)->format('d M');
+            $dailyLoans[] = BookLoan::whereDate('tanggal_pinjam', $date)->count();
+        }
+        
+        // Daily reads statistics (last 30 days)
+        $dailyReads = [];
+        $dailyReadLabels = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dailyReadLabels[] = now()->subDays($i)->format('d M');
+            $dailyReads[] = ReadingHistory::where('activity_type', 'read')
+                ->whereDate('created_at', $date)
+                ->count();
+        }
         
         return view('library.dashboard', compact(
             'totalBooks',
@@ -77,7 +86,10 @@ class LibraryController extends Controller
             'popularBooks',
             'categories',
             'recentActivity',
-            'monthlyStats'
+            'dailyLoans',
+            'dailyLoanLabels',
+            'dailyReads',
+            'dailyReadLabels'
         ));
     }
 

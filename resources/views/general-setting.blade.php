@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('head')
 <title>General Setting</title>
@@ -252,7 +252,7 @@
                                             <div class="row mb-3">
                                                 <label class="col-sm-4 col-form-label">Mode</label>
                                                 <div class="col-sm-8">
-                                            <select class="form-select" name="ipaymu_mode">
+                                            <select class="form-control select-primary" name="ipaymu_mode">
                                                 <option value="sandbox" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'sandbox' ? 'selected' : '' }}>Sandbox</option>
                                                 <option value="production" {{ ($gateway->ipaymu_mode ?? 'sandbox') == 'production' ? 'selected' : '' }}>Production</option>
                                                     </select>

@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -63,7 +63,7 @@
                             <!-- Jenis Pelanggaran (Grouped by Kategori) -->
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Jenis Pelanggaran <span class="text-danger">*</span></label>
-                                <select name="pelanggaran_id" class="form-select @error('pelanggaran_id') is-invalid @enderror" required id="pelanggaranSelect">
+                                <select name="pelanggaran_id" class="form-control select-primary @error('pelanggaran_id') is-invalid @enderror" required id="pelanggaranSelect">
                                     <option value="">Pilih Jenis Pelanggaran</option>
                                     @foreach($pelanggaran as $kategoriName => $items)
                                         <optgroup label="{{ $kategoriName }}">
@@ -118,7 +118,7 @@
                             <!-- Status -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Status <span class="text-danger">*</span></label>
-                                <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                <select name="status" class="form-control select-primary @error('status') is-invalid @enderror" required>
                                     <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Pending (Perlu Review)</option>
                                     <option value="approved" {{ old('status') == 'approved' ? 'selected' : '' }}>Langsung Disetujui</option>
                                     <option value="rejected" {{ old('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>

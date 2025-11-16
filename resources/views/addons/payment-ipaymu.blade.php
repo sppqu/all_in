@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Pembayaran Add-on - SPPQU')
 

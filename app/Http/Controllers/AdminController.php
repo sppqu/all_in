@@ -612,7 +612,7 @@ class AdminController extends Controller
             ->whereYear('be.bebas_input_date', $currentYear)
             ->whereMonth('be.bebas_input_date', $currentMonth)
             ->count();
-        
+            
         $totalBillsThisMonth = $totalBulananThisMonth + $totalBebasThisMonth;
         
         // Hitung tagihan yang sudah lunas bulan ini
@@ -652,12 +652,12 @@ class AdminController extends Controller
         // Ambil subscription aktif terbaru dari user yang di-check (superadmin untuk inheritance)
         $activeSubscription = null;
         if ($checkUserId) {
-            $activeSubscription = DB::table('subscriptions')
+        $activeSubscription = DB::table('subscriptions')
                 ->where('user_id', $checkUserId)
-                ->where('status', 'active')
-                ->whereNotNull('expires_at')
-                ->orderBy('expires_at', 'desc')
-                ->first();
+            ->where('status', 'active')
+            ->whereNotNull('expires_at')
+            ->orderBy('expires_at', 'desc')
+            ->first();
         }
         
         if ($activeSubscription) {

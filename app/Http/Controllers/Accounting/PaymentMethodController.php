@@ -147,6 +147,47 @@ class PaymentMethodController extends Controller
     }
 
     /**
+     * Toggle payment method status (ON/OFF)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        try {
+            $paymentMethod = DB::table('payment_methods')->where('id', $id)->first();
+            
+            if (!$paymentMethod) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Metode pembayaran tidak ditemukan!'
+                ], 404);
+            }
+            
+            $status = $request->input('status', 'OFF');
+            
+            DB::table('payment_methods')
+                ->where('id', $id)
+                ->update([
+                    'status' => $status,
+                    'updated_at' => now()
+                ]);
+            
+            $statusText = $status == 'ON' ? 'diaktifkan' : 'dinonaktifkan';
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Metode pembayaran berhasil {$statusText}!"
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error toggling payment method status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate status metode pembayaran: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(Request $request, $id)

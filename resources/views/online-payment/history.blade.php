@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Riwayat Pembayaran Online')
 
@@ -72,7 +72,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label for="status" class="form-label">Status</label>
-                                    <select class="form-select" id="status" name="status">
+                                    <select class="form-control select-primary" id="status" name="status">
                                         <option value="">Semua Status</option>
                                         <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Menunggu Verifikasi</option>
                                         <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Berhasil</option>
@@ -81,7 +81,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label for="per_page" class="form-label">Data per Halaman</label>
-                                    <select class="form-select" id="per_page" name="per_page">
+                                    <select class="form-control select-primary" id="per_page" name="per_page">
                                         <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
                                         <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
                                         <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
@@ -117,14 +117,14 @@
                         <table class="table table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
-                                    <th width="3%">No</th>
-                                    <th width="12%">NIS</th>
-                                    <th width="20%">Nama Lengkap</th>
-                                    <th width="15%">Kelas</th>
-                                    <th width="15%">Reference</th>
-                                    <th width="10%">Status</th>
-                                    <th width="15%">Tanggal</th>
-                                    <th width="10%">Aksi</th>
+                                    <th width="3%" class="text-left">No</th>
+                                    <th width="12%" class="text-left">NIS</th>
+                                    <th width="20%" class="text-left">Nama Lengkap</th>
+                                    <th width="15%" class="text-left">Kelas</th>
+                                    <th width="15%" class="text-left">Reference</th>
+                                    <th width="10%" class="text-center">Status</th>
+                                    <th width="15%" class="text-left">Tanggal</th>
+                                    <th width="10%" class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -603,13 +603,10 @@ function setupVerificationButtons() {
 <!-- Simple Toast System -->
 <script>
 // Simple toast notification system
-function showToast(type, title, message) {
-    alert(`${title}: ${message}`);
-}
-
+// showToast function is now global from adminty.blade.php layout
 // Global toast functions
-window.showVerificationToast = showToast;
-window.fallbackToast = showToast;
+window.showVerificationToast = window.showToast;
+window.fallbackToast = window.showToast;
 
 // Debug: Log all available functions
 console.log('Available functions on window:');

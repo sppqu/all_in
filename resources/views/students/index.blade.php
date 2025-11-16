@@ -1,12 +1,12 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('head')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Peserta Didik</title>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+<!-- Toast Container - Hidden by default, will be shown when needed -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" style="display: none;">
         <div class="d-flex">
             <div class="toast-body">
                 <i class="fas fa-check-circle me-2"></i>
@@ -16,7 +16,7 @@
         </div>
     </div>
     
-    <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" style="display: none;">
         <div class="d-flex">
             <div class="toast-body">
                 <i class="fas fa-exclamation-circle me-2"></i>
@@ -52,6 +52,60 @@
 
 .table td {
     vertical-align: middle;
+}
+
+/* Fix checkbox column visibility and scrolling */
+.table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+.table-responsive table {
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Sticky checkbox column */
+.table-responsive thead th:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #343a40 !important;
+    z-index: 12;
+    min-width: 50px;
+    width: 50px;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    border-right: 2px solid #495057;
+}
+
+.table-responsive tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    min-width: 50px;
+    width: 50px;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    background-color: #fff;
+    border-right: 2px solid #dee2e6;
+}
+
+.table-responsive tbody tr:nth-child(even) td:first-child {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.table-responsive tbody tr:hover td:first-child {
+    background-color: rgba(0, 0, 0, 0.075) !important;
+}
+
+/* Ensure checkbox is visible and clickable */
+.table-responsive .form-check-input {
+    cursor: pointer;
+    margin: 0;
+    width: 18px;
+    height: 18px;
 }
 
 .badge {
@@ -128,7 +182,27 @@
     pointer-events: auto !important;
     cursor: pointer !important;
     position: relative !important;
-    z-index: 1 !important;
+    z-index: 10 !important;
+    border: none !important;
+    outline: none !important;
+}
+
+/* Fix for reset password button specifically */
+.btn-reset-password {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 11 !important;
+    position: relative !important;
+}
+
+.btn-reset-password i {
+    pointer-events: none !important;
+}
+
+.btn-reset-password:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+    color: #fff !important;
 }
 
 .action-btn:hover {
@@ -467,7 +541,7 @@ code {
                                 </div>
                                 <div class="col-md-3">
                                     <label for="class_id" class="form-label">Kelas</label>
-                                    <select class="form-select" id="class_id" name="class_id">
+                                    <select class="form-control select-default" id="class_id" name="class_id">
                                         <option value="">Semua Kelas</option>
                                         @foreach($classes as $class)
                                             <option value="{{ $class->class_id }}" {{ request('class_id') == $class->class_id ? 'selected' : '' }}>
@@ -478,7 +552,7 @@ code {
                                 </div>
                                 <div class="col-md-3">
                                     <label for="status" class="form-label">Status</label>
-                                    <select class="form-select" id="status" name="status">
+                                    <select class="form-control select-primary" id="status" name="status">
                                         <option value="">Semua Status</option>
                                         <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Aktif</option>
                                         <option value="0" {{ request('status') == '0' ? 'selected' : '' }}>Non-Aktif</option>
@@ -572,11 +646,11 @@ code {
                         @method('DELETE')
                         <input type="hidden" name="selected_ids" id="selectedIds">
                         
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                        <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                            <table class="table table-striped table-hover" style="min-width: 100%;">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th width="3%">
+                                        <th style="min-width: 50px; width: 50px; padding-left: 15px; padding-right: 15px;">
                                             <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
                                         </th>
                                         <th width="3%">No</th>
@@ -592,7 +666,7 @@ code {
                                 <tbody>
                                     @forelse($students as $index => $student)
                                     <tr>
-                                        <td>
+                                        <td style="min-width: 50px; width: 50px; padding-left: 15px; padding-right: 15px;">
                                             <input type="checkbox" name="student_ids[]" value="{{ $student->student_id }}" class="form-check-input student-checkbox">
                                         </td>
                                         <td>{{ $students->firstItem() + $loop->index }}</td>
@@ -632,11 +706,12 @@ code {
                                                 <a href="{{ route('students.edit', $student) }}" class="btn btn-warning btn-sm action-btn" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <button type="button" class="btn btn-secondary btn-sm action-btn btn-reset-password" 
-                                                        data-student-id="{{ $student->student_id }}"
-                                                        data-student-name="{{ $student->student_full_name }}"
-                                                        title="Reset Password">
-                                                    <i class="fas fa-key"></i>
+                                                <button type="button" 
+                                                        class="btn btn-secondary btn-sm action-btn btn-reset-password" 
+                                                        onclick="openResetPasswordModal('{{ $student->student_id }}', '{{ addslashes($student->student_full_name) }}')"
+                                                        title="Reset Password"
+                                                        style="pointer-events: auto !important; cursor: pointer !important; z-index: 11 !important; position: relative !important;">
+                                                    <i class="fas fa-key" style="pointer-events: none;"></i>
                                                 </button>
                                                 <form action="{{ route('students.destroy', $student) }}" method="POST" class="d-inline delete-form">
                                                     @csrf
@@ -755,14 +830,16 @@ code {
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-danger text-white border-0">
         <h5 class="modal-title" id="deleteModalLabel">
           <i class="fa fa-trash me-2"></i>Konfirmasi Hapus Peserta Didik
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" onclick="closeDeleteStudentModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
@@ -772,7 +849,7 @@ code {
         <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" onclick="closeDeleteStudentModal()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
         <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
@@ -784,27 +861,29 @@ code {
 </div>
 
 <!-- Modal Konfirmasi Reset Password -->
-<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-secondary text-white border-0">
         <h5 class="modal-title" id="resetPasswordModalLabel">
           <i class="fa fa-key me-2"></i>Konfirmasi Reset Password
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeResetPasswordModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
           <i class="fa fa-key text-warning" style="font-size: 3rem;"></i>
         </div>
-        <h5 class="mb-3">Reset password untuk peserta didik <span id="modalResetStudentName"></span>?</h5>
+        <h5 class="mb-3">Reset password untuk peserta didik <strong id="modalResetStudentName"></strong>?</h5>
         <p class="text-muted mb-0">Password akan diubah menjadi: <strong>password123</strong></p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal" onclick="closeResetPasswordModal()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
-        <button type="button" class="btn btn-secondary px-4" id="confirmResetPasswordBtn">
+        <button type="button" class="btn btn-primary px-4" id="confirmResetPasswordBtn" onclick="confirmResetPassword()">
           <i class="fa fa-key me-2"></i>Ya, Reset Password
         </button>
       </div>
@@ -813,103 +892,31 @@ code {
 </div>
 
 <!-- Modal Konfirmasi Reset Password Massal -->
-<div class="modal fade" id="resetPasswordMassalModal" tabindex="-1" aria-labelledby="resetPasswordMassalModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content border-0 shadow-lg">
-      <!-- Header dengan gradient yang lebih menarik -->
-      <div class="modal-header border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);">
-        <div class="d-flex align-items-center">
-          <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3 shadow-sm">
-            <i class="fa fa-key text-white" style="font-size: 1.8rem;"></i>
-          </div>
-          <div>
-            <h5 class="modal-title text-white mb-0" id="resetPasswordMassalModalLabel">
-              <strong>🔐 Reset Password Massal</strong>
-            </h5>
-            <small class="text-white-75">Konfirmasi aksi reset password untuk multiple peserta didik</small>
-          </div>
-        </div>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      
-      <!-- Body dengan animasi dan informasi detail yang lebih menarik -->
-      <div class="modal-body p-5">
-        <div class="text-center mb-4">
-          <!-- Icon animasi dengan efek yang lebih menarik -->
-          <div class="position-relative mb-4">
-            <div class="bg-gradient-warning rounded-circle d-inline-flex align-items-center justify-content-center shadow-lg" style="width: 100px; height: 100px; background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);">
-              <i class="fa fa-key text-white" style="font-size: 3rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"></i>
-            </div>
-            <div class="position-absolute top-0 start-100 translate-middle">
-              <span class="badge bg-danger rounded-pill shadow-sm" id="modalResetMassalCount" style="font-size: 1rem; padding: 0.6rem 1rem;"></span>
-            </div>
-            <!-- Efek ripple -->
-            <div class="position-absolute top-50 start-50 translate-middle" style="width: 120px; height: 120px; border: 3px solid rgba(255, 193, 7, 0.3); border-radius: 50%; animation: ripple 2s infinite;"></div>
-          </div>
-          
-          <!-- Pesan utama dengan styling yang lebih menarik -->
-          <div class="mb-4">
-            <h3 class="text-dark mb-2 fw-bold">
-              Reset Password untuk <span class="text-primary" id="modalResetMassalCountText" style="font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1);"></span> Peserta Didik?
-            </h3>
-            <p class="text-muted fs-5">Tindakan ini akan mengubah password semua peserta didik yang dipilih</p>
-          </div>
-          
-          <!-- Informasi detail dengan card yang lebih menarik -->
-          <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start">
-                <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3 mt-1">
-                  <i class="fa fa-info-circle text-info" style="font-size: 1.2rem;"></i>
-                </div>
-                <div class="text-start flex-grow-1">
-                  <h6 class="text-info fw-bold mb-3">📋 Informasi Reset Password:</h6>
-                  <ul class="mb-0 ps-3" style="list-style: none;">
-                    <li class="mb-2">
-                      <i class="fa fa-check-circle text-success me-2"></i>
-                      Semua password akan diubah menjadi: 
-                      <code class="bg-warning bg-opacity-25 px-3 py-2 rounded fw-bold fs-6">password123</code>
-                    </li>
-                    <li class="mb-2">
-                      <i class="fa fa-sign-in-alt text-primary me-2"></i>
-                      Peserta didik harus login ulang dengan password baru
-                    </li>
-                    <li class="mb-2">
-                      <i class="fa fa-exclamation-triangle text-warning me-2"></i>
-                      Tindakan ini tidak dapat dibatalkan
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Warning box dengan styling yang lebih menarik -->
-          <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border-left: 4px solid #ff9800;">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center">
-                <div class="bg-warning bg-opacity-20 rounded-circle p-2 me-3">
-                  <i class="fa fa-exclamation-triangle text-warning" style="font-size: 1.3rem;"></i>
-                </div>
-                <div>
-                  <h6 class="text-warning fw-bold mb-1">⚠️ Peringatan Penting:</h6>
-                  <p class="text-dark mb-0">Pastikan semua peserta didik yang dipilih benar sebelum melanjutkan. Tindakan ini akan mempengaruhi akses login mereka.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Footer dengan tombol yang lebih menarik -->
-      <div class="modal-footer border-0 bg-light justify-content-center gap-4 p-4">
-        <button type="button" class="btn btn-outline-secondary px-5 py-3 fw-bold" data-bs-dismiss="modal" style="border-radius: 25px; min-width: 140px;">
-          <i class="fa fa-times me-2"></i>
-          Batal
+<div class="modal fade" id="resetPasswordMassalModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordMassalModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-secondary text-white border-0">
+        <h5 class="modal-title" id="resetPasswordMassalModalLabel">
+          <i class="fa fa-key me-2"></i>Konfirmasi Reset Password Massal
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeResetPasswordMassalModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+          <span aria-hidden="true">&times;</span>
         </button>
-        <button type="button" class="btn btn-warning px-5 py-3 fw-bold shadow-lg" id="confirmResetPasswordMassalBtn" style="border-radius: 25px; min-width: 180px; background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%); border: none;">
-          <i class="fa fa-key me-2"></i>
-          Ya, Reset Password
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fa fa-key text-warning" style="font-size: 3rem;"></i>
+        </div>
+        <h5 class="mb-3">Reset password untuk <strong id="modalResetMassalCountText">0</strong> peserta didik?</h5>
+        <p class="text-muted mb-0">Password akan diubah menjadi: <strong>password123</strong></p>
+        <p class="text-muted mt-2 mb-0"><small>Tindakan ini tidak dapat dibatalkan</small></p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal" onclick="closeResetPasswordMassalModal()">
+          <i class="fa fa-times me-2"></i>Batal
+        </button>
+        <button type="button" class="btn btn-primary px-4" id="confirmResetPasswordMassalBtn" onclick="confirmResetPasswordMassal()">
+          <i class="fa fa-key me-2"></i>Ya, Reset Password
         </button>
       </div>
     </div>
@@ -919,17 +926,90 @@ code {
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-
+    // Variabel global
     let formToDelete = null;
     let studentToResetPassword = null;
+    
+    // Fungsi untuk membuka modal reset password (dipanggil dari onclick) - Global
+    window.openResetPasswordModal = function(studentId, studentName) {
+        console.log('openResetPasswordModal called with:', studentId, studentName);
+        
+        if (!studentId || !studentName) {
+            console.error('Missing student ID or name');
+            if (typeof showToast === 'function') {
+                showToast('Data peserta didik tidak valid', 'error');
+            }
+            return;
+        }
+        
+        studentToResetPassword = studentId;
+        
+        // Update nama di modal
+        const modalResetStudentName = document.getElementById('modalResetStudentName');
+        if (modalResetStudentName) {
+            modalResetStudentName.textContent = studentName;
+        } else {
+            console.error('Modal reset student name element not found');
+        }
+        
+        // Tampilkan modal - Template Adminty menggunakan Bootstrap 4 dengan jQuery
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#resetPasswordModal').modal('show');
+            console.log('Modal shown using jQuery');
+        } else {
+            console.error('jQuery modal not available');
+            // Fallback manual untuk Bootstrap 4
+            const resetPasswordModal = document.getElementById('resetPasswordModal');
+            if (resetPasswordModal) {
+                resetPasswordModal.style.display = 'block';
+                resetPasswordModal.classList.add('show');
+                document.body.classList.add('modal-open');
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'resetPasswordModalBackdrop';
+                document.body.appendChild(backdrop);
+                console.log('Modal shown manually');
+            }
+        }
+    };
+    
+    // Fungsi untuk menutup modal reset password - Global
+    window.closeResetPasswordModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#resetPasswordModal').modal('hide');
+        } else {
+            // Fallback manual untuk Bootstrap 4
+            const resetPasswordModal = document.getElementById('resetPasswordModal');
+            if (resetPasswordModal) {
+                resetPasswordModal.style.display = 'none';
+                resetPasswordModal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.getElementById('resetPasswordModalBackdrop');
+                if (backdrop) backdrop.remove();
+            }
+        }
+    };
+    
+    // Konfirmasi reset password - Global
+    window.confirmResetPassword = function() {
+        if (studentToResetPassword) {
+            resetPassword(studentToResetPassword);
+        } else {
+            console.error('No student selected for password reset');
+            if (typeof showToast === 'function') {
+                showToast('Tidak ada peserta didik yang dipilih', 'error');
+            }
+        }
+    };
+
+document.addEventListener('DOMContentLoaded', function() {
     
     // Debug: Log when page loads
     console.log('Students index page loaded');
     console.log('Action buttons found:', document.querySelectorAll('.action-btn').length);
     console.log('Detail links found:', document.querySelectorAll('.detail-link').length);
     
-    // Event delegation untuk tombol delete dan reset password
+    // Event delegation untuk tombol delete
     document.addEventListener('click', function(e) {
         // Tombol delete
         if (e.target.closest('.btn-delete')) {
@@ -938,20 +1018,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const studentName = btn.getAttribute('data-student-name');
             formToDelete = btn.closest('form');
             document.getElementById('modalStudentName').textContent = studentName;
-            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
-        }
-        
-        // Tombol reset password
-        if (e.target.closest('.btn-reset-password')) {
-            e.preventDefault();
-            const btn = e.target.closest('.btn-reset-password');
-            const studentId = btn.getAttribute('data-student-id');
-            const studentName = btn.getAttribute('data-student-name');
-            studentToResetPassword = studentId;
-            document.getElementById('modalResetStudentName').textContent = studentName;
-            const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
-            modal.show();
+            // Gunakan jQuery modal untuk Bootstrap 4
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#deleteModal').modal('show');
+            } else {
+                console.error('jQuery modal not available');
+            }
         }
     });
     
@@ -960,16 +1032,41 @@ document.addEventListener('DOMContentLoaded', function() {
         if (formToDelete) formToDelete.submit();
     };
     
-    // Konfirmasi reset password
-    document.getElementById('confirmResetPasswordBtn').onclick = function() {
-        if (studentToResetPassword) {
-            resetPassword(studentToResetPassword);
+    // Fungsi untuk menutup modal delete - Global
+    window.closeDeleteStudentModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#deleteModal').modal('hide');
+        } else {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+            }
         }
     };
     
-    // Konfirmasi reset password massal
-    document.getElementById('confirmResetPasswordMassalBtn').onclick = function() {
-        resetPasswordMassal();
+    // Konfirmasi reset password massal - Global
+    window.confirmResetPasswordMassal = function() {
+        executeResetPasswordMassal();
+    };
+    
+    // Fungsi untuk menutup modal reset password massal - Global
+    window.closeResetPasswordMassalModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#resetPasswordMassalModal').modal('hide');
+        } else {
+            const modal = document.getElementById('resetPasswordMassalModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
     };
 
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -1111,61 +1208,107 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update modal dengan jumlah yang dipilih
-        document.getElementById('modalResetMassalCount').textContent = count;
         document.getElementById('modalResetMassalCountText').textContent = count;
         
-        // Tampilkan modal konfirmasi
-        const modal = new bootstrap.Modal(document.getElementById('resetPasswordMassalModal'));
-        modal.show();
-        
-        // Tambahkan animasi pada modal
-        setTimeout(() => {
-            const modalElement = document.getElementById('resetPasswordMassalModal');
-            modalElement.classList.add('animate__animated', 'animate__fadeIn');
-        }, 100);
+        // Tampilkan modal konfirmasi - gunakan jQuery untuk Bootstrap 4
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#resetPasswordMassalModal').modal('show');
+        } else {
+            console.error('jQuery modal not available');
+        }
     };
 
-    // Fungsi untuk menampilkan toast
-    function showToast(message, type = 'success') {
-        if (type === 'success') {
-            document.getElementById('toastMessage').textContent = message;
-            const toast = new bootstrap.Toast(document.getElementById('successToast'));
-            toast.show();
-        } else {
-            document.getElementById('errorToastMessage').textContent = message;
-            const toast = new bootstrap.Toast(document.getElementById('errorToast'));
-            toast.show();
-        }
-    }
+    // Fungsi showToast sudah tersedia secara global dari adminty.blade.php
+    // Tidak perlu mendefinisikan ulang, cukup gunakan window.showToast yang sudah ada
 
     // Reset password function
     window.resetPassword = function(studentId) {
+        console.log('resetPassword called with studentId:', studentId);
+        
+        if (!studentId) {
+            console.error('Student ID is required');
+            if (typeof showToast === 'function') {
+                showToast('ID peserta didik tidak valid', 'error');
+            }
+            return;
+        }
+        
+        // Show loading state
+        const confirmBtn = document.getElementById('confirmResetPasswordBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Memproses...';
+        }
+        
         fetch(`/students/${studentId}/reset-password`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Server error');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Reset password response:', data);
+            
+            // Restore button state
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fa fa-key me-2"></i>Ya, Reset Password';
+            }
+            
             if (data.success) {
-                // Tutup modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
-                modal.hide();
+                // Tutup modal - gunakan jQuery untuk Bootstrap 4
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#resetPasswordModal').modal('hide');
+                } else {
+                    // Fallback manual untuk Bootstrap 4
+                    const modal = document.getElementById('resetPasswordModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.getElementById('resetPasswordModalBackdrop');
+                        if (backdrop) backdrop.remove();
+                    }
+                }
                 
-                // Tampilkan toast sukses
-                showToast('Password berhasil direset menjadi: password123', 'success');
+                // Tampilkan toast sukses dengan pesan singkat
+                if (typeof showToast === 'function') {
+                    showToast('Password berhasil direset', 'success');
+                }
                 
                 // Reset variabel
                 studentToResetPassword = null;
             } else {
-                showToast('Gagal reset password: ' + data.message, 'error');
+                if (typeof showToast === 'function') {
+                    const errorMsg = data.message || 'Gagal reset password';
+                    showToast(errorMsg.length > 50 ? errorMsg.substring(0, 50) + '...' : errorMsg, 'error');
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Terjadi kesalahan saat reset password', 'error');
+            
+            // Restore button state
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="fa fa-key me-2"></i>Ya, Reset Password';
+            }
+            
+            if (typeof showToast === 'function') {
+                const errorMsg = error.message || 'Terjadi kesalahan saat reset password';
+                showToast(errorMsg.length > 50 ? errorMsg.substring(0, 50) + '...' : errorMsg, 'error');
+            }
         });
     };
 
@@ -1180,22 +1323,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update modal dengan jumlah yang dipilih
-        document.getElementById('modalResetMassalCount').textContent = count;
         document.getElementById('modalResetMassalCountText').textContent = count;
         
-        // Tampilkan modal konfirmasi
-        const modal = new bootstrap.Modal(document.getElementById('resetPasswordMassalModal'));
-        modal.show();
-        
-        // Tambahkan animasi pada modal
-        setTimeout(() => {
-            const modalElement = document.getElementById('resetPasswordMassalModal');
-            modalElement.classList.add('animate__animated', 'animate__fadeIn');
-        }, 100);
+        // Tampilkan modal konfirmasi - gunakan jQuery untuk Bootstrap 4
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#resetPasswordMassalModal').modal('show');
+        } else {
+            console.error('jQuery modal not available');
+        }
     };
 
-    // Fungsi untuk eksekusi reset password massal
-    function executeResetPasswordMassal() {
+    // Fungsi untuk eksekusi reset password massal - Global
+    window.executeResetPasswordMassal = function() {
         const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
         const studentIds = Array.from(checkedBoxes).map(cb => cb.value);
         
@@ -1210,9 +1349,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Tutup modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordMassalModal'));
-                modal.hide();
+                // Tutup modal - gunakan jQuery untuk Bootstrap 4
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#resetPasswordMassalModal').modal('hide');
+                } else {
+                    const modal = document.getElementById('resetPasswordMassalModal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('show');
+                        document.body.classList.remove('modal-open');
+                    }
+                }
                 
                 // Tampilkan toast sukses
                 showToast(`Password berhasil direset untuk ${data.count} peserta didik menjadi: password123`, 'success');
@@ -1232,12 +1379,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             showToast('Terjadi kesalahan saat reset password massal', 'error');
         });
-    }
-
-    // Update event listener untuk reset password massal
-    document.getElementById('confirmResetPasswordMassalBtn').onclick = function() {
-        executeResetPasswordMassal();
     };
+
+    // Event listener untuk reset password massal sudah ditangani oleh onclick di button
 });
 </script>
 @endsection 

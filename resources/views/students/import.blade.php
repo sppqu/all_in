@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -115,9 +115,6 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        @php
-                                            $classes = \App\Models\ClassModel::orderBy('class_name')->get();
-                                        @endphp
                                         @foreach($classes as $class)
                                             <div class="col-md-3 mb-2">
                                                 <span class="badge bg-primary">{{ $class->class_name }}</span>

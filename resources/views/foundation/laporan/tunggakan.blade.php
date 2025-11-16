@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -31,7 +31,7 @@
             <form method="GET" action="{{ route('manage.foundation.laporan.tunggakan') }}" class="row g-3">
                 <div class="col-md-4">
                     <label for="school_id" class="form-label">Pilih Sekolah</label>
-                    <select name="school_id" id="school_id" class="form-select" onchange="this.form.submit()">
+                    <select name="school_id" id="school_id" class="form-control select-primary" onchange="this.form.submit()">
                         <option value="">Semua Sekolah</option>
                         @foreach($schools as $school)
                             <option value="{{ $school->id }}" {{ $selectedSchoolId == $school->id ? 'selected' : '' }}>
@@ -42,7 +42,7 @@
                 </div>
                 <div class="col-md-4">
                     <label for="class_id" class="form-label">Filter Kelas</label>
-                    <select name="class_id" id="class_id" class="form-select" onchange="this.form.submit()">
+                    <select name="class_id" id="class_id" class="form-control select-primary" onchange="this.form.submit()">
                         <option value="">Semua Kelas</option>
                         @foreach($classes as $class)
                             <option value="{{ $class->class_id }}" {{ $selectedClassId == $class->class_id ? 'selected' : '' }}>

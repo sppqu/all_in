@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title','Hak Akses Menu')
 
@@ -31,8 +31,14 @@
                         Bendahara
                       @elseif($role === 'spmb_admin')
                         Admin SPMB
+                      @elseif($role === 'admin_perpustakaan')
+                        Admin Perpustakaan
+                      @elseif($role === 'admin_bk')
+                        Admin BK
+                      @elseif($role === 'admin_jurnal')
+                        Admin Jurnal
                       @else
-                        {{ $role }}
+                        {{ ucfirst(str_replace('_', ' ', $role)) }}
                       @endif
                     </th>
                   @endif

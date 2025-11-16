@@ -1,21 +1,41 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Tambah Tabungan')
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+    /* Select2 untuk select-primary - background putih dengan border teal */
     .select2-container--default .select2-selection--single {
         height: 38px;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
+        border: 1px solid #01a9ac !important;
+        border-radius: 2px;
+        background-color: #ffffff !important;
     }
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 38px;
-        padding-left: 12px;
+        padding: 1px 30px 8px 20px !important;
+        color: #333 !important;
+        background-color: transparent !important;
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 36px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #01a9ac transparent transparent transparent !important;
+    }
+    /* Pastikan background putih saat dropdown dibuka */
+    .select2-container--default.select2-container--open .select2-selection--single {
+        background-color: #ffffff !important;
+        border-color: #01a9ac !important;
+    }
+    /* Pastikan hasil dropdown juga putih */
+    .select2-container--default .select2-results__option {
+        background-color: #ffffff !important;
+    }
+    .select2-container--default .select2-results__option--highlighted {
+        background-color: #01a9ac !important;
+        color: #ffffff !important;
     }
 </style>
 @endpush
@@ -41,7 +61,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="student_id" class="form-label">Pilih Siswa <span class="text-danger">*</span></label>
-                            <select name="student_id" id="student_id" class="form-select @error('student_id') is-invalid @enderror" required>
+                            <select name="student_id" id="student_id" class="form-control select-primary @error('student_id') is-invalid @enderror" required>
                                 <option value="">Pilih Siswa</option>
                             </select>
                             @error('student_id')
@@ -52,8 +72,8 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="saldo" class="form-label">Saldo Awal <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
+                            <div class="input-group input-group-primary">
+                                <span class="input-group-addon">Rp</span>
                                 <input type="text" 
                                        class="form-control @error('saldo') is-invalid @enderror" 
                                        id="saldo" 

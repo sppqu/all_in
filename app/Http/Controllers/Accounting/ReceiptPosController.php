@@ -14,11 +14,22 @@ class ReceiptPosController extends Controller
      */
     public function index()
     {
+        // Ambil current school_id
+        $currentSchoolId = currentSchoolId();
+        
         // Ambil dari tabel pos_pembayaran (default dari NAMA POS Pembayaran)
-        $receiptPos = DB::table('pos_pembayaran')
-            ->select('pos_id', 'pos_name', 'pos_description')
-            ->orderBy('pos_name')
-            ->get();
+        // Filter berdasarkan school_id
+        $receiptPosQuery = DB::table('pos_pembayaran')
+            ->select('pos_id', 'pos_name', 'pos_description');
+        
+        if ($currentSchoolId) {
+            $receiptPosQuery->where(function($q) use ($currentSchoolId) {
+                $q->where('school_id', $currentSchoolId)
+                  ->orWhereNull('school_id'); // Backward compatibility untuk data lama
+            });
+        }
+        
+        $receiptPos = $receiptPosQuery->orderBy('pos_name')->get();
         
         // Ambil metode pembayaran untuk dropdown
         $paymentMethods = DB::table('payment_methods')
@@ -26,8 +37,12 @@ class ReceiptPosController extends Controller
             ->orderBy('nama_metode')
             ->get();
         
+        // Ambil parameter filter dari request
+        $startDate = request()->get('start_date', date('Y-m-d', strtotime('-3 months')));
+        $endDate = request()->get('end_date', date('Y-m-d'));
+        
         // Ambil data transaksi penerimaan untuk ditampilkan di list
-        $transaksiList = DB::table('transaksi_penerimaan as tp')
+        $transaksiListQuery = DB::table('transaksi_penerimaan as tp')
             ->leftJoin('payment_methods as pm', 'tp.metode_pembayaran_id', '=', 'pm.id')
             ->leftJoin('kas as k', 'tp.kas_id', '=', 'k.id')
             ->select(
@@ -42,18 +57,27 @@ class ReceiptPosController extends Controller
                 'tp.kas_id',
                 'pm.nama_metode as cara_transaksi',
                 'k.nama_kas as kas_name'
-            )
-            ->orderBy('tp.tanggal_penerimaan', 'desc')
-            ->get();
+            );
+        
+        // Terapkan filter tanggal jika ada
+        if ($startDate && $endDate) {
+            $transaksiListQuery->whereBetween('tp.tanggal_penerimaan', [$startDate, $endDate]);
+        }
+        
+        $transaksiList = $transaksiListQuery->orderBy('tp.tanggal_penerimaan', 'desc')->get();
         
         // Ambil data profil sekolah untuk header kuitansi
         $schoolProfile = DB::table('schools')->first();
         
         // Ambil data kas untuk dropdown
+        // Tampilkan semua kas (aktif dan tidak aktif) untuk memastikan semua muncul
         $kasList = DB::table('kas')
-            ->where('is_active', 1)
             ->orderBy('nama_kas')
             ->get();
+        
+        // Log untuk debugging
+        Log::info('Kas List Count: ' . $kasList->count());
+        Log::info('Kas List Data: ', $kasList->toArray());
         
         return view('accounting.receipt-pos.index', compact('receiptPos', 'paymentMethods', 'transaksiList', 'schoolProfile', 'kasList'));
     }
@@ -91,19 +115,24 @@ class ReceiptPosController extends Controller
         }
 
         try {
+            // Ambil current school_id
+            $currentSchoolId = currentSchoolId();
+            
             $insertData = [];
             
             // Jika ada nama_pos_baru, berarti dari modal "Buat Pos Penerimaan Baru"
             if ($request->has('nama_pos_baru')) {
                 $insertData = [
                     'pos_name' => $request->nama_pos_baru,
-                    'pos_description' => $request->keterangan_pos_baru
+                    'pos_description' => $request->keterangan_pos_baru,
+                    'school_id' => $currentSchoolId
                 ];
             } else {
                 // Jika tidak ada, berarti dari modal tambah pos biasa
                 $insertData = [
                     'pos_name' => $request->pos_name,
-                    'pos_description' => $request->pos_description
+                    'pos_description' => $request->pos_description,
+                    'school_id' => $currentSchoolId
                 ];
             }
             
@@ -357,6 +386,17 @@ class ReceiptPosController extends Controller
             
             Log::info("Total detail inserted: {$detailCount}");
             
+            // Update saldo kas (tambah saldo)
+            DB::table('kas')
+                ->where('id', $request->kas_id)
+                ->increment('saldo', $totalPenerimaan);
+            
+            Log::info('Kas saldo updated', [
+                'kas_id' => $request->kas_id,
+                'total_penerimaan' => $totalPenerimaan,
+                'new_saldo' => DB::table('kas')->where('id', $request->kas_id)->value('saldo')
+            ]);
+            
             DB::commit();
             
             return response()->json([
@@ -445,18 +485,33 @@ class ReceiptPosController extends Controller
         try {
             DB::beginTransaction();
             
+            // Get transaction data untuk update saldo kas
+            $transaction = DB::table('transaksi_penerimaan')->where('id', $id)->first();
+            
+            if (!$transaction) {
+                DB::rollback();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan atau sudah dihapus!'
+                ], 404);
+            }
+            
             // Hapus detail transaksi terlebih dahulu (cascade)
             DB::table('transaksi_penerimaan_detail')->where('transaksi_id', $id)->delete();
             
             // Hapus transaksi utama
             $deleted = DB::table('transaksi_penerimaan')->where('id', $id)->delete();
             
-            if (!$deleted) {
-                DB::rollback();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaksi tidak ditemukan atau sudah dihapus!'
-                ], 404);
+            // Update saldo kas (kurangi saldo karena transaksi penerimaan dihapus)
+            if ($transaction->kas_id && $transaction->total_penerimaan) {
+                DB::table('kas')
+                    ->where('id', $transaction->kas_id)
+                    ->decrement('saldo', (float) $transaction->total_penerimaan);
+                
+                Log::info('Kas saldo updated (receipt delete)', [
+                    'kas_id' => $transaction->kas_id,
+                    'total_penerimaan' => $transaction->total_penerimaan
+                ]);
             }
             
             DB::commit();
@@ -486,11 +541,21 @@ class ReceiptPosController extends Controller
         $startDate = $request->get('start_date', date('Y-m-01')); // Default awal bulan
         $endDate = $request->get('end_date', date('Y-m-d')); // Default hari ini
         
-        // Ambil semua pos penerimaan
-        $receiptPos = DB::table('pos_pembayaran')
-            ->select('pos_id', 'pos_name', 'pos_description')
-            ->orderBy('pos_name', 'asc')
-            ->get();
+        // Ambil current school_id
+        $currentSchoolId = currentSchoolId();
+        
+        // Ambil pos penerimaan, filter berdasarkan school_id
+        $receiptPosQuery = DB::table('pos_pembayaran')
+            ->select('pos_id', 'pos_name', 'pos_description');
+        
+        if ($currentSchoolId) {
+            $receiptPosQuery->where(function($q) use ($currentSchoolId) {
+                $q->where('school_id', $currentSchoolId)
+                  ->orWhereNull('school_id'); // Backward compatibility untuk data lama
+            });
+        }
+        
+        $receiptPos = $receiptPosQuery->orderBy('pos_name', 'asc')->get();
         
         // Hitung pendapatan per pos dalam range tanggal dari semua sumber
         $posIncomes = [];
@@ -667,6 +732,9 @@ class ReceiptPosController extends Controller
             $insertResult = DB::table('transaksi_penerimaan_detail')->insert($details);
             Log::info('Insert detail baru result: ' . $insertResult);
             
+            // Get old transaction data untuk update saldo kas
+            $oldTransaction = DB::table('transaksi_penerimaan')->where('id', $id)->first();
+            
             // Update total penerimaan
             $totalPenerimaan = array_sum($request->jumlah_penerimaan);
             $updateTotalResult = DB::table('transaksi_penerimaan')
@@ -674,6 +742,48 @@ class ReceiptPosController extends Controller
                 ->update(['total_penerimaan' => $totalPenerimaan]);
             
             Log::info('Update total penerimaan result: ' . $updateTotalResult . ', Total: ' . $totalPenerimaan);
+            
+            // Update saldo kas
+            if ($oldTransaction) {
+                $oldTotalPenerimaan = (float) ($oldTransaction->total_penerimaan ?? 0);
+                $oldKasId = $oldTransaction->kas_id;
+                $newKasId = $request->kas_id;
+                
+                // Jika kas_id berubah, kurangi saldo kas lama dan tambah saldo kas baru
+                if ($oldKasId != $newKasId) {
+                    // Kembalikan saldo kas lama
+                    DB::table('kas')
+                        ->where('id', $oldKasId)
+                        ->decrement('saldo', $oldTotalPenerimaan);
+                    
+                    // Tambah saldo kas baru
+                    DB::table('kas')
+                        ->where('id', $newKasId)
+                        ->increment('saldo', $totalPenerimaan);
+                } else {
+                    // Jika kas_id sama, cukup selisihkan total
+                    $selisih = $totalPenerimaan - $oldTotalPenerimaan;
+                    if ($selisih != 0) {
+                        if ($selisih > 0) {
+                            DB::table('kas')
+                                ->where('id', $newKasId)
+                                ->increment('saldo', $selisih);
+                        } else {
+                            DB::table('kas')
+                                ->where('id', $newKasId)
+                                ->decrement('saldo', abs($selisih));
+                        }
+                    }
+                }
+                
+                Log::info('Kas saldo updated (receipt update)', [
+                    'old_kas_id' => $oldKasId,
+                    'new_kas_id' => $newKasId,
+                    'old_total' => $oldTotalPenerimaan,
+                    'new_total' => $totalPenerimaan,
+                    'selisih' => $totalPenerimaan - $oldTotalPenerimaan
+                ]);
+            }
             
             DB::commit();
             Log::info('Transaction committed successfully');

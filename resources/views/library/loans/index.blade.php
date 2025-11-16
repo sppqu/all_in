@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Kelola Peminjaman - E-Perpustakaan')
 
@@ -30,60 +30,52 @@
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-book-open fa-2x opacity-50"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h3 class="mb-0">{{ number_format($stats['active']) }}</h3>
-                            <p class="mb-0">Sedang Dipinjam</p>
-                        </div>
+                <div class="card-body text-white" style="position: relative; padding-right: 90px !important;">
+                    <div>
+                        <h3 class="mb-0">{{ number_format($stats['active']) }}</h3>
+                        <p class="mb-0">Sedang Dipinjam</p>
+                    </div>
+                    <div style="position: absolute; top: 15px; right: 10px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-book-open fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h3 class="mb-0">{{ number_format($stats['overdue']) }}</h3>
-                            <p class="mb-0">Terlambat</p>
-                        </div>
+                <div class="card-body text-white" style="position: relative; padding-right: 90px !important;">
+                    <div>
+                        <h3 class="mb-0">{{ number_format($stats['overdue']) }}</h3>
+                        <p class="mb-0">Terlambat</p>
+                    </div>
+                    <div style="position: absolute; top: 15px; right: 10px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-exclamation-triangle fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle fa-2x opacity-50"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h3 class="mb-0">{{ number_format($stats['returned_today']) }}</h3>
-                            <p class="mb-0">Dikembalikan Hari Ini</p>
-                        </div>
+                <div class="card-body text-white" style="position: relative; padding-right: 90px !important;">
+                    <div>
+                        <h3 class="mb-0">{{ number_format($stats['returned_today']) }}</h3>
+                        <p class="mb-0">Dikembalikan Hari Ini</p>
+                    </div>
+                    <div style="position: absolute; top: 15px; right: 10px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-check-circle fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                <div class="card-body text-white">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-coins fa-2x opacity-50"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <h3 class="mb-0">Rp {{ number_format($stats['total_fines']) }}</h3>
-                            <p class="mb-0">Total Denda Bulan Ini</p>
-                        </div>
+                <div class="card-body text-white" style="position: relative; padding-right: 90px !important;">
+                    <div>
+                        <h3 class="mb-0">Rp {{ number_format($stats['total_fines']) }}</h3>
+                        <p class="mb-0">Total Denda Bulan Ini</p>
+                    </div>
+                    <div style="position: absolute; top: 15px; right: 10px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-coins fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
@@ -96,7 +88,7 @@
             <form action="{{ route('manage.library.loans.index') }}" method="GET">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <select name="status" class="form-select">
+                        <select name="status" class="form-control select-primary">
                             <option value="">Semua Status</option>
                             <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
                             <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
@@ -104,7 +96,7 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <select name="overdue" class="form-select">
+                        <select name="overdue" class="form-control select-primary">
                             <option value="">Semua</option>
                             <option value="1" {{ request('overdue') == '1' ? 'selected' : '' }}>Hanya Terlambat</option>
                         </select>
@@ -239,7 +231,7 @@
                     <p>Apakah buku sudah dikembalikan?</p>
                     <div class="mb-3">
                         <label class="form-label">Kondisi Buku</label>
-                        <select name="kondisi" class="form-select" required>
+                        <select name="kondisi" class="form-control select-primary" required>
                             <option value="baik">Baik</option>
                             <option value="rusak_ringan">Rusak Ringan</option>
                             <option value="rusak_berat">Rusak Berat</option>

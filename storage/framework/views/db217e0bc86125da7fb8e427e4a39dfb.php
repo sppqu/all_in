@@ -124,14 +124,14 @@
                     <!-- Nav Tabs -->
                     <ul class="nav nav-tabs px-3 pt-3" id="billingTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="subscription-tab" data-bs-toggle="tab" data-bs-target="#subscription-content" type="button" role="tab">
+                            <button class="nav-link active" id="subscription-tab" data-toggle="tab" data-target="#subscription-content" type="button" role="tab">
                                 <i class="fas fa-sync-alt me-2"></i>
                                 Berlangganan Bulanan
                                 <span class="badge bg-primary rounded-pill ms-2"><?php echo e($subscriptions->count()); ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="addon-tab" data-bs-toggle="tab" data-bs-target="#addon-content" type="button" role="tab">
+                            <button class="nav-link" id="addon-tab" data-toggle="tab" data-target="#addon-content" type="button" role="tab">
                                 <i class="fas fa-puzzle-piece me-2"></i>
                                 Pembelian Add-on
                                 <span class="badge bg-success rounded-pill ms-2"><?php echo e($addonPurchases->count()); ?></span>
@@ -349,6 +349,29 @@
 </div>
 
 <script>
+$(document).ready(function() {
+    // Initialize tabs
+    function initializeTabs() {
+        // Handle tab click
+        $('#billingTabs button[data-toggle="tab"]').on('click', function(e) {
+            e.preventDefault();
+            
+            var target = $(this).data('target');
+            
+            // Remove active class from all tabs and panes
+            $('#billingTabs .nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            
+            // Add active class to clicked tab and corresponding pane
+            $(this).addClass('active');
+            $(target).addClass('show active');
+        });
+    }
+    
+    // Initialize tabs on document ready
+    initializeTabs();
+});
+
 function cancelSubscription(subscriptionId) {
     if (confirm('Apakah Anda yakin ingin membatalkan berlangganan ini?')) {
         const form = document.createElement('form');
@@ -481,4 +504,4 @@ setInterval(function() {
 </style>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.coreui', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/subscription/index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.adminty', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/subscription/index.blade.php ENDPATH**/ ?>

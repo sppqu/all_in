@@ -1,7 +1,21 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('head')
 <title>Setting Pembayaran Bulanan</title>
+<style>
+    /* Custom width untuk modal tarif bulanan */
+    #tarifBulananModal .modal-dialog {
+        max-width: 95%;
+        width: 95%;
+    }
+    
+    @media (min-width: 1200px) {
+        #tarifBulananModal .modal-dialog {
+            max-width: 1400px;
+            width: 1400px;
+        }
+    }
+</style>
 @endsection
 
 @section('content')
@@ -20,7 +34,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Kelas</label>
-                            <select class="form-select" name="class_id">
+                            <select class="form-control select-primary" name="class_id">
                                 <option value="">-- Semua Kelas --</option>
                                 @foreach($classes as $class)
                                     <option value="{{ $class->class_id }}" {{ (isset($selectedClass) && $selectedClass == $class->class_id) ? 'selected' : '' }}>{{ $class->class_name }}</option>
@@ -34,7 +48,7 @@
                     <div class="border-top pt-3 mb-3">
                         <div class="fw-bold mb-2">Pengaturan Tarif</div>
                         <div class="d-flex flex-wrap gap-2 mb-3">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tarifBulananModal">
+                            <button type="button" class="btn btn-primary" onclick="openTarifBulananModal()">
                                 <i class="fa fa-plus me-1"></i> Berdasarkan Kelas
                             </button>
 
@@ -119,14 +133,16 @@
     </div>
 </div>
 <!-- Modal Tarif Bulanan -->
-<div class="modal fade" id="tarifBulananModal" tabindex="-1" aria-labelledby="tarifBulananModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<div class="modal fade" id="tarifBulananModal" tabindex="-1" role="dialog" aria-labelledby="tarifBulananModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="tarifBulananModalLabel">
                     <i class="fa fa-plus me-2"></i>Tambah Tarif Bulanan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeTarifBulananModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formTarifBulananModal">
@@ -152,7 +168,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Kelas</label>
-                                        <select class="form-select" name="class_id" id="kelasBulananSelect" required>
+                                        <select class="form-control select-primary" name="class_id" id="kelasBulananSelect" required>
                                             <option value="">---Pilih Kelas---</option>
                                             @foreach($classes as $class)
                                                 <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
@@ -195,7 +211,7 @@
                             </div>
                             <div class="d-flex gap-2 justify-content-end mt-3">
                                 <button type="submit" class="btn btn-success px-4"><i class="fa fa-save me-2"></i>Simpan</button>
-                                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal"><i class="fa fa-undo me-2"></i>Cancel</button>
+                                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal" onclick="closeTarifBulananModal()"><i class="fa fa-undo me-2"></i>Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -205,14 +221,16 @@
     </div>
 </div>
 <!-- Modal Edit Tarif Bulanan Satuan -->
-<div class="modal fade" id="editBulananModal" tabindex="-1" aria-labelledby="editBulananModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="editBulananModal" tabindex="-1" role="dialog" aria-labelledby="editBulananModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
                 <h5 class="modal-title" id="editBulananModalLabel">
                     <i class="fa fa-edit me-2"></i>Edit Tarif Bulanan Siswa
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="closeEditBulananModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formEditBulanan">
@@ -229,7 +247,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeEditBulananModal()">Batal</button>
                 <button type="button" id="btnUpdateBulanan" class="btn btn-warning">Update</button>
             </div>
         </div>
@@ -243,14 +261,16 @@
                 <h5 class="modal-title" id="tarifSiswaModalLabel">
                     <i class="fa fa-plus me-2"></i>Tambah Tarif Bulanan Per Siswa
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeTarifBulananModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formTarifBulananSiswa">
                     <div class="row g-3 align-items-end mb-3">
                         <div class="col-md-5">
                             <label class="form-label fw-bold">Kelas</label>
-                            <select class="form-select" name="kelas_id" id="kelasSiswaSelectBulanan" required>
+                            <select class="form-control select-primary" name="kelas_id" id="kelasSiswaSelectBulanan" required>
                                 <option value="">-- Pilih Kelas --</option>
                                 @foreach($classes as $class)
                                     <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
@@ -259,7 +279,7 @@
                         </div>
                         <div class="col-md-7">
                             <label class="form-label fw-bold">Siswa</label>
-                            <select class="form-select" name="student_id" id="siswaSelectBulanan" required>
+                            <select class="form-control select-primary" name="student_id" id="siswaSelectBulanan" required>
                                 <option value="">-- Pilih Siswa --</option>
                             </select>
                         </div>
@@ -276,7 +296,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="closeEditBulananModal()">Batal</button>
                 <button type="button" id="btnSimpanTarifBulananSiswa" class="btn btn-info text-white">Simpan</button>
             </div>
         </div>
@@ -284,14 +304,16 @@
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-danger text-white border-0">
         <h5 class="modal-title" id="deleteModalLabel">
           <i class="fa fa-trash me-2"></i>Konfirmasi Hapus Tarif
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeDeleteModalBulanan()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+            <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
@@ -301,10 +323,10 @@
         <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal" onclick="closeDeleteModalBulanan()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
-        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
+        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn" onclick="confirmDeleteBulanan()">
           <i class="fa fa-trash me-2"></i>Ya, Hapus
         </button>
       </div>
@@ -316,6 +338,106 @@
 @section('scripts')
 
 <script>
+    // Fungsi untuk membuka modal tarif bulanan - Global
+    window.openTarifBulananModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#tarifBulananModal').modal('show');
+        } else {
+            console.error('jQuery modal not available');
+        }
+    };
+    
+    // Fungsi untuk menutup modal tarif bulanan - Global
+    window.closeTarifBulananModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#tarifBulananModal').modal('hide');
+        } else {
+            const modal = document.getElementById('tarifBulananModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
+    };
+    
+    // Fungsi untuk menutup modal edit bulanan - Global
+    window.closeEditBulananModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#editBulananModal').modal('hide');
+        } else {
+            const modal = document.getElementById('editBulananModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
+    };
+    
+    // Fungsi untuk menutup modal tarif siswa - Global
+    window.closeTarifSiswaModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#tarifSiswaModal').modal('hide');
+        } else {
+            const modal = document.getElementById('tarifSiswaModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
+    };
+    
+    // Fungsi untuk menutup modal delete bulanan - Global
+    window.closeDeleteModalBulanan = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#deleteModal').modal('hide');
+        } else {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
+    };
+    
+    // Fungsi untuk konfirmasi delete bulanan - Global
+    window.confirmDeleteBulanan = function() {
+        if (deleteForm) {
+            fetch(deleteForm.action, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+            })
+            .then(r => r.json().then(data => ({ok: r.ok, data})))
+            .then(({ok, data}) => {
+                if (ok) {
+                    showToast(data.message || 'Berhasil dihapus!');
+                    setTimeout(() => {
+                        const currentUrl = new URL(window.location.href);
+                        const classId = currentUrl.searchParams.get('class_id');
+                        if (classId) {
+                            window.location.href = currentUrl.pathname + '?class_id=' + classId;
+                        } else {
+                            location.reload();
+                        }
+                    }, 2000);
+                } else {
+                    showToast(data.message || 'Gagal hapus!', 'danger');
+                }
+            })
+            .catch(() => showToast('Terjadi kesalahan jaringan.', 'danger'))
+            .finally(() => {
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#deleteModal').modal('hide');
+                } else {
+                    closeDeleteModalBulanan();
+                }
+            });
+        }
+    };
+
 // Pastikan SweetAlert tersedia
 document.addEventListener('DOMContentLoaded', function() {
     // Fallback untuk SweetAlert jika tidak tersedia
@@ -373,8 +495,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     showToast(data.message, 'success');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('tarifBulananModal'));
-                    modal.hide();
+                    if (typeof $ !== 'undefined' && $.fn.modal) {
+                        $('#tarifBulananModal').modal('hide');
+                    } else {
+                        closeTarifBulananModal();
+                    }
                     form.reset();
                     // Redirect ke halaman sebelumnya dengan parameter yang sama
                     const currentUrl = new URL(window.location.href);
@@ -420,7 +545,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 .finally(function() {
                     // Modal edit siap digunakan tanpa autofill
                 });
-            new bootstrap.Modal(document.getElementById('editBulananModal')).show();
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#editBulananModal').modal('show');
+            } else {
+                console.error('jQuery modal not available');
+            }
         });
     });
     // Update tarif bulanan satuan
@@ -468,42 +597,15 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteForm = this.closest('form');
             deleteForm.action = `/api/bulanan/${studentId}/{{ $payment->payment_id }}`;
             document.getElementById('modalStudentName').textContent = nama;
-            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
+            if (typeof $ !== 'undefined' && $.fn.modal) {
+                $('#deleteModal').modal('show');
+            } else {
+                console.error('jQuery modal not available');
+            }
         });
     });
 
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        if (deleteForm) {
-            fetch(deleteForm.action, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-            })
-            .then(r => r.json().then(data => ({ok: r.ok, data})))
-            .then(({ok, data}) => {
-                if (ok) {
-                    showToast(data.message || 'Berhasil dihapus!');
-                    setTimeout(() => {
-                        // Redirect ke halaman sebelumnya dengan parameter yang sama
-                        const currentUrl = new URL(window.location.href);
-                        const classId = currentUrl.searchParams.get('class_id');
-                        if (classId) {
-                            window.location.href = currentUrl.pathname + '?class_id=' + classId;
-                        } else {
-                            location.reload();
-                        }
-                    }, 2000);
-                } else {
-                    showToast(data.message || 'Gagal hapus!', 'danger');
-                }
-            })
-            .catch(() => showToast('Terjadi kesalahan jaringan.', 'danger'))
-            .finally(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-                modal.hide();
-            });
-        }
-    });
+    // Event listener untuk confirmDeleteBtn sudah dihandle oleh onclick="confirmDeleteBulanan()" di HTML
     // Bulk select, enable/disable hapus masal
     let selectedBulanan = [];
     function updateBulkBulananButtons() {

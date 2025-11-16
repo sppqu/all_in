@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Laporan Rekapitulasi')
 
@@ -66,7 +66,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Jenis Pembayaran</label>
-                                <select name="payment_type" class="form-control">
+                                <select name="payment_type" class="form-control select-primary">
                                     <option value="">Semua Jenis</option>
                                     <option value="Tunai" {{ $paymentType == 'Tunai' ? 'selected' : '' }}>Tunai</option>
                                     <option value="Transfer Bank" {{ $paymentType == 'Transfer Bank' ? 'selected' : '' }}>Transfer Bank</option>
@@ -75,7 +75,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Pos Pembayaran</label>
-                                <select name="pos_id" class="form-control">
+                                <select name="pos_id" class="form-control select-primary">
                                     <option value="">Semua Pos</option>
                                     @foreach($posList ?? [] as $pos)
                                         <option value="{{ $pos->pos_id }}" {{ ($posId ?? '') == $pos->pos_id ? 'selected' : '' }}>
@@ -86,7 +86,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Kelas</label>
-                                <select name="class_id" class="form-control">
+                                <select name="class_id" class="form-control select-primary">
                                     <option value="">Semua Kelas</option>
                                     @foreach($classList ?? [] as $class)
                                         <option value="{{ $class->class_id }}" {{ ($classId ?? '') == $class->class_id ? 'selected' : '' }}>

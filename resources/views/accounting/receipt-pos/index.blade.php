@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Pos Penerimaan')
 
@@ -89,6 +89,154 @@
 .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #0056b3;
 }
+
+/* Table Styling - Putih dan font kecil */
+#transaksiTableMain {
+    font-size: 0.85rem;
+}
+
+#transaksiTableMain thead {
+    background-color: #ffffff !important;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#transaksiTableMain thead th {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#transaksiTableMain tbody tr {
+    background-color: #ffffff !important;
+}
+
+#transaksiTableMain tbody td {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#transaksiTableMain tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+#transaksiTableMain tbody tr.table-active {
+    background-color: #e7f3ff !important;
+    border-left: 4px solid #007bff;
+}
+
+/* Filter Section Styling */
+.input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.input-group .form-control[type="date"] {
+    border: 1px solid #cccccc;
+    border-radius: 2px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #333;
+    transition: all 0.3s ease;
+    height: 38px;
+}
+
+.input-group .form-control[type="date"]:focus {
+    border-color: #01a9ac;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(1, 169, 172, 0.25);
+    z-index: 0;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #cccccc;
+    color: #333;
+    font-size: 14px;
+    padding: 0 12px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    line-height: 38px;
+}
+
+.input-group .form-control:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.input-group .form-control:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+
+.input-group .form-control:not(:first-child):not(:last-child) {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+}
+
+.input-group:hover .form-control[type="date"] {
+    border-color: #01a9ac;
+}
+
+.input-group:hover .input-group-text {
+    border-color: #01a9ac;
+}
+
+.input-group .form-control[type="date"]:first-child:focus {
+    border-right: 1px solid #01a9ac;
+}
+
+.input-group .form-control[type="date"]:last-child:focus {
+    border-left: 1px solid #01a9ac;
+}
+
+/* Icon hapus font size */
+.fa-trash,
+.fas.fa-trash,
+.fa.fa-trash {
+    font-size: 14px !important;
+}
+
+/* Header card font size */
+.card-header.bg-primary h5,
+.card-header.bg-success h5 {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+}
+
+.card-header.bg-primary h5 span,
+.card-header.bg-success h5 span {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+}
+
+/* Table header styling - putih dan font kecil */
+table thead {
+    background-color: #ffffff !important;
+    border-bottom: 2px solid #dee2e6;
+}
+
+table thead th {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    font-weight: 600;
+    font-size: 0.75rem !important;
+    padding: 0.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
 </style>
 
 @section('content')
@@ -97,36 +245,25 @@
         <!-- Panel Kiri: Daftar Transaksi -->
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list me-2"></i>Transaksi Penerimaan Lain
+                <div class="card-header bg-primary text-white" style="color: #ffffff !important;">
+                    <h5 class="mb-0" style="color: #ffffff !important;">
+                        <span style="color: #ffffff !important;">Transaksi Penerimaan Lain</span>
                     </h5>
                 </div>
                 <div class="card-body">
                     <!-- Filter Section -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Filter Periode</label>
-                            <div class="input-group">
-                                <input type="date" class="form-control" id="tanggal_awal" value="{{ date('Y-m-d', strtotime('-3 months')) }}">
-                                <span class="input-group-text">s/d</span>
-                                <input type="date" class="form-control" id="tanggal_akhir" value="{{ date('Y-m-d') }}">
-                            </div>
-                        </div>
-                        <div class="col-md-6 d-flex align-items-end">
-                            <button type="button" class="btn btn-primary me-2" onclick="filterPeriode()">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-primary" onclick="openFilterModal()">
                                 <i class="fas fa-filter me-1"></i>Filter Periode [F5]
                             </button>
-                            <!-- <a href="{{ route('manage.accounting.pos-view') }}" class="btn btn-info" title="Lihat Pos Penerimaan">
-                                <i class="fas fa-eye me-1"></i>Lihat Pos
-                            </a> -->
                         </div>
                     </div>
 
                     <!-- Tabel Transaksi -->
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table table-hover" id="transaksiTableMain">
+                            <thead>
                                 <tr>
                                     <th>NO.</th>
                                     <th>TANGGAL</th>
@@ -179,9 +316,9 @@
         <!-- Panel Kanan: Detail Transaksi -->
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Detail Transaksi
+                <div class="card-header bg-success text-white" style="color: #ffffff !important;">
+                    <h5 class="mb-0" style="color: #ffffff !important;">
+                        <span style="color: #ffffff !important;">Detail Transaksi</span>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -220,7 +357,7 @@
                     <!-- Tabel Item Detail -->
                     <div class="table-responsive">
                         <table class="table table-bordered">
-                            <thead class="table-primary">
+                            <thead>
                                                                     <tr>
                                         <th>NO</th>
                                         <th>POS PENERIMAAN</th>
@@ -288,14 +425,16 @@
 </div>
 
 <!-- Modal Tambah Transaksi -->
-<div class="modal fade" id="tambahTransaksiModal" tabindex="-1" aria-labelledby="tambahTransaksiModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="tambahTransaksiModal" tabindex="-1" role="dialog" aria-labelledby="tambahTransaksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="tambahTransaksiModalLabel">
                     <i class="fas fa-plus me-2"></i>Tambah Transaksi Penerimaan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeTambahTransaksiModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formTambahTransaksi">
@@ -307,7 +446,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Tahun Ajaran <span class="text-danger">*</span></label>
-                            <select class="form-select" id="tahun_ajaran" name="tahun_ajaran" required>
+                            <select class="form-control select-primary" id="tahun_ajaran" name="tahun_ajaran" required>
                                 <option value="">Pilih Tahun Ajaran</option>
                                 <option value="2024/2025">2024/2025</option>
                                 <option value="2025/2026" selected>2025/2026</option>
@@ -322,7 +461,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                            <select class="form-select" id="metode_pembayaran" name="metode_pembayaran" required>
+                            <select class="form-control select-primary" id="metode_pembayaran" name="metode_pembayaran" required>
                                 <option value="">Pilih Metode</option>
                                 @foreach($paymentMethods as $method)
                                     <option value="{{ $method->id }}">{{ $method->nama_metode }}</option>
@@ -333,12 +472,17 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Kas <span class="text-danger">*</span></label>
-                            <select class="form-select" id="kas_id" name="kas_id" required>
+                            <select class="form-control select-primary" id="kas_id" name="kas_id" required>
                                 <option value="">Pilih Kas</option>
                                 @foreach($kasList as $kas)
                                     <option value="{{ $kas->id }}">{{ $kas->nama_kas }}</option>
                                 @endforeach
                             </select>
+                            @if($kasList->isEmpty())
+                                <small class="text-danger">Tidak ada data kas yang aktif</small>
+                            @else
+                                <small class="text-muted">Total: {{ $kasList->count() }} kas</small>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Keterangan Transaksi</label>
@@ -354,7 +498,7 @@
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered" id="rincianTable">
-                                    <thead class="table-secondary">
+                                    <thead>
                                         <tr>
                                             <th width="5%">No.</th>
                                             <th width="25%">Pos Penerimaan</th>
@@ -381,7 +525,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeTambahTransaksiModal()">Batal</button>
                 <button type="button" class="btn btn-success" onclick="simpanTransaksi()">
                     <i class="fas fa-save me-2"></i>Simpan
                 </button>
@@ -391,14 +535,16 @@
 </div>
 
 <!-- Modal Edit Transaksi -->
-<div class="modal fade" id="editTransaksiModal" tabindex="-1" aria-labelledby="editTransaksiModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="editTransaksiModal" tabindex="-1" role="dialog" aria-labelledby="editTransaksiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
                 <h5 class="modal-title" id="editTransaksiModalLabel">
                     <i class="fas fa-edit me-2"></i>Edit Transaksi Penerimaan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeEditTransaksiModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formEditTransaksi">
@@ -423,7 +569,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editMetodePembayaran" name="metode_pembayaran" required>
+                            <select class="form-control select-primary" id="editMetodePembayaran" name="metode_pembayaran" required>
                                 <option value="">Pilih Metode</option>
                                 @foreach($paymentMethods as $method)
                                     <option value="{{ $method->id }}">{{ $method->nama_metode }}</option>
@@ -435,12 +581,17 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Kas <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editKasId" name="kas_id" required>
+                            <select class="form-control select-primary" id="editKasId" name="kas_id" required>
                                 <option value="">Pilih Kas</option>
                                 @foreach($kasList as $kas)
                                     <option value="{{ $kas->id }}">{{ $kas->nama_kas }}</option>
                                 @endforeach
                             </select>
+                            @if($kasList->isEmpty())
+                                <small class="text-danger">Tidak ada data kas yang aktif</small>
+                            @else
+                                <small class="text-muted">Total: {{ $kasList->count() }} kas</small>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Keterangan Transaksi</label>
@@ -453,7 +604,7 @@
                         <label class="form-label">Rincian Transaksi <span class="text-danger">*</span></label>
                         <div class="table-responsive">
                             <table class="table table-bordered" id="editRincianTable">
-                                <thead class="table-light">
+                                <thead>
                                     <tr>
                                         <th style="width: 8%;">NO</th>
                                         <th style="width: 30%;">POS PENERIMAAN</th>
@@ -482,7 +633,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditTransaksiModal()">Batal</button>
                 <button type="button" class="btn btn-warning" onclick="simpanEditTransaksi()">
                     <i class="fas fa-save me-1"></i>Simpan Perubahan
                 </button>
@@ -492,14 +643,16 @@
 </div>
 
 <!-- Modal Edit Pos Penerimaan -->
-<div class="modal fade" id="editPosModal" tabindex="-1" aria-labelledby="editPosModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="editPosModal" tabindex="-1" role="dialog" aria-labelledby="editPosModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
                 <h5 class="modal-title" id="editPosModalLabel">
                     <i class="fas fa-edit me-2"></i>Edit Pos Penerimaan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeEditPosModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formEditPos">
@@ -515,7 +668,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditPosModal()">Batal</button>
                 <button type="button" class="btn btn-warning" onclick="updatePos()">
                     <i class="fas fa-save me-2"></i>Update
                 </button>
@@ -525,14 +678,16 @@
 </div>
 
 <!-- Modal Buat Pos Penerimaan Baru -->
-<div class="modal fade" id="buatPosBaruModal" tabindex="-1" aria-labelledby="buatPosBaruModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="buatPosBaruModal" tabindex="-1" role="dialog" aria-labelledby="buatPosBaruModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="buatPosBaruModalLabel">
                     <i class="fas fa-plus me-2"></i>Buat Pos Penerimaan Baru
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeBuatPosBaruModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formBuatPosBaru">
@@ -558,7 +713,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeBuatPosBaruModal()">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="simpanPosBaru()">
                     <i class="fas fa-save me-2"></i>Simpan
                 </button>
@@ -567,15 +722,54 @@
     </div>
 </div>
 
+<!-- Modal Filter Periode -->
+<div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="filterModalLabel">
+                    <i class="fas fa-filter me-2"></i>Filter Periode
+                </h5>
+                <button type="button" class="close text-white" onclick="closeFilterModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Periode</label>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="modal_tanggal_awal" class="form-label">Dari Tanggal</label>
+                        <input type="date" class="form-control select-primary" id="modal_tanggal_awal" value="{{ request('start_date', date('Y-m-d', strtotime('-3 months'))) }}">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="modal_tanggal_akhir" class="form-label">Sampai Tanggal</label>
+                        <input type="date" class="form-control select-primary" id="modal_tanggal_akhir" value="{{ request('end_date', date('Y-m-d')) }}">
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary w-100" onclick="applyFilter()">
+                        <i class="fas fa-check me-2"></i>Terapkan Filter
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Preview Kuitansi -->
-<div class="modal fade" id="previewKuitansiModal" tabindex="-1" aria-labelledby="previewKuitansiModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<div class="modal fade" id="previewKuitansiModal" tabindex="-1" role="dialog" aria-labelledby="previewKuitansiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document" style="max-width: 95%; width: 95%;">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="previewKuitansiModalLabel">
                     <i class="fas fa-print me-2"></i>Preview Kuitansi Penerimaan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closePreviewKuitansiModal()" aria-label="Close">
+                    <span>&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <div id="kuitansiContent" class="bg-white p-4">
@@ -583,7 +777,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary" onclick="closePreviewKuitansiModal()">Tutup</button>
                 <button type="button" class="btn btn-success" onclick="printKuitansi()">
                     <i class="fas fa-print me-1"></i>Cetak Kuitansi
                 </button>
@@ -592,181 +786,6 @@
     </div>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-    <div id="liveToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body d-flex align-items-center">
-                <div class="toast-icon me-3">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="toast-message flex-grow-1">
-                    <div class="toast-title fw-bold"></div>
-                    <div class="toast-text"></div>
-                </div>
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    </div>
-</div>
-
-<style>
-/* Custom Toast Styles */
-.toast {
-    min-width: 350px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.toast-success {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-}
-
-.toast-error {
-    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-    color: white;
-}
-
-.toast-info {
-    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
-    color: white;
-}
-
-.toast-warning {
-    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-    color: #212529;
-}
-
-.toast-icon {
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-}
-
-.toast-title {
-    font-size: 1rem;
-    margin-bottom: 2px;
-}
-
-.toast-text {
-    font-size: 0.875rem;
-    opacity: 0.9;
-}
-
-.toast-body {
-    padding: 16px;
-}
-
-/* Animation */
-.toast.showing {
-    animation: slideInRight 0.3s ease-out;
-}
-
-.toast.hide {
-    animation: slideOutRight 0.3s ease-in;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Custom Card Styles */
-.card-header {
-    border-bottom: 2px solid rgba(0,0,0,0.1);
-}
-
-.table th {
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-}
-
-.btn {
-    border-radius: 8px;
-    font-weight: 500;
-}
-
-.form-control, .form-select {
-    border-radius: 6px;
-}
-
-/* Kuitansi Print Styles */
-@media print {
-    .kuitansi-container {
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    .modal-header,
-    .modal-footer,
-    .btn {
-        display: none !important;
-    }
-    
-    .modal-body {
-        padding: 0 !important;
-    }
-    
-    .kuitansi-container {
-        page-break-inside: avoid;
-    }
-    
-    .table {
-        page-break-inside: avoid;
-    }
-}
-
-/* Kuitansi styling */
-.kuitansi-container {
-    background: white;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.kuitansi-container table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-.kuitansi-container th,
-.kuitansi-container td {
-    border: 1px solid #000;
-    padding: 5px;
-    font-size: 11px;
-}
-
-.kuitansi-container th {
-    background-color: #f0f0f0;
-    font-weight: bold;
-}
-</style>
 
 <script>
 // Data sekolah untuk header kuitansi
@@ -775,51 +794,15 @@ let schoolProfileData = @json($schoolProfile);
 let currentRow = 1;
 let selectedTransaksiId = null;
 
-// Modern Toast Function
+// showToast function is now global from adminty.blade.php layout
+// Alias untuk kompatibilitas
 function showModernToast(type, title, message, duration = 5000) {
-    const toastEl = document.getElementById('liveToast');
-    const toastBody = toastEl.querySelector('.toast-body');
-    const toastIcon = toastEl.querySelector('.toast-icon i');
-    const toastTitle = toastEl.querySelector('.toast-title');
-    const toastText = toastEl.querySelector('.toast-text');
-    
-    // Remove existing classes
-    toastEl.className = 'toast align-items-center border-0';
-    
-    // Set content
-    toastTitle.textContent = title;
-    toastText.textContent = message;
-    
-    // Set type and icon
-    switch(type) {
-        case 'success':
-            toastEl.classList.add('toast-success');
-            toastIcon.className = 'fas fa-check-circle';
-            break;
-        case 'error':
-            toastEl.classList.add('toast-error');
-            toastIcon.className = 'fas fa-times-circle';
-            break;
-        case 'warning':
-            toastEl.classList.add('toast-warning');
-            toastIcon.className = 'fas fa-exclamation-triangle';
-            break;
-        case 'info':
-            toastEl.classList.add('toast-info');
-            toastIcon.className = 'fas fa-info-circle';
-            break;
-        default:
-            toastEl.classList.add('toast-info');
-            toastIcon.className = 'fas fa-info-circle';
+    // Gunakan showToast global dari layout
+    if (typeof window.showToast === 'function') {
+        window.showToast(type, title, message);
+    } else {
+        console.error('showToast function not available');
     }
-    
-    // Show toast
-    const toast = new bootstrap.Toast(toastEl, {
-        autohide: true,
-        delay: duration
-    });
-    
-    toast.show();
 }
 
 // Load data on page load
@@ -827,6 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTransaksiData();
     setDefaultMetode();
 });
+
 
 // Load transaksi data
 function loadTransaksiData() {
@@ -967,8 +951,17 @@ function updateSummary(data) {
 
 // Filter functions
 function filterPeriode() {
-    const tanggalAwal = document.getElementById('tanggal_awal').value;
-    const tanggalAkhir = document.getElementById('tanggal_akhir').value;
+    // Ambil nilai dari modal atau dari input langsung
+    let tanggalAwal = document.getElementById('modal_tanggal_awal')?.value;
+    let tanggalAkhir = document.getElementById('modal_tanggal_akhir')?.value;
+    
+    // Fallback ke input langsung jika modal tidak ada
+    if (!tanggalAwal) {
+        tanggalAwal = document.getElementById('tanggal_awal')?.value;
+    }
+    if (!tanggalAkhir) {
+        tanggalAkhir = document.getElementById('tanggal_akhir')?.value;
+    }
     
     if (!tanggalAwal || !tanggalAkhir) {
         showModernToast('warning', 'Peringatan!', 'Pilih tanggal awal dan akhir');
@@ -977,6 +970,11 @@ function filterPeriode() {
     
     showModernToast('info', 'Memfilter...', 'Menerapkan filter periode');
     // Implementasi filter sesuai kebutuhan
+    // Reload halaman dengan parameter filter
+    const url = new URL(window.location.href);
+    url.searchParams.set('start_date', tanggalAwal);
+    url.searchParams.set('end_date', tanggalAkhir);
+    window.location.href = url.toString();
 }
 
 function multiFilter() {
@@ -984,13 +982,83 @@ function multiFilter() {
 }
 
 // Action functions
+// Global functions untuk modal control
+function closeTambahTransaksiModal() {
+    $('#tambahTransaksiModal').modal('hide');
+}
+
+function closeEditTransaksiModal() {
+    $('#editTransaksiModal').modal('hide');
+}
+
+function closeEditPosModal() {
+    $('#editPosModal').modal('hide');
+}
+
+function closeBuatPosBaruModal() {
+    $('#buatPosBaruModal').modal('hide');
+}
+
+function closePreviewKuitansiModal() {
+    $('#previewKuitansiModal').modal('hide');
+}
+
+// Filter Modal functions
+function openFilterModal() {
+    // Set nilai default jika belum ada
+    const tanggalAwal = document.getElementById('modal_tanggal_awal');
+    const tanggalAkhir = document.getElementById('modal_tanggal_akhir');
+    
+    if (!tanggalAwal.value) {
+        tanggalAwal.value = '{{ date('Y-m-d', strtotime('-3 months')) }}';
+    }
+    if (!tanggalAkhir.value) {
+        tanggalAkhir.value = '{{ date('Y-m-d') }}';
+    }
+    
+    $('#filterModal').modal('show');
+}
+
+function closeFilterModal() {
+    $('#filterModal').modal('hide');
+}
+
+function applyFilter() {
+    const tanggalAwal = document.getElementById('modal_tanggal_awal').value;
+    const tanggalAkhir = document.getElementById('modal_tanggal_akhir').value;
+    
+    if (!tanggalAwal || !tanggalAkhir) {
+        showModernToast('warning', 'Peringatan!', 'Pilih tanggal awal dan akhir');
+        return;
+    }
+    
+    if (tanggalAwal > tanggalAkhir) {
+        showModernToast('warning', 'Peringatan!', 'Tanggal awal tidak boleh lebih besar dari tanggal akhir');
+        return;
+    }
+    
+    // Simpan nilai ke hidden input atau langsung filter
+    // Update nilai untuk filterPeriode
+    if (document.getElementById('tanggal_awal')) {
+        document.getElementById('tanggal_awal').value = tanggalAwal;
+    }
+    if (document.getElementById('tanggal_akhir')) {
+        document.getElementById('tanggal_akhir').value = tanggalAkhir;
+    }
+    
+    // Tutup modal
+    closeFilterModal();
+    
+    // Terapkan filter
+    filterPeriode();
+}
+
 function tambahTransaksi() {
     document.getElementById('formTambahTransaksi').reset();
     document.getElementById('tanggal_penerimaan').value = new Date().toISOString().split('T')[0];
     resetRincianTable();
     
-    const modal = new bootstrap.Modal(document.getElementById('tambahTransaksiModal'));
-    modal.show();
+    $('#tambahTransaksiModal').modal('show');
 }
 
 function tambahCopy() {
@@ -999,6 +1067,11 @@ function tambahCopy() {
         return;
     }
     showModernToast('info', 'Copy Transaksi', 'Fitur copy transaksi akan segera tersedia');
+}
+
+// Alias untuk tambahTransaksiCopy
+function tambahTransaksiCopy() {
+    tambahCopy();
 }
 
 function ubahTransaksi() {
@@ -1031,8 +1104,7 @@ function ubahTransaksi() {
     loadDetailItemForEdit(selectedTransaksiId);
     
     // Tampilkan modal edit
-    const modal = new bootstrap.Modal(document.getElementById('editTransaksiModal'));
-    modal.show();
+    $('#editTransaksiModal').modal('show');
 }
 
 // Load detail item untuk edit
@@ -1222,8 +1294,7 @@ function simpanEditTransaksi() {
         console.log('Response data:', data);
         if (data.success) {
             showModernToast('success', 'Berhasil!', data.message);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editTransaksiModal'));
-            modal.hide();
+            $('#editTransaksiModal').modal('hide');
             setTimeout(() => {
                 location.reload();
             }, 1500);
@@ -1420,8 +1491,7 @@ function cetakBukti() {
     });
     
     // Tampilkan modal preview
-    const modal = new bootstrap.Modal(document.getElementById('previewKuitansiModal'));
-    modal.show();
+    $('#previewKuitansiModal').modal('show');
 }
 
 // Rincian table functions
@@ -1504,8 +1574,7 @@ function editPos(id, name, description) {
     document.getElementById('edit_pos_name').value = name;
     document.getElementById('edit_pos_description').value = description;
     
-    const modal = new bootstrap.Modal(document.getElementById('editPosModal'));
-    modal.show();
+    $('#editPosModal').modal('show');
 }
 
 function deletePos(id, name) {
@@ -1577,7 +1646,7 @@ function updatePos() {
         console.log('Update response data:', data);
         if (data.success) {
             showModernToast('success', 'Berhasil!', data.message);
-            bootstrap.Modal.getInstance(document.getElementById('editPosModal')).hide();
+            $('#editPosModal').modal('hide');
             setTimeout(() => {
                 location.reload();
             }, 1500);
@@ -1657,7 +1726,7 @@ function simpanTransaksi() {
     .then(data => {
         if (data.success) {
             showModernToast('success', 'Berhasil!', data.message);
-            bootstrap.Modal.getInstance(document.getElementById('tambahTransaksiModal')).hide();
+            $('#tambahTransaksiModal').modal('hide');
             
             // Reload page untuk menampilkan data terbaru
             setTimeout(() => {
@@ -1705,7 +1774,7 @@ function simpanPosBaru() {
     .then(data => {
         if (data.success) {
             showModernToast('success', 'Berhasil!', 'Pos penerimaan baru berhasil dibuat!');
-            bootstrap.Modal.getInstance(document.getElementById('buatPosBaruModal')).hide();
+            $('#buatPosBaruModal').modal('hide');
             
             // Reset form
             form.reset();
@@ -1911,7 +1980,7 @@ document.addEventListener('keydown', function(e) {
             break;
         case 'F5':
             e.preventDefault();
-            filterPeriode();
+            openFilterModal();
             break;
         case 'F6':
             e.preventDefault();

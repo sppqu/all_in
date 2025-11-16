@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid px-4">
@@ -29,15 +29,13 @@
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Total Siswa Perlu Bimbingan</p>
-                            <h3 class="mb-0 fw-bold text-danger">{{ $siswaPerluBimbingan->count() }}</h3>
-                        </div>
-                        <div class="bg-danger bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                        </div>
+                <div class="card-body position-relative" style="padding-right: 90px;">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Siswa Perlu Bimbingan</p>
+                        <h3 class="mb-0 fw-bold text-danger">{{ $siswaPerluBimbingan->count() }}</h3>
+                    </div>
+                    <div class="stat-icon" style="background-color: #dc3545; border-radius: 8px;">
+                        <i class="fas fa-user-friends fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
@@ -45,17 +43,15 @@
 
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Rata-rata Point</p>
-                            <h3 class="mb-0 fw-bold text-warning">
-                                {{ $siswaPerluBimbingan->count() > 0 ? round($siswaPerluBimbingan->avg('total_point')) : 0 }}
-                            </h3>
-                        </div>
-                        <div class="bg-warning bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-chart-line fa-2x text-warning"></i>
-                        </div>
+                <div class="card-body position-relative" style="padding-right: 90px;">
+                    <div>
+                        <p class="text-muted mb-1 small">Rata-rata Point</p>
+                        <h3 class="mb-0 fw-bold text-warning">
+                            {{ $siswaPerluBimbingan->count() > 0 ? round($siswaPerluBimbingan->avg('total_point')) : 0 }}
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="background-color: #ffc107; border-radius: 8px;">
+                        <i class="fas fa-chart-line fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
@@ -63,17 +59,15 @@
 
         <div class="col-md-4">
             <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1 small">Point Tertinggi</p>
-                            <h3 class="mb-0 fw-bold text-danger">
-                                {{ $siswaPerluBimbingan->count() > 0 ? $siswaPerluBimbingan->max('total_point') : 0 }}
-                            </h3>
-                        </div>
-                        <div class="bg-danger bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-fire fa-2x text-danger"></i>
-                        </div>
+                <div class="card-body position-relative" style="padding-right: 90px;">
+                    <div>
+                        <p class="text-muted mb-1 small">Point Tertinggi</p>
+                        <h3 class="mb-0 fw-bold text-danger">
+                            {{ $siswaPerluBimbingan->count() > 0 ? $siswaPerluBimbingan->max('total_point') : 0 }}
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="background-color: #dc3545; border-radius: 8px;">
+                        <i class="fas fa-fire fa-2x text-white"></i>
                     </div>
                 </div>
             </div>
@@ -83,9 +77,6 @@
     <!-- Action Buttons -->
     <div class="row g-3 mb-4">
         <div class="col-md-12">
-            <a href="{{ route('manage.bk.bimbingan.create') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus-circle me-2"></i>Tambah Bimbingan Baru
-            </a>
             <a href="{{ route('manage.bk.bimbingan.index') }}" class="btn btn-outline-info btn-lg">
                 <i class="fas fa-list me-2"></i>Lihat Semua Bimbingan
             </a>
@@ -233,6 +224,17 @@
 
 .hover-lift:hover {
     transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 15px;
+    right: 15px;
 }
 </style>
 @endsection

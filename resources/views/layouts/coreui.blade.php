@@ -659,13 +659,6 @@
                         <i class="fa fa-school me-2"></i> Kelola Sekolah
                     </a>
                 </li>
-                @if(auth()->user()->role === 'superadmin')
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('*tahun-pelajaran*') ? 'active' : '' }}" href="{{ url('/tahun-pelajaran') }}">
-                        <i class="fa fa-calendar me-2"></i> Tahun Ajaran
-                    </a>
-                </li>
-                @endif
                 
                 {{-- Kelola Pengguna --}}
                 @if(function_exists('menuCan') && menuCan('menu.users'))

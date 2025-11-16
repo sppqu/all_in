@@ -34,6 +34,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/library/card', [LibraryController::class, 'libraryCard'])->name('library.card');
 });
 
+// Serve PDF route (accessible by both student and admin)
+Route::get('/library/serve-pdf/{id}', [ReaderController::class, 'servePdf'])->name('library.serve-pdf');
+
 // Admin routes (hanya superadmin dan role tertentu)
 Route::middleware(['auth'])->prefix('manage/library')->name('manage.library.')->group(function () {
     

@@ -31,7 +31,7 @@
                         <div class="mb-3">
                             <label class="form-label">Pilih Sekolah</label>
                             <small class="text-muted d-block mb-2">User ini akan otomatis menjadi Admin Sekolah di sekolah yang dipilih (bisa pilih lebih dari satu)</small>
-                            <select name="school_ids[]" id="school_ids" class="form-select" multiple size="5" required>
+                            <select name="school_ids[]" id="school_ids" class="form-control select-default" multiple size="5" required>
                                 <?php $__currentLoopData = $schools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $school): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($school->id); ?>" <?php echo e(in_array($school->id, old('school_ids', [])) ? 'selected' : ''); ?>>
                                         <?php echo e($school->nama_sekolah); ?> (<?php echo e($school->jenjang); ?>)
@@ -44,7 +44,7 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select name="role" id="role_select" class="form-select" required>
+                            <select name="role" id="role_select" class="form-control select-primary" required>
                                 <option value="">- Pilih Role -</option>
                                 <option value="admin" <?php echo e(old('role')=='admin' ? 'selected' : ''); ?>>Admin Sekolah</option>
                                 <option value="admin_bk" <?php echo e(old('role')=='admin_bk' ? 'selected' : ''); ?>>Admin BK (Hanya Akses BK)</option>
@@ -94,4 +94,4 @@
 </style>
 
 <?php $__env->stopSection(); ?> 
-<?php echo $__env->make('layouts.coreui', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/users/create.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.adminty', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/users/create.blade.php ENDPATH**/ ?>

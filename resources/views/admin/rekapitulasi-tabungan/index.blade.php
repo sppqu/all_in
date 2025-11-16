@@ -1,6 +1,58 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Rekapitulasi Tabungan')
+
+@section('head')
+<style>
+    /* Fix untuk widget card icon tidak tertutup */
+    .widget-card-1 {
+        overflow: visible !important;
+        margin-top: 20px;
+    }
+    
+    .widget-card-1 .card-block {
+        padding: 1.25rem;
+        padding-top: 15px;
+        padding-right: 80px;
+        position: relative;
+        text-align: left !important;
+    }
+    
+    .widget-card-1 .card1-icon {
+        position: absolute;
+        top: -15px;
+        right: 20px;
+        left: auto;
+        width: 60px;
+        height: 60px;
+        font-size: 35px;
+        border-radius: 8px;
+        display: flex;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease-in-out;
+        z-index: 10;
+    }
+    
+    .widget-card-1:hover .card1-icon {
+        top: -25px;
+    }
+    
+    .widget-card-1 .card-block h6,
+    .widget-card-1 .card-block h4,
+    .widget-card-1 .card-block span,
+    .widget-card-1 .card-block small,
+    .widget-card-1 .card-block div {
+        text-align: left !important;
+    }
+    
+    .widget-card-1 .card-block > h6:first-child {
+        margin-right: 70px;
+        padding-right: 0;
+    }
+</style>
+@endsection
 
 @section('content')
 <div class="container-fluid">
@@ -28,7 +80,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="class_id" class="form-label">Kelas</label>
-                                <select class="form-select" id="class_id" name="class_id">
+                                <select class="form-control select-primary" id="class_id" name="class_id">
                                     <option value="">Semua Kelas</option>
                                     @foreach($classes as $class)
                                         <option value="{{ $class->class_id }}" 
@@ -40,7 +92,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="payment_method" class="form-label">Metode Pembayaran</label>
-                                <select class="form-select" id="payment_method" name="payment_method">
+                                <select class="form-control select-primary" id="payment_method" name="payment_method">
                                     <option value="">Semua Metode</option>
                                     <option value="tunai" {{ $paymentMethod == 'tunai' ? 'selected' : '' }}>Tunai</option>
                                     <option value="transfer_bank" {{ $paymentMethod == 'transfer_bank' ? 'selected' : '' }}>Transfer Bank</option>
@@ -62,48 +114,36 @@
                     @if($hasFilters)
                         <!-- Summary Cards -->
                         <div class="row mb-4">
-                            <div class="col-md-4">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h6 class="card-title">Total Setoran</h6>
-                                                <h4 class="mb-0">Rp {{ number_format($totalSetoran, 0, ',', '.') }}</h4>
-                                            </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-arrow-up fa-2x"></i>
-                                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card widget-card-1" style="position: relative; background: white;">
+                                    <div class="card-block">
+                                        <div class="card1-icon bg-c-green" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                            <i class="feather icon-arrow-up text-white"></i>
                                         </div>
+                                        <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Total Setoran</h6>
+                                        <h4 class="mt-2 mb-0" style="color: #10b981; font-weight: 600;">Rp {{ number_format($totalSetoran, 0, ',', '.') }}</h4>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="card bg-danger text-white">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h6 class="card-title">Total Penarikan</h6>
-                                                <h4 class="mb-0">Rp {{ number_format($totalPenarikan, 0, ',', '.') }}</h4>
-                                            </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-arrow-down fa-2x"></i>
-                                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card widget-card-1" style="position: relative; background: white;">
+                                    <div class="card-block">
+                                        <div class="card1-icon bg-c-red" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                            <i class="feather icon-arrow-down text-white"></i>
                                         </div>
+                                        <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Total Penarikan</h6>
+                                        <h4 class="mt-2 mb-0" style="color: #ef4444; font-weight: 600;">Rp {{ number_format($totalPenarikan, 0, ',', '.') }}</h4>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="card bg-info text-white">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <h6 class="card-title">Total Saldo</h6>
-                                                <h4 class="mb-0">Rp {{ number_format($totalSaldo, 0, ',', '.') }}</h4>
-                                            </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-wallet fa-2x"></i>
-                                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card widget-card-1" style="position: relative; background: white;">
+                                    <div class="card-block">
+                                        <div class="card1-icon bg-c-blue" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                                            <i class="feather icon-credit-card text-white"></i>
                                         </div>
+                                        <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Total Saldo</h6>
+                                        <h4 class="mt-2 mb-0" style="color: #3b82f6; font-weight: 600;">Rp {{ number_format($totalSaldo, 0, ',', '.') }}</h4>
                                     </div>
                                 </div>
                             </div>
@@ -183,13 +223,15 @@
 
 <!-- Detail Modal -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg" style="max-width: 80%; width: 80%;">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title" id="detailModalLabel">
                     <i class="fas fa-list-alt me-2"></i>Detail Transaksi Tabungan
                 </h5>
-                <button type="button" class="btn-close btn-close-white" onclick="closeDetailModal()" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeDetailModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <!-- Student Info -->
@@ -322,14 +364,8 @@ function showDetailModal(studentId, studentName, studentNis) {
 }
 
 function closeDetailModal() {
-    // Hide modal using Bootstrap 5 method
-    const modal = bootstrap.Modal.getInstance(document.getElementById('detailModal'));
-    if (modal) {
-        modal.hide();
-    } else {
-        // Fallback for older Bootstrap versions
-        $('#detailModal').modal('hide');
-    }
+    // Hide modal using jQuery (Bootstrap 4 compatible)
+    $('#detailModal').modal('hide');
     
     // Reset current student ID
     currentStudentId = null;

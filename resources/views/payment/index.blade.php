@@ -1,22 +1,57 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('head')
 <title>Jenis Pembayaran</title>
 <style>
+/* Action Button Styling */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* Action Button Icon Colors - Ensure white icons */
 .btn-warning .fas,
-.btn-warning .fa {
+.btn-warning .fa,
+.btn-warning.action-btn .fas,
+.btn-warning.action-btn .fa {
     color: white !important;
 }
 
 .btn-danger .fas,
-.btn-danger .fa {
+.btn-danger .fa,
+.btn-danger.action-btn .fas,
+.btn-danger.action-btn .fa {
     color: white !important;
 }
 
 .btn-primary .fas,
-.btn-primary .fa {
+.btn-primary .fa,
+.btn-primary.action-btn .fas,
+.btn-primary.action-btn .fa {
     color: white !important;
+}
+
+.table td {
+    vertical-align: middle;
 }
 </style>
 @endsection
@@ -68,12 +103,20 @@
                                     </td>
                                     <td>{{ $payment->period->period_name ?? '-' }}</td>
                                     <td>
-                                        <a href="{{ route('payment.edit', $payment->payment_id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
-                                        <form action="{{ route('payment.destroy', $payment->payment_id) }}" method="POST" class="d-inline delete-form">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete" data-payment-name="{{ $payment->pos->pos_name ?? '-' }} - {{ $payment->period->period_name ?? '-' }}"><i class="fas fa-trash"></i></button>
-                                        </form>
+                                        <div class="action-buttons">
+                                            <a href="{{ route('payment.edit', $payment->payment_id) }}" class="btn btn-warning btn-sm action-btn" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('payment.destroy', $payment->payment_id) }}" method="POST" class="d-inline delete-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-danger btn-sm action-btn btn-delete" 
+                                                        data-payment-name="{{ $payment->pos->pos_name ?? '-' }} - {{ $payment->period->period_name ?? '-' }}"
+                                                        title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 @empty
@@ -89,27 +132,29 @@
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-danger text-white border-0">
         <h5 class="modal-title" id="deleteModalLabel">
           <i class="fa fa-trash me-2"></i>Konfirmasi Hapus Jenis Pembayaran
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeDeleteModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body text-center py-4">
         <div class="mb-3">
           <i class="fa fa-question-circle text-warning" style="font-size: 3rem;"></i>
         </div>
-        <h5 class="mb-3">Yakin ingin menghapus <span id="modalPaymentName"></span>?</h5>
+        <h5 class="mb-3">Yakin ingin menghapus <strong id="modalPaymentName"></strong>?</h5>
         <p class="text-muted mb-0">Tindakan ini tidak dapat dibatalkan.</p>
       </div>
       <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+        <button type="button" class="btn btn-secondary px-4" data-dismiss="modal" onclick="closeDeleteModal()">
           <i class="fa fa-times me-2"></i>Batal
         </button>
-        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
+        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn" onclick="confirmDelete()">
           <i class="fa fa-trash me-2"></i>Ya, Hapus
         </button>
       </div>
@@ -120,22 +165,46 @@
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-
     let formToDelete = null;
-    document.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const paymentName = this.getAttribute('data-payment-name');
-            formToDelete = this.closest('form');
-            document.getElementById('modalPaymentName').textContent = paymentName;
-            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
+    
+    // Fungsi untuk membuka modal delete
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-delete').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const paymentName = this.getAttribute('data-payment-name');
+                formToDelete = this.closest('form');
+                document.getElementById('modalPaymentName').textContent = paymentName;
+                
+                // Tampilkan modal - gunakan jQuery untuk Bootstrap 4
+                if (typeof $ !== 'undefined' && $.fn.modal) {
+                    $('#deleteModal').modal('show');
+                } else {
+                    console.error('jQuery modal not available');
+                }
+            });
         });
     });
-    document.getElementById('confirmDeleteBtn').onclick = function() {
-        if (formToDelete) formToDelete.submit();
+    
+    // Fungsi untuk menutup modal delete - Global
+    window.closeDeleteModal = function() {
+        if (typeof $ !== 'undefined' && $.fn.modal) {
+            $('#deleteModal').modal('hide');
+        } else {
+            const modal = document.getElementById('deleteModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+        }
     };
-});
+    
+    // Fungsi untuk konfirmasi delete - Global
+    window.confirmDelete = function() {
+        if (formToDelete) {
+            formToDelete.submit();
+        }
+    };
 </script>
 @endsection 

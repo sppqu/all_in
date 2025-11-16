@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Tambah Peminjaman - E-Perpustakaan')
 
@@ -44,7 +44,7 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Pilih Buku <span class="text-danger">*</span></label>
-                                <select name="book_id" id="book_id" class="form-select" required>
+                                <select name="book_id" id="book_id" class="form-control select-primary" required>
                                     <option value="">Pilih Buku</option>
                                     @foreach($books as $book)
                                     <option value="{{ $book->id }}" {{ old('book_id') == $book->id ? 'selected' : '' }}>
@@ -66,7 +66,7 @@
                             
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Durasi Peminjaman <span class="text-danger">*</span></label>
-                                <select name="durasi_hari" class="form-select @error('durasi_hari') is-invalid @enderror" required>
+                                <select name="durasi_hari" class="form-control select-primary @error('durasi_hari') is-invalid @enderror" required>
                                     <option value="">Pilih Durasi</option>
                                     <option value="3" {{ old('durasi_hari') == 3 ? 'selected' : '' }}>3 Hari</option>
                                     <option value="7" {{ old('durasi_hari') == 7 ? 'selected' : '' }}>7 Hari (1 Minggu)</option>

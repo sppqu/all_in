@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -67,7 +67,7 @@
                                 <label for="pendaftaran_dibuka" class="form-label">
                                     <i class="fas fa-toggle-on me-1"></i>Status Pendaftaran
                                 </label>
-                                <select class="form-select @error('pendaftaran_dibuka') is-invalid @enderror" 
+                                <select class="form-control select-primary @error('pendaftaran_dibuka') is-invalid @enderror" 
                                         id="pendaftaran_dibuka" 
                                         name="pendaftaran_dibuka">
                                     <option value="1" {{ old('pendaftaran_dibuka', $settings->pendaftaran_dibuka) ? 'selected' : '' }}>
@@ -122,14 +122,16 @@
                                     <i class="fas fa-money-bill me-1"></i>Biaya Pendaftaran
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
+                                    <span class="input-group-text" style="background-color: #01a9ac; color: #ffffff; border-color: #01a9ac; border-radius: 4px 0 0 4px; min-width: 80px; padding: 0.375rem 1.5rem; text-align: center; font-weight: 500;">Rp</span>
                                     <input type="number" 
                                            class="form-control @error('biaya_pendaftaran') is-invalid @enderror" 
                                            id="biaya_pendaftaran" 
                                            name="biaya_pendaftaran" 
                                            value="{{ old('biaya_pendaftaran', $settings->biaya_pendaftaran) }}"
+                                           placeholder="Masukkan jumlah biaya pendaftaran"
                                            min="0" 
-                                           step="1">
+                                           step="1"
+                                           style="border-color: #01a9ac; border-left: none; border-radius: 0 4px 4px 0;">
                                     @error('biaya_pendaftaran')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -142,14 +144,16 @@
                                     <i class="fas fa-money-bill-wave me-1"></i>Biaya SPMB
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
+                                    <span class="input-group-text" style="background-color: #01a9ac; color: #ffffff; border-color: #01a9ac; border-radius: 4px 0 0 4px; min-width: 80px; padding: 0.375rem 1.5rem; text-align: center; font-weight: 500;">Rp</span>
                                     <input type="number" 
                                            class="form-control @error('biaya_spmb') is-invalid @enderror" 
                                            id="biaya_spmb" 
                                            name="biaya_spmb" 
                                            value="{{ old('biaya_spmb', $settings->biaya_spmb) }}"
+                                           placeholder="Masukkan jumlah biaya SPMB"
                                            min="0" 
-                                           step="1">
+                                           step="1"
+                                           style="border-color: #01a9ac; border-left: none; border-radius: 0 4px 4px 0;">
                                     @error('biaya_spmb')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

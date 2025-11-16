@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', $book->judul . ' - E-Perpustakaan')
 
@@ -25,12 +25,12 @@
                 @endif
                 <div class="card-body">
                     @if($book->file_path)
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('library.read', $book->id) }}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-book-reader me-2"></i>Baca Online
+                        <div class="d-flex flex-column" style="gap: 12px;">
+                            <a href="{{ route('library.serve-pdf', $book->id) }}" target="_blank" class="btn" style="background-color: #01a9ac; border-color: #01a9ac; color: #ffffff; border-radius: 6px;">
+                                <i class="fas fa-book-reader me-2" style="color: #ffffff;"></i>Baca Online
                             </a>
-                            <a href="{{ route('library.download', $book->id) }}" class="btn btn-outline-success">
-                                <i class="fas fa-download me-2"></i>Download PDF
+                            <a href="{{ route('library.download', $book->id) }}" class="btn" style="background-color: #ffffff; border: 2px solid #28a745; color: #28a745; border-radius: 6px;">
+                                <i class="fas fa-download me-2" style="color: #28a745;"></i>Download PDF
                             </a>
                         </div>
                     @else

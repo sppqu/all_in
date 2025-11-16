@@ -1,10 +1,10 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="font-size: 1.5rem;">Edit Sekolah</h4>
-        <a href="{{ route('manage.foundation.schools.index') }}" class="btn btn-secondary">
+        <a href="{{ route('manage.admin.dashboard') }}" class="btn btn-secondary">
             <i class="fa fa-arrow-left me-2"></i>Kembali
         </a>
     </div>
@@ -162,7 +162,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="{{ route('manage.foundation.schools.index') }}" class="btn btn-secondary">Batal</a>
+                    <a href="{{ route('manage.admin.dashboard') }}" class="btn btn-secondary">Batal</a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-save me-2"></i>Update
                     </button>

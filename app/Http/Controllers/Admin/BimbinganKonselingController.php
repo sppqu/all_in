@@ -14,7 +14,15 @@ class BimbinganKonselingController extends Controller
      */
     public function index(Request $request)
     {
+        $currentSchoolId = currentSchoolId();
         $query = BimbinganKonseling::with(['siswa.class', 'guruBK']);
+
+        // Filter by school_id through siswa relationship
+        if ($currentSchoolId) {
+            $query->whereHas('siswa', function($q) use ($currentSchoolId) {
+                $q->where('school_id', $currentSchoolId);
+            });
+        }
 
         // Filter by status
         if ($request->filled('status')) {
@@ -39,7 +47,17 @@ class BimbinganKonselingController extends Controller
                            ->orderBy('created_at', 'desc')
                            ->paginate(15);
 
-        return view('manage.bk.bimbingan.index', compact('bimbingan'));
+        // Get students for modal dropdown - filter by school_id
+        $currentSchoolId = currentSchoolId();
+        $students = Student::with('class');
+        
+        if ($currentSchoolId) {
+            $students->where('school_id', $currentSchoolId);
+        }
+        
+        $students = $students->orderBy('student_full_name')->get();
+
+        return view('manage.bk.bimbingan.index', compact('bimbingan', 'students'));
     }
 
     /**
@@ -47,9 +65,15 @@ class BimbinganKonselingController extends Controller
      */
     public function create()
     {
-        $students = Student::with('class')
-                          ->orderBy('student_full_name')
-                          ->get();
+        // Get students - filter by school_id
+        $currentSchoolId = currentSchoolId();
+        $students = Student::with('class');
+        
+        if ($currentSchoolId) {
+            $students->where('school_id', $currentSchoolId);
+        }
+        
+        $students = $students->orderBy('student_full_name')->get();
 
         return view('manage.bk.bimbingan.create', compact('students'));
     }
@@ -77,6 +101,15 @@ class BimbinganKonselingController extends Controller
 
         $bimbingan = BimbinganKonseling::create($validated);
 
+        // Handle AJAX request
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data bimbingan konseling berhasil ditambahkan.',
+                'data' => $bimbingan
+            ]);
+        }
+
         return redirect()->route('manage.bk.bimbingan.index')
                         ->with('success', 'Data bimbingan konseling berhasil ditambahkan.');
     }
@@ -102,9 +135,15 @@ class BimbinganKonselingController extends Controller
      */
     public function edit(BimbinganKonseling $bimbingan)
     {
-        $students = Student::with('class')
-                          ->orderBy('student_full_name')
-                          ->get();
+        // Get students - filter by school_id
+        $currentSchoolId = currentSchoolId();
+        $students = Student::with('class');
+        
+        if ($currentSchoolId) {
+            $students->where('school_id', $currentSchoolId);
+        }
+        
+        $students = $students->orderBy('student_full_name')->get();
 
         return view('manage.bk.bimbingan.edit', compact('bimbingan', 'students'));
     }

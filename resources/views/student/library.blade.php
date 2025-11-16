@@ -183,7 +183,7 @@
                 <div class="row g-3" id="booksGrid">
                     @foreach($recentBooks as $book)
                     <div class="col-6 col-md-4 col-lg-3 book-item" data-category="{{ $book->category_id }}" data-title="{{ strtolower($book->judul) }}" data-author="{{ strtolower($book->pengarang) }}">
-                        <div class="book-card">
+                        <div class="book-card" @if($book->file_path) onclick="window.location.href='{{ route('student.library.read', $book->id) }}'" style="cursor: pointer;" @endif>
                             <div class="book-cover">
                                 @if($book->cover_image)
                                     <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->judul }}">
@@ -207,7 +207,7 @@
                                 <h6 class="book-title">{{ Str::limit($book->judul, 40) }}</h6>
                                 <p class="book-author">{{ Str::limit($book->pengarang, 30) }}</p>
                                 @if($book->file_path)
-                                    <a href="{{ asset('storage/' . $book->file_path) }}" target="_blank" class="btn btn-sm btn-primary w-100">
+                                    <a href="{{ route('student.library.read', $book->id) }}" class="btn btn-sm btn-primary w-100" onclick="event.stopPropagation();">
                                         <i class="fas fa-book-reader me-1"></i>Baca Online
                                     </a>
                                 @endif

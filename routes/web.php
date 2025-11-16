@@ -271,6 +271,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
         Route::post('/kas', [\App\Http\Controllers\Accounting\KasController::class, 'store'])->name('kas.store');
         Route::get('/kas/{kas}/edit', [\App\Http\Controllers\Accounting\KasController::class, 'edit'])->name('kas.edit');
         Route::put('/kas/{kas}', [\App\Http\Controllers\Accounting\KasController::class, 'update'])->name('kas.update');
+        Route::post('/kas/{kas}/toggle-status', [\App\Http\Controllers\Accounting\KasController::class, 'toggleStatus'])->name('kas.toggle-status');
         Route::delete('/kas/{kas}', [\App\Http\Controllers\Accounting\KasController::class, 'destroy'])->name('kas.destroy');
 
         // Metode Pembayaran
@@ -279,6 +280,7 @@ Route::prefix('manage')->name('manage.')->middleware('auth', 'check.subscription
         Route::post('/payment-methods', [\App\Http\Controllers\Accounting\PaymentMethodController::class, 'store'])->name('payment-methods.store');
         Route::get('/payment-methods/{paymentMethod}/edit', [\App\Http\Controllers\Accounting\PaymentMethodController::class, 'edit'])->name('payment-methods.edit');
         Route::put('/payment-methods/{paymentMethod}', [\App\Http\Controllers\Accounting\PaymentMethodController::class, 'update'])->name('payment-methods.update');
+        Route::post('/payment-methods/{paymentMethod}/toggle-status', [\App\Http\Controllers\Accounting\PaymentMethodController::class, 'toggleStatus'])->name('payment-methods.toggle-status');
         Route::delete('/payment-methods/{paymentMethod}', [\App\Http\Controllers\Accounting\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 
         // Pos Penerimaan (Default dari NAMA POS Pembayaran)
@@ -382,6 +384,9 @@ Route::prefix('student')->name('student.')->group(function () {
         
         // E-Perpustakaan
         Route::get('/library', [StudentAuthController::class, 'library'])->name('library');
+        Route::get('/library/read/{id}', [App\Http\Controllers\Library\ReaderController::class, 'read'])->name('library.read');
+        Route::get('/library/download/{id}', [App\Http\Controllers\Library\ReaderController::class, 'download'])->name('library.download');
+        Route::post('/library/read/{id}/progress', [App\Http\Controllers\Library\ReaderController::class, 'updateProgress'])->name('library.update-progress');
         
         // Online Payment
         Route::get('/online-payment', [StudentAuthController::class, 'onlinePayment'])->name('online-payment');
@@ -445,6 +450,7 @@ Route::get('/welcome', function () {
 // Period (Tahun Pelajaran) Routes
 Route::resource('periods', PeriodController::class)->middleware('auth');
 Route::post('periods/{period}/set-active', [PeriodController::class, 'setActive'])->name('periods.set-active')->middleware('auth');
+Route::post('periods/{period}/toggle-status', [PeriodController::class, 'toggleStatus'])->name('periods.toggle-status')->middleware('auth');
 
 // Class (Kelas) Routes
 Route::resource('classes', ClassController::class)->middleware('auth');
@@ -456,9 +462,7 @@ Route::get('/test-bulk', function() { return 'Bulk route works!'; })->name('test
 Route::resource('students', StudentController::class)->middleware('auth');
 
 // Import routes for students
-Route::get('/students-import', function () {
-    return view('students.import');
-})->name('students.import-form')->middleware('auth');
+Route::get('/students-import', [StudentController::class, 'importForm'])->name('students.import-form')->middleware('auth');
 
 Route::post('/students-import', [StudentController::class, 'import'])->name('students.import')->middleware('auth');
 Route::get('/students-download-template', [StudentController::class, 'downloadTemplate'])->name('students.download-template')->middleware('auth');
@@ -1328,6 +1332,9 @@ Route::prefix('student')->name('student.')->group(function () {
         
         // E-Perpustakaan
         Route::get('/library', [StudentAuthController::class, 'library'])->name('library');
+        Route::get('/library/read/{id}', [App\Http\Controllers\Library\ReaderController::class, 'read'])->name('library.read');
+        Route::get('/library/download/{id}', [App\Http\Controllers\Library\ReaderController::class, 'download'])->name('library.download');
+        Route::post('/library/read/{id}/progress', [App\Http\Controllers\Library\ReaderController::class, 'updateProgress'])->name('library.update-progress');
         
         // Online Payment
         Route::get('/online-payment', [StudentAuthController::class, 'onlinePayment'])->name('online-payment');
@@ -1391,6 +1398,7 @@ Route::get('/welcome', function () {
 // Period (Tahun Pelajaran) Routes
 Route::resource('periods', PeriodController::class)->middleware('auth');
 Route::post('periods/{period}/set-active', [PeriodController::class, 'setActive'])->name('periods.set-active')->middleware('auth');
+Route::post('periods/{period}/toggle-status', [PeriodController::class, 'toggleStatus'])->name('periods.toggle-status')->middleware('auth');
 
 // Class (Kelas) Routes
 Route::resource('classes', ClassController::class)->middleware('auth');
@@ -1402,9 +1410,7 @@ Route::get('/test-bulk', function() { return 'Bulk route works!'; })->name('test
 Route::resource('students', StudentController::class)->middleware('auth');
 
 // Import routes for students
-Route::get('/students-import', function () {
-    return view('students.import');
-})->name('students.import-form')->middleware('auth');
+Route::get('/students-import', [StudentController::class, 'importForm'])->name('students.import-form')->middleware('auth');
 
 Route::post('/students-import', [StudentController::class, 'import'])->name('students.import')->middleware('auth');
 Route::get('/students-download-template', [StudentController::class, 'downloadTemplate'])->name('students.download-template')->middleware('auth');

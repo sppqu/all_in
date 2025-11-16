@@ -29,8 +29,14 @@
                         Bendahara
                       <?php elseif($role === 'spmb_admin'): ?>
                         Admin SPMB
+                      <?php elseif($role === 'admin_perpustakaan'): ?>
+                        Admin Perpustakaan
+                      <?php elseif($role === 'admin_bk'): ?>
+                        Admin BK
+                      <?php elseif($role === 'admin_jurnal'): ?>
+                        Admin Jurnal
                       <?php else: ?>
-                        <?php echo e($role); ?>
+                        <?php echo e(ucfirst(str_replace('_', ' ', $role))); ?>
 
                       <?php endif; ?>
                     </th>
@@ -87,4 +93,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-<?php echo $__env->make('layouts.coreui', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/users/role-menu.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.adminty', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\sppqu\sppqu_addon\resources\views/users/role-menu.blade.php ENDPATH**/ ?>

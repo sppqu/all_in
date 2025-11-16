@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 @section('content')
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -32,7 +32,7 @@
                         <div class="mb-3">
                             <label class="form-label">Pilih Sekolah</label>
                             <small class="text-muted d-block mb-2">User ini akan otomatis menjadi Admin Sekolah di sekolah yang dipilih (bisa pilih lebih dari satu)</small>
-                            <select name="school_ids[]" id="school_ids" class="form-select" multiple size="5" required>
+                            <select name="school_ids[]" id="school_ids" class="form-control select-default" multiple size="5" required>
                                 @foreach($schools as $school)
                                     <option value="{{ $school->id }}" {{ in_array($school->id, old('school_ids', [])) ? 'selected' : '' }}>
                                         {{ $school->nama_sekolah }} ({{ $school->jenjang }})
@@ -45,7 +45,7 @@
                         {{-- Untuk role lain (jika ada akses dari level lain) --}}
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select name="role" id="role_select" class="form-select" required>
+                            <select name="role" id="role_select" class="form-control select-primary" required>
                                 <option value="">- Pilih Role -</option>
                                 <option value="admin" {{ old('role')=='admin' ? 'selected' : '' }}>Admin Sekolah</option>
                                 <option value="admin_bk" {{ old('role')=='admin_bk' ? 'selected' : '' }}>Admin BK (Hanya Akses BK)</option>

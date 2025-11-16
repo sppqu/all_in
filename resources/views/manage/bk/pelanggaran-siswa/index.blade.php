@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -43,7 +43,7 @@
                                 <input type="text" name="search" class="form-control" placeholder="Cari siswa (NIS/Nama)..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-2">
-                                <select name="status" class="form-select">
+                                <select name="status" class="form-control select-primary">
                                     <option value="">Semua Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>

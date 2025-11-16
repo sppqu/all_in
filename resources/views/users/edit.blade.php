@@ -1,5 +1,24 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 @section('content')
+@if(session('success') || session('error'))
+    <div id="session-messages" style="display: none;">
+        @if(session('success'))
+            <div data-type="success" data-message="{{ session('success') }}"></div>
+        @endif
+        @if(session('error'))
+            <div data-type="error" data-message="{{ session('error') }}"></div>
+        @endif
+    </div>
+@endif
+
+@if($errors->any())
+    <div id="validation-errors" style="display: none;">
+        @foreach($errors->all() as $error)
+            <div data-type="error" data-message="{{ $error }}"></div>
+        @endforeach
+    </div>
+@endif
+
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-lg-6">
@@ -30,7 +49,7 @@
                         @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan')
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <select name="role" id="role_select" class="form-select" required>
+                            <select name="role" id="role_select" class="form-control select-primary" required>
                                 <option value="">- Pilih Role -</option>
                                 <option value="superadmin" {{ old('role', $user->role)=='superadmin' ? 'selected' : '' }}>Superadmin</option>
                                 <option value="admin_yayasan" {{ old('role', $user->role)=='admin_yayasan' ? 'selected' : '' }}>Admin Yayasan</option>
@@ -54,6 +73,8 @@
                             <label class="form-label">Role</label>
                             <input type="text" class="form-control" value="{{ ucfirst($user->role) }}" readonly>
                             <small class="text-muted">Role tidak dapat diubah</small>
+                            {{-- Hidden input untuk mengirim role ke server --}}
+                            <input type="hidden" name="role" value="{{ $user->role }}">
                         </div>
                         @endif
                         {{-- School selection dihilangkan, otomatis menggunakan school_id dari admin yang membuat --}}
@@ -62,7 +83,7 @@
                         <div class="mb-3" id="school_selection" style="display: none;">
                             <label class="form-label">Pilih Sekolah</label>
                             <small class="text-muted d-block mb-2">User ini akan di-assign sebagai admin sekolah yang dipilih (bisa pilih lebih dari satu)</small>
-                            <select name="school_ids[]" id="school_ids" class="form-select" multiple size="5">
+                            <select name="school_ids[]" id="school_ids" class="form-control select-default" multiple size="5">
                                 @foreach($schools as $school)
                                     <option value="{{ $school->id }}" {{ in_array($school->id, old('school_ids', $userSchoolIds ?? [])) ? 'selected' : '' }}>
                                         {{ $school->nama_sekolah }} ({{ $school->jenjang }})
@@ -90,22 +111,50 @@
 </div>
 <style>
 .card-header.bg-primary, .card-header {
-    background-color: #2e7d32 !important;
+    background-color: #01a9ac !important;
     color: #fff !important;
 }
 .btn-primary {
-    background-color: #2e7d32 !important;
-    border-color: #2e7d32 !important;
+    background-color: #01a9ac !important;
+    border-color: #01a9ac !important;
     color: #fff !important;
 }
 .btn-primary:active, .btn-primary:focus, .btn-primary:hover {
-    background-color: #256026 !important;
-    border-color: #256026 !important;
+    background-color: #018a8c !important;
+    border-color: #018a8c !important;
     color: #fff !important;
 }
 </style>
-@if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan')
+@push('scripts')
 <script>
+$(document).ready(function() {
+    // Handle session messages with global toast
+    const sessionMessages = $('#session-messages');
+    if (sessionMessages.length) {
+        sessionMessages.find('div').each(function() {
+            const type = $(this).data('type');
+            const message = $(this).data('message');
+            
+            if (typeof showToast === 'function') {
+                showToast(type === 'success' ? 'success' : 'error', type === 'success' ? 'Berhasil' : 'Error', message);
+            }
+        });
+    }
+    
+    // Handle validation errors with global toast
+    const validationErrors = $('#validation-errors');
+    if (validationErrors.length) {
+        validationErrors.find('div').each(function() {
+            const message = $(this).data('message');
+            
+            if (typeof showToast === 'function') {
+                showToast('error', 'Validasi Error', message);
+            }
+        });
+    }
+});
+
+@if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan')
 document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('role_select');
     const schoolSelection = document.getElementById('school_selection');
@@ -138,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         roleSelect.addEventListener('change', toggleSchoolSelection);
     }
 });
-</script>
 @endif
+</script>
+@endpush
 @endsection 

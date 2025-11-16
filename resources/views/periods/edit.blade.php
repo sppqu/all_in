@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -52,8 +52,9 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label d-block">Status Tahun Pelajaran</label>
                             <div class="form-check">
-                                <input class="form-check-input" 
+                                <input class="form-control form-check-input checkbox-primary" 
                                        type="checkbox" 
                                        id="period_status" 
                                        name="period_status" 
@@ -63,7 +64,8 @@
                                     Aktifkan tahun pelajaran ini
                                 </label>
                             </div>
-                            <small class="form-text text-muted">
+                            <small class="form-text text-muted" style="display: block; margin-top: 0.5rem;">
+                                <i class="fas fa-info-circle me-1"></i>
                                 Jika dicentang, tahun pelajaran lain akan otomatis dinonaktifkan
                             </small>
                         </div>

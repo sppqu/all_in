@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid px-4">
@@ -31,8 +31,8 @@
                                 <i class="fas fa-check-circle"></i> Disetujui
                             </small>
                         </div>
-                        <div class="stat-icon bg-primary bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-exclamation-triangle fa-2x text-primary"></i>
+                        <div class="stat-icon" style="background-color: #0d6efd; border-radius: 8px;">
+                            <i class="fas fa-exclamation-triangle fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -51,8 +51,8 @@
                                 <i class="fas fa-clock"></i> Pending
                             </small>
                         </div>
-                        <div class="stat-icon bg-warning bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-hourglass-half fa-2x text-warning"></i>
+                        <div class="stat-icon" style="background-color: #ffc107; border-radius: 8px;">
+                            <i class="fas fa-hourglass-half fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -71,8 +71,8 @@
                                 <i class="far fa-calendar"></i> {{ \Carbon\Carbon::now()->isoFormat('MMMM') }}
                             </small>
                         </div>
-                        <div class="stat-icon bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-calendar-day fa-2x text-info"></i>
+                        <div class="stat-icon" style="background-color: #17a2b8; border-radius: 8px;">
+                            <i class="fas fa-calendar-day fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -91,8 +91,8 @@
                                 <i class="fas fa-user-times"></i> Perlu Perhatian
                             </small>
                         </div>
-                        <div class="stat-icon bg-danger bg-opacity-10 rounded-3 p-3">
-                            <i class="fas fa-users fa-2x text-danger"></i>
+                        <div class="stat-icon" style="background-color: #dc3545; border-radius: 8px;">
+                            <i class="fas fa-user-times fa-2x text-white"></i>
                         </div>
                     </div>
                 </div>
@@ -299,6 +299,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    border-radius: 8px;
+}
+
+.card-body {
+    position: relative;
+    padding-right: 90px !important;
 }
 
 .stat-icon-sm {

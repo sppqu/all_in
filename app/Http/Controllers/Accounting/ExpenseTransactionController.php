@@ -25,9 +25,22 @@ class ExpenseTransactionController extends Controller
             ->get();
         
         // Ambil data pos penerimaan untuk dropdown sumber dana
-        $receiptPos = DB::table('pos_pembayaran')
-            ->orderBy('pos_name')
-            ->get();
+        // Filter berdasarkan school_id
+        $currentSchoolId = currentSchoolId();
+        $receiptPosQuery = DB::table('pos_pembayaran')
+            ->select('pos_id', 'pos_name', 'pos_description', 'school_id');
+        
+        if ($currentSchoolId) {
+            $receiptPosQuery->where(function($q) use ($currentSchoolId) {
+                $q->where('school_id', $currentSchoolId)
+                  ->orWhereNull('school_id'); // Backward compatibility untuk data lama
+            });
+        } else {
+            // Jika tidak ada school_id, hanya ambil yang school_id NULL
+            $receiptPosQuery->whereNull('school_id');
+        }
+        
+        $receiptPos = $receiptPosQuery->orderBy('pos_name')->get();
             
         // Debug: Force check data
         \Log::info('CONTROLLER DEBUG - receiptPos count: ' . $receiptPos->count());
@@ -63,10 +76,16 @@ class ExpenseTransactionController extends Controller
             ->get();
         
         // Ambil data kas untuk dropdown
+        // Tampilkan semua kas (aktif dan tidak aktif) untuk memastikan semua muncul
         $kasList = DB::table('kas')
-            ->where('is_active', 1)
             ->orderBy('nama_kas')
             ->get();
+        
+        // Debug: Log jumlah kas
+        Log::info('ExpenseTransaction Kas List Count: ' . $kasList->count());
+        if ($kasList->count() > 0) {
+            Log::info('ExpenseTransaction Kas List: ' . json_encode($kasList->pluck('nama_kas')->toArray()));
+        }
         
         // Ambil data transaksi pengeluaran dari tabel baru (hanya transaksi utama, bukan detail)
         $transactions = DB::table('transaksi_pengeluaran as tp')
@@ -149,6 +168,7 @@ class ExpenseTransactionController extends Controller
                 'tahun_ajaran' => $request->tahun_ajaran,
                 'dibayar_ke' => $request->dibayar_ke,
                 'metode_pembayaran_id' => $request->metode_pembayaran_id,
+                'kas_id' => $request->kas_id,
                 'keterangan_transaksi' => $request->keterangan_transaksi,
                 'operator' => auth()->user()->name ?? 'Admin',
                 'total_pengeluaran' => array_sum($request->jumlah_pengeluaran),
@@ -170,8 +190,17 @@ class ExpenseTransactionController extends Controller
                 ]);
             }
             
-            // Update saldo kas (tidak perlu insert ke debit karena sudah menggunakan transaksi_pengeluaran)
-            // Saldo kas akan diupdate melalui trigger atau proses terpisah
+            // Update saldo kas (kurangi saldo)
+            $totalPengeluaran = array_sum($request->jumlah_pengeluaran);
+            DB::table('kas')
+                ->where('id', $request->kas_id)
+                ->decrement('saldo', $totalPengeluaran);
+            
+            Log::info('Kas saldo updated (expense)', [
+                'kas_id' => $request->kas_id,
+                'total_pengeluaran' => $totalPengeluaran,
+                'new_saldo' => DB::table('kas')->where('id', $request->kas_id)->value('saldo')
+            ]);
             
             DB::commit();
             
@@ -208,9 +237,8 @@ class ExpenseTransactionController extends Controller
     {
         $request->validate([
             'tanggal_pengeluaran' => 'required|date',
-            'sumber_dana_tahun' => 'required|string|max:20',
-            'pengeluaran_tahun' => 'required|string|max:20',
-            'metode_pembayaran' => 'required|exists:payment_methods,id',
+            'tahun_ajaran' => 'required|string|max:20',
+            'metode_pembayaran_id' => 'required|exists:payment_methods,id',
             'dibayar_ke' => 'required|string|max:100',
             'kas_id' => 'required|exists:kas,id',
             'keterangan_transaksi' => 'nullable|string|max:500',
@@ -241,11 +269,9 @@ class ExpenseTransactionController extends Controller
                 ->where('id', $id)
                 ->update([
                     'tanggal_pengeluaran' => $request->tanggal_pengeluaran,
-                    'tahun_ajaran' => $request->pengeluaran_tahun,
-                    'sumber_dana_tahun' => $request->sumber_dana_tahun,
-                    'pengeluaran_tahun' => $request->pengeluaran_tahun,
+                    'tahun_ajaran' => $request->tahun_ajaran,
                     'dibayar_ke' => $request->dibayar_ke,
-                    'metode_pembayaran_id' => $request->metode_pembayaran,
+                    'metode_pembayaran_id' => $request->metode_pembayaran_id,
                     'kas_id' => $request->kas_id,
                     'keterangan_transaksi' => $request->keterangan_transaksi,
                     'total_pengeluaran' => $totalPengeluaran,
@@ -268,14 +294,45 @@ class ExpenseTransactionController extends Controller
                 ]);
             }
             
-            // Update saldo kas (debit) - hapus yang lama, buat yang baru
-            DB::table('debit')
-                ->where('debit_date', $oldTransaction->tanggal_pengeluaran)
-                ->where('no_ref', $oldTransaction->no_transaksi)
-                ->delete();
+            // Update saldo kas
+            $oldTotalPengeluaran = (float) ($oldTransaction->total_pengeluaran ?? 0);
+            $oldKasId = $oldTransaction->kas_id;
+            $newKasId = $request->kas_id;
             
-            // Update saldo kas (tidak perlu insert ke debit karena sudah menggunakan transaksi_pengeluaran)
-            // Saldo kas akan diupdate melalui trigger atau proses terpisah
+            // Jika kas_id berubah, kembalikan saldo kas lama dan kurangi saldo kas baru
+            if ($oldKasId != $newKasId) {
+                // Kembalikan saldo kas lama (tambah karena pengeluaran dibatalkan)
+                DB::table('kas')
+                    ->where('id', $oldKasId)
+                    ->increment('saldo', $oldTotalPengeluaran);
+                
+                // Kurangi saldo kas baru
+                DB::table('kas')
+                    ->where('id', $newKasId)
+                    ->decrement('saldo', $totalPengeluaran);
+            } else {
+                // Jika kas_id sama, cukup selisihkan total
+                $selisih = $totalPengeluaran - $oldTotalPengeluaran;
+                if ($selisih != 0) {
+                    if ($selisih > 0) {
+                        DB::table('kas')
+                            ->where('id', $newKasId)
+                            ->decrement('saldo', $selisih);
+                    } else {
+                        DB::table('kas')
+                            ->where('id', $newKasId)
+                            ->increment('saldo', abs($selisih));
+                    }
+                }
+            }
+            
+            Log::info('Kas saldo updated (expense update)', [
+                'old_kas_id' => $oldKasId,
+                'new_kas_id' => $newKasId,
+                'old_total' => $oldTotalPengeluaran,
+                'new_total' => $totalPengeluaran,
+                'selisih' => $totalPengeluaran - $oldTotalPengeluaran
+            ]);
             
             DB::commit();
             
@@ -324,8 +381,17 @@ class ExpenseTransactionController extends Controller
             // Delete transaksi pengeluaran utama
             DB::table('transaksi_pengeluaran')->where('id', $id)->delete();
             
-            // Delete from saldo kas (tidak perlu delete dari debit karena sudah menggunakan transaksi_pengeluaran)
-            // Saldo kas akan diupdate melalui trigger atau proses terpisah
+            // Update saldo kas (tambah kembali saldo karena transaksi pengeluaran dihapus)
+            if ($transaction->kas_id && $transaction->total_pengeluaran) {
+                DB::table('kas')
+                    ->where('id', $transaction->kas_id)
+                    ->increment('saldo', (float) $transaction->total_pengeluaran);
+                
+                Log::info('Kas saldo updated (expense delete)', [
+                    'kas_id' => $transaction->kas_id,
+                    'total_pengeluaran' => $transaction->total_pengeluaran
+                ]);
+            }
             
             DB::commit();
             
@@ -614,7 +680,7 @@ class ExpenseTransactionController extends Controller
         ]);
 
         try {
-            DB::table('pos_pengeluaran')->insert([
+            $posId = DB::table('pos_pengeluaran')->insertGetId([
                 'pos_name' => $request->nama_pos_pengeluaran_baru,
                 'pos_description' => $request->keterangan_pos_pengeluaran_baru,
                 'pos_type' => 'operasional', // Default type
@@ -625,7 +691,8 @@ class ExpenseTransactionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pos pengeluaran baru berhasil dibuat!'
+                'message' => 'Pos pengeluaran baru berhasil dibuat!',
+                'pos_id' => $posId
             ]);
 
         } catch (\Exception $e) {

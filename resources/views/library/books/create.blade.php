@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Tambah Buku - E-Perpustakaan')
 
@@ -39,7 +39,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Kategori <span class="text-danger">*</span></label>
-                                <select name="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
+                                <select name="category_id" class="form-control select-primary @error('category_id') is-invalid @enderror" required>
                                     <option value="">Pilih Kategori</option>
                                     @foreach($categories as $cat)
                                     <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
@@ -108,7 +108,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Status</label>
-                                <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                                <select name="status" class="form-control select-primary @error('status') is-invalid @enderror" required>
                                     <option value="tersedia" {{ old('status') == 'tersedia' ? 'selected' : '' }}>Tersedia</option>
                                     <option value="tidak_tersedia" {{ old('status') == 'tidak_tersedia' ? 'selected' : '' }}>Tidak Tersedia</option>
                                 </select>

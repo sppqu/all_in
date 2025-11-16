@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Laporan Arus Kas')
 
@@ -50,7 +50,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Kas</label>
-                                    <select class="form-select" id="kas_id" name="kas_id">
+                                    <select class="form-control select-primary" id="kas_id" name="kas_id">
                                         <option value="">Semua Kas</option>
                                         @foreach($kasList as $kas)
                                             <option value="{{ $kas->id }}">{{ $kas->nama_kas }}</option>
@@ -147,7 +147,7 @@
                                 <h5 class="mb-0">
                                     <i class="fa fa-wallet me-2"></i>
                                     {{ $kasData['nama_kas'] }} 
-                                    <span class="badge bg-secondary ms-2">{{ $kasData['jenis_kas'] == 'cash' ? 'Tunai' : 'Bank' }}</span>
+                                    <span class="badge bg-primary ms-2 text-white" style="font-size: 0.75rem; padding: 0.35em 0.65em; color: #ffffff !important;">{{ $kasData['jenis_kas'] == 'cash' ? 'Tunai' : 'Bank' }}</span>
                                 </h5>
                             </div>
                             <div class="card-body">
@@ -182,12 +182,12 @@
                                 <!-- Tabs untuk Kas Masuk dan Keluar -->
                                 <ul class="nav nav-tabs" id="kasTab{{ $kasData['kas_id'] }}" role="tablist">
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="masuk-tab{{ $kasData['kas_id'] }}" data-bs-toggle="tab" data-bs-target="#masuk{{ $kasData['kas_id'] }}" type="button" role="tab">
+                                        <button class="nav-link active" id="masuk-tab{{ $kasData['kas_id'] }}" data-toggle="tab" data-target="#masuk{{ $kasData['kas_id'] }}" type="button" role="tab">
                                             <i class="fa fa-arrow-down me-1"></i> Kas Masuk ({{ count($kasData['kas_masuk']) }})
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="keluar-tab{{ $kasData['kas_id'] }}" data-bs-toggle="tab" data-bs-target="#keluar{{ $kasData['kas_id'] }}" type="button" role="tab">
+                                        <button class="nav-link" id="keluar-tab{{ $kasData['kas_id'] }}" data-toggle="tab" data-target="#keluar{{ $kasData['kas_id'] }}" type="button" role="tab">
                                             <i class="fa fa-arrow-up me-1"></i> Kas Keluar ({{ count($kasData['kas_keluar']) }})
                                         </button>
                                     </li>
@@ -297,7 +297,45 @@
 // Initialize summary
 $(document).ready(function() {
     updateSummary();
+    
+    // Initialize Bootstrap tabs
+    initializeTabs();
+    
+    // Re-initialize tabs after dynamic content is loaded
+    $(document).on('shown.bs.tab', 'button[data-toggle="tab"]', function() {
+        // Tab switched successfully
+    });
 });
+
+// Initialize tabs functionality
+function initializeTabs() {
+    // Handle tab clicks for both static and dynamic tabs (Bootstrap 4)
+    $(document).off('click', 'button[data-toggle="tab"]').on('click', 'button[data-toggle="tab"]', function(e) {
+        e.preventDefault();
+        
+        const $button = $(this);
+        const target = $button.data('target') || $button.attr('href');
+        
+        if (!target) return;
+        
+        // Remove active class from all tabs in the same tab list
+        const $tabList = $button.closest('.nav-tabs');
+        $tabList.find('.nav-link').removeClass('active');
+        
+        // Add active class to clicked tab
+        $button.addClass('active');
+        
+        // Hide all tab panes in the same tab content
+        const $tabContent = $button.closest('.card').find('.tab-content');
+        $tabContent.find('.tab-pane').removeClass('show active');
+        
+        // Show target tab pane
+        const $targetPane = $(target);
+        if ($targetPane.length) {
+            $targetPane.addClass('show active');
+        }
+    });
+}
 
 // Filter form submission
 $('#filterForm').on('submit', function(e) {
@@ -364,6 +402,11 @@ function renderCashflowData(cashflowData) {
     }
     
     $('#dataContainer').html(html);
+    
+    // Re-initialize tabs after content is loaded
+    setTimeout(function() {
+        initializeTabs();
+    }, 100);
 }
 
 // Generate kas card HTML
@@ -376,7 +419,7 @@ function generateKasCard(kasData) {
                         <h5 class="mb-0">
                             <i class="fa fa-wallet me-2"></i>
                             ${kasData.nama_kas}
-                                                                <span class="badge bg-secondary ms-2">${kasData.jenis_kas == 'cash' ? 'Tunai' : 'Bank'}</span>
+                                                                <span class="badge bg-primary ms-2 text-white" style="font-size: 0.75rem; padding: 0.35em 0.65em; color: #ffffff !important;">${kasData.jenis_kas == 'cash' ? 'Tunai' : 'Bank'}</span>
                         </h5>
                     </div>
                     <div class="card-body">
@@ -426,12 +469,12 @@ function generateKasTabs(kasData) {
     return `
         <ul class="nav nav-tabs" id="kasTab${kasData.kas_id}" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="masuk-tab${kasData.kas_id}" data-bs-toggle="tab" data-bs-target="#masuk${kasData.kas_id}" type="button" role="tab">
+                <button class="nav-link active" id="masuk-tab${kasData.kas_id}" data-toggle="tab" data-target="#masuk${kasData.kas_id}" type="button" role="tab">
                     <i class="fa fa-arrow-down me-1"></i> Kas Masuk (${kasData.kas_masuk.length})
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="keluar-tab${kasData.kas_id}" data-bs-toggle="tab" data-bs-target="#keluar${kasData.kas_id}" type="button" role="tab">
+                <button class="nav-link" id="keluar-tab${kasData.kas_id}" data-toggle="tab" data-target="#keluar${kasData.kas_id}" type="button" role="tab">
                     <i class="fa fa-arrow-up me-1"></i> Kas Keluar (${kasData.kas_keluar.length})
                 </button>
             </li>

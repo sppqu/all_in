@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Transaksi Pembayaran Siswa')
 
@@ -9,7 +9,177 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <link rel="stylesheet" href="{{ asset('css/verification-modal.css') }}">
-
+    <style>
+        
+        /* Styling untuk Select2 dropdown peserta didik dengan border default (putih/abu-abu) */
+        /* Override SEMUA warna primary/hijau untuk student_search - gunakan selector yang sangat spesifik */
+        body .select2-container--bootstrap-5 .select2-selection,
+        body .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        body .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            border: 1px solid #cccccc !important;
+            border-color: #cccccc !important;
+            border-radius: 2px !important;
+            background-color: #fff !important;
+        }
+        
+        body .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+            border-color: #cccccc !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1) !important;
+            outline: none !important;
+        }
+        
+        body .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            border-color: #cccccc !important;
+        }
+        
+        /* Override warna primary dari Bootstrap 5 theme */
+        body .select2-container--bootstrap-5 .select2-selection[class*="border"],
+        body .select2-container--bootstrap-5 .select2-selection {
+            border-color: #cccccc !important;
+        }
+        
+        /* Pastikan tidak ada warna hijau/teal/primary */
+        body .select2-container--bootstrap-5 .select2-selection {
+            background-image: none !important;
+            background-color: #fff !important;
+        }
+        
+        /* Override background pada rendered text */
+        body .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered,
+        body .select2-container--default .select2-selection--single .select2-selection__rendered {
+            background-color: transparent !important;
+            background: transparent !important;
+            color: #333 !important;
+        }
+        
+        /* Override warna dari Bootstrap 5 theme yang mungkin menggunakan primary */
+        body .select2-container--bootstrap-5 .select2-selection--single {
+            border-color: #cccccc !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            line-height: 38px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Styling untuk .select2-container .select2-selection--single */
+        .select2-container .select2-selection--single {
+            height: 40px;
+            min-height: auto !important;
+            padding: 1px 2px;
+        }
+        
+        body .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+            padding-left: 12px;
+            padding-right: 30px;
+            padding-top: 0;
+            padding-bottom: 0;
+            color: #333;
+            background-color: transparent !important;
+            background: transparent !important;
+            display: flex;
+            align-items: center;
+            position: relative;
+            top: 2px;
+            transform: translateY(-1px);
+        }
+        
+        body .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 8px;
+        }
+        
+        body .select2-container--bootstrap-5 .select2-selection__arrow {
+            height: 36px !important;
+            right: 8px;
+            top: 1px;
+        }
+        
+        body .select2-container--bootstrap-5 .select2-selection__arrow b {
+            border-color: #333 transparent transparent transparent;
+            border-width: 5px 4px 0 4px;
+            margin-top: -2px;
+        }
+        
+        /* Pastikan tidak ada warna primary di semua state */
+        body .select2-container--bootstrap-5.select2-container--below .select2-selection,
+        body .select2-container--bootstrap-5.select2-container--above .select2-selection {
+            border-color: #cccccc !important;
+        }
+        
+        /* Override semua kemungkinan warna primary/teal/hijau dari theme */
+        body .select2-container--bootstrap-5 .select2-selection[style*="#01a9ac"],
+        body .select2-container--bootstrap-5 .select2-selection[style*="teal"],
+        body .select2-container--bootstrap-5 .select2-selection[style*="primary"] {
+            border-color: #cccccc !important;
+        }
+        
+        /* Force override dengan inline style via JavaScript akan ditambahkan */
+    </style>
+    <script>
+        // Force override warna Select2 setelah diinisialisasi
+        // Function untuk force set border color
+        window.forceSelect2DefaultColor = function() {
+            $('.select2-container--bootstrap-5').each(function() {
+                var $selection = $(this).find('.select2-selection');
+                var $rendered = $(this).find('.select2-selection__rendered');
+                
+                if ($selection.length) {
+                    $selection.css({
+                        'border-color': '#cccccc !important',
+                        'border': '1px solid #cccccc !important',
+                        'background-color': '#fff !important'
+                    });
+                    // Force dengan attr juga
+                    $selection.attr('style', function(i, style) {
+                        return (style || '') + ' border-color: #cccccc !important; border: 1px solid #cccccc !important; background-color: #fff !important;';
+                    });
+                }
+                
+                // Hilangkan background pada rendered text
+                if ($rendered.length) {
+                    $rendered.css({
+                        'background-color': 'transparent !important',
+                        'background': 'transparent !important',
+                        'color': '#333 !important'
+                    });
+                    $rendered.attr('style', function(i, style) {
+                        return (style || '') + ' background-color: transparent !important; background: transparent !important; color: #333 !important;';
+                    });
+                }
+            });
+        };
+        
+        // Jalankan setelah DOM ready dan Select2 siap
+        $(document).ready(function() {
+            // Set setelah Select2 diinisialisasi (delay lebih lama)
+            setTimeout(function() {
+                window.forceSelect2DefaultColor();
+            }, 500);
+            
+            // Set ulang saat Select2 dibuka/ditutup
+            $(document).on('select2:open select2:close select2:select', function() {
+                setTimeout(window.forceSelect2DefaultColor, 50);
+            });
+            
+            // Set ulang saat focus
+            $(document).on('focus', '#student_search', function() {
+                setTimeout(window.forceSelect2DefaultColor, 50);
+            });
+            
+            // Observer untuk perubahan DOM (jika Select2 ditambahkan secara dinamis)
+            if (window.MutationObserver) {
+                var observer = new MutationObserver(function(mutations) {
+                    setTimeout(window.forceSelect2DefaultColor, 100);
+                });
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+        });
+    </script>
 @endsection
 
 @section('content')
@@ -19,26 +189,26 @@
             <div class="card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0"><i class="fas fa-search"></i> Cari Transaksi Pembayaran</h4>
-                </div>
-                <div class="card-body">
+        </div>
+        <div class="card-body">
                     <form id="searchForm">
                         <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
-                                <label for="student_status" class="form-label">Status Siswa</label>
-                                <select class="form-select" id="student_status" name="student_status">
+                <div class="col-md-3">
+                                <label for="student_status" class="form-label mb-2 fw-semibold">Status Siswa</label>
+                                <select class="form-control select-primary" id="student_status" name="student_status" style="height: 38px; line-height: 38px;">
                                     <option value="1">Aktif</option>
-                                    <option value="0">Tidak Aktif</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="student_search" class="form-label">Peserta Didik</label>
-                                <select class="form-select" id="student_search" name="student_id">
+                        <option value="0">Tidak Aktif</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                                <label for="student_search" class="form-label mb-2 fw-semibold">Peserta Didik</label>
+                                <select class="form-control select-primary" id="student_search" name="student_id" style="height: 38px;">
                                     <option value="">Pilih Peserta Didik</option>
                                 </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">&nbsp;</label>
-                                <button type="button" class="btn btn-primary w-100" id="btnCariData">
+                </div>
+                <div class="col-md-3">
+                                <label class="form-label mb-2 d-block">&nbsp;</label>
+                                <button type="button" class="btn btn-primary w-100" id="btnCariData" style="height: 38px; line-height: 1.5;">
                                     <i class="fas fa-search me-2"></i>Cari Data
                                 </button>
                             </div>
@@ -143,36 +313,40 @@
         <!-- Data Tagihan -->
         <div class="col-12 mt-3">
         <div class="card">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0"><i class="fas fa-credit-card"></i> Data Tagihan</h5>
                 </div>
                 <div class="card-body">
                     <!-- Toolbar Multi Pembayaran -->
-                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-                        <button type="button" id="toggleMultiModeBtn" class="btn btn-outline-secondary btn-sm">
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <button type="button" id="toggleMultiModeBtn" class="btn btn-light btn-sm">
                             <i class="fas fa-cart-plus me-1"></i> Mode Multi-Bayar: <span id="multiModeStatus">OFF</span>
                         </button>
-                        <div class="ms-auto small">
-                            <span class="me-3">Dipilih: <span id="multiSelectedCount" class="fw-bold">0</span> item</span>
-                            <span>Total: <span id="multiSelectedTotal" class="fw-bold">Rp 0</span></span>
+                        <div class="bg-white text-dark px-3 py-1 rounded d-flex align-items-center gap-3" style="min-height: 32px;">
+                            <span class="small text-nowrap">Dipilih: <span id="multiSelectedCount" class="fw-bold">0</span> item</span>
+                            <span class="small text-nowrap">Total: <span id="multiSelectedTotal" class="fw-bold">Rp 0</span></span>
                         </div>
                         <button type="button" id="multiPayBtn" class="btn btn-success btn-sm text-white" disabled>
                             <i class="fas fa-money-bill-wave me-1"></i> Bayar Sekaligus
                         </button>
                     </div>
+                </div>
+                <div class="card-body">
                     <!-- Tab Navigation -->
+                    <div class="tab-icon">
                     <ul class="nav nav-tabs" id="paymentTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="bulanan-tab" data-bs-toggle="tab" data-bs-target="#bulanan" type="button" role="tab">
+                                <a class="nav-link active" id="bulanan-tab" data-toggle="tab" href="#bulanan" role="tab" aria-controls="bulanan" aria-selected="true">
                                 <i class="fas fa-calendar-alt"></i> Bulanan
-                            </button>
+                                </a>
                     </li>
                     <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="bebas-tab" data-bs-toggle="tab" data-bs-target="#bebas" type="button" role="tab">
+                                <a class="nav-link" id="bebas-tab" data-toggle="tab" href="#bebas" role="tab" aria-controls="bebas" aria-selected="false">
                                 <i class="fas fa-money-bill-wave"></i> Bebas
-                            </button>
+                                </a>
                     </li>
                 </ul>
+                    </div>
 
                     <!-- Tab Content -->
                     <div class="tab-content" id="paymentTabsContent">
@@ -262,12 +436,14 @@
 </div>
 
 <!-- Modal Pembayaran Bulanan -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="fas fa-credit-card"></i> Konfirmasi Pembayaran</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closePaymentModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="row">
@@ -309,12 +485,14 @@
 </div>
 
 <!-- Modal Pembayaran Bebas -->
-<div class="modal fade" id="bebasPaymentModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="bebasPaymentModal" tabindex="-1" role="dialog" aria-labelledby="bebasPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title"><i class="fas fa-money-bill-wave"></i> Pembayaran Bebas</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeBebasPaymentModal()" style="opacity: 1; font-size: 1.5rem; padding: 0.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="bebasPaymentForm">
@@ -355,18 +533,18 @@
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-12">
-                            <label class="form-label">Metode Pembayaran</label>
-                            <div class="d-flex gap-2">
+                            <label class="form-label d-block mb-3">Metode Pembayaran</label>
+                            <div class="d-flex gap-5">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="payment_method" id="bebas_cash" value="cash" checked>
+                                    <input class="form-control" type="radio" name="payment_method" id="bebas_cash" value="cash" checked>
                                     <label class="form-check-label" for="bebas_cash">
-                                        <i class="fas fa-money-bill-wave me-2"></i>Tunai
+                                        Tunai
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="payment_method" id="bebas_tabungan" value="tabungan">
+                                    <input class="form-control" type="radio" name="payment_method" id="bebas_tabungan" value="tabungan">
                                     <label class="form-check-label" for="bebas_tabungan">
-                                        <i class="fas fa-piggy-bank me-2"></i>Tabungan
+                                        Tabungan
                                     </label>
                                 </div>
                             </div>
@@ -813,7 +991,21 @@ $(document).ready(function() {
                 }
             },
             minimumInputLength: 1
+        }).on('select2:open select2:close', function() {
+            // Force override warna setelah Select2 dibuka/ditutup
+            setTimeout(function() {
+                if (window.forceSelect2DefaultColor) {
+                    window.forceSelect2DefaultColor();
+                }
+            }, 10);
         });
+        
+        // Force override warna setelah Select2 diinisialisasi
+        setTimeout(function() {
+            if (window.forceSelect2DefaultColor) {
+                window.forceSelect2DefaultColor();
+            }
+        }, 100);
         
         console.log('Select2 initialized with AJAX search for status:', status);
     }
@@ -1002,16 +1194,8 @@ $(document).ready(function() {
 
 // Fungsi untuk menutup modal pembayaran
 function closePaymentModal() {
-    // Tutup modal menggunakan Bootstrap API
-    const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
-    if (modal) {
-        modal.hide();
-        console.log('Modal pembayaran ditutup menggunakan Bootstrap API');
-    } else {
-        // Fallback menggunakan jQuery
+    // Tutup modal menggunakan jQuery (Bootstrap 4)
         $('#paymentModal').modal('hide');
-        console.log('Modal pembayaran ditutup menggunakan jQuery');
-    }
     
     // Reset form jika ada
     $('#paymentModal form')[0]?.reset();
@@ -2816,50 +3000,10 @@ function showDeleteTransactionModal(transactionId, paymentNumber, amount, date, 
 
 <!-- Simple Toast System -->
 <script>
-// Simple toast notification system
-function showToast(type, title, message) {
-    // Create toast container if it doesn't exist
-    let toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-        toastContainer.style.zIndex = '9999';
-        document.body.appendChild(toastContainer);
-    }
-    
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <strong>${title}</strong><br>
-                ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    // Add to container
-    toastContainer.appendChild(toast);
-    
-    // Show toast
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
+// showToast function is now global from adminty.blade.php layout
 // Global toast functions
-window.showVerificationToast = showToast;
-window.fallbackToast = showToast;
+window.showVerificationToast = window.showToast;
+window.fallbackToast = window.showToast;
 
 // Auto-refresh data setelah pembayaran online berhasil
 function setupAutoRefresh() {

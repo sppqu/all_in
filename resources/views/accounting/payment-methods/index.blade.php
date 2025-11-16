@@ -1,6 +1,22 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Metode Pembayaran')
+
+@push('styles')
+<style>
+    /* Switch styling - menggunakan styling dari template */
+    .form-check.form-switch {
+        padding-left: 0;
+    }
+    
+    .form-check-input.status-switch {
+        width: 3em;
+        height: 1.5em;
+        cursor: pointer;
+        margin-left: 0;
+    }
+</style>
+@endpush
 
 @section('content')
 <div class="container-fluid">
@@ -31,7 +47,7 @@
                         <div>
                             <h6 class="text-muted mb-0">Total Metode: {{ $paymentMethods->count() }}</h6>
                         </div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreatePaymentMethod">
+                        <button type="button" class="btn btn-primary" onclick="openCreatePaymentMethodModal()">
                             <i class="fa fa-plus me-2"></i>Tambah Metode Pembayaran
                         </button>
                     </div>
@@ -62,15 +78,15 @@
                                             {{ $method->keterangan ?: '-' }}
                                         </td>
                                         <td>
-                                            @if($method->status == 'ON')
-                                                <span class="badge bg-success">
-                                                    <i class="fa fa-check me-1"></i>ON
-                                                </span>
-                                            @else
-                                                <span class="badge bg-danger">
-                                                    <i class="fa fa-times me-1"></i>OFF
-                                                </span>
-                                            @endif
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input status-switch" 
+                                                       type="checkbox" 
+                                                       id="status_{{ $method->id }}" 
+                                                       data-method-id="{{ $method->id }}"
+                                                       {{ $method->status == 'ON' ? 'checked' : '' }}
+                                                       onchange="togglePaymentMethodStatus({{ $method->id }}, this.checked)">
+                                                <label class="form-check-label" for="status_{{ $method->id }}"></label>
+                                            </div>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
@@ -110,7 +126,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalCreatePaymentMethodLabel">Membuat Metode Pembayaran Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeCreatePaymentMethodModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form id="formCreatePaymentMethod" action="{{ route('manage.accounting.payment-methods.store') }}" method="POST">
                 @csrf
@@ -125,7 +143,7 @@
                         <label for="kas_id" class="form-label">
                             Kas <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" id="kas_id" name="kas_id" required>
+                        <select class="form-control select-primary" id="kas_id" name="kas_id" required>
                             <option value="">Pilih Kas</option>
                             @foreach($kasList as $kas)
                                 <option value="{{ $kas->id }}">{{ $kas->nama_kas }}</option>
@@ -154,7 +172,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger" onclick="closeCreatePaymentMethodModal()">
                         <i class="fa fa-times me-2"></i>Tutup [Esc]
                     </button>
                     <button type="submit" class="btn btn-success">
@@ -172,7 +190,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalEditPaymentMethodLabel">Edit Metode Pembayaran</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeEditPaymentMethodModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form id="formEditPaymentMethod" method="POST">
                 @csrf
@@ -188,7 +208,7 @@
                         <label for="edit_kas_id" class="form-label">
                             Kas <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" id="edit_kas_id" name="kas_id" required>
+                        <select class="form-control select-primary" id="edit_kas_id" name="kas_id" required>
                             <option value="">Pilih Kas</option>
                             @foreach($kasList as $kas)
                                 <option value="{{ $kas->id }}">{{ $kas->nama_kas }}</option>
@@ -213,7 +233,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger" onclick="closeEditPaymentMethodModal()">
                         <i class="fa fa-times me-2"></i>Tutup [Esc]
                     </button>
                     <button type="submit" class="btn btn-success">
@@ -229,76 +249,34 @@
 
 @push('scripts')
 <script>
-// Toast notification function (sama seperti di kas)
-function showToast(type, title, message) {
-    console.log('showToast called with:', { type, title, message });
-    
-    const toastId = 'toast-' + Date.now();
-    const iconClass = type === 'success' ? 'fa-check-circle text-success' : 
-                     type === 'info' ? 'fa-info-circle text-info' : 
-                     'fa-exclamation-circle text-danger';
-    
-    const headerStyle = type === 'success' 
-        ? 'background-color: #198754 !important; color: white !important;' 
-        : type === 'info'
-        ? 'background-color: #0dcaf0 !important; color: white !important;'
-        : 'background-color: #dc3545 !important; color: white !important;';
-    
-    const toastHtml = `
-        <div class="toast" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-            <div class="toast-header" style="${headerStyle} border: none;">
-                <i class="fa ${iconClass} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body" style="background-color: white !important; color: black !important; font-weight: 500; border: 1px solid #dee2e6; padding: 12px 16px;">
-                ${message || 'Pesan tidak tersedia'}
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', toastHtml);
-    
-    const toast = new bootstrap.Toast(document.getElementById(toastId), {
-        delay: 4000
-    });
-    toast.show();
-    
-    document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
-        this.remove();
-    });
-}
-
-// Handle status toggle untuk create
-document.getElementById('status').addEventListener('change', function() {
-    const statusText = document.querySelector('.status-text');
-    statusText.textContent = this.checked ? 'ON' : 'OFF';
-});
-
-// Handle status toggle untuk edit
-document.getElementById('edit_status').addEventListener('change', function() {
-    const statusText = document.querySelector('.edit-status-text');
-    statusText.textContent = this.checked ? 'ON' : 'OFF';
-});
-
-function editPaymentMethod(id, namaMetode, kasId, keterangan, status) {
+// Make functions global
+window.editPaymentMethod = function(id, namaMetode, kasId, keterangan, status) {
     // Set form action untuk update
     document.getElementById('formEditPaymentMethod').action = '{{ route("manage.accounting.payment-methods.index") }}/' + id;
     
     // Set form values
-    document.getElementById('edit_nama_metode').value = namaMetode;
-    document.getElementById('edit_kas_id').value = kasId;
-    document.getElementById('edit_keterangan').value = keterangan;
+    document.getElementById('edit_nama_metode').value = namaMetode || '';
+    document.getElementById('edit_kas_id').value = kasId || '';
+    document.getElementById('edit_keterangan').value = keterangan || '';
     document.getElementById('edit_status').checked = (status === 'ON');
     
     // Update status text
-    document.querySelector('.edit-status-text').textContent = status;
+    const statusTextEl = document.querySelector('.edit-status-text');
+    if (statusTextEl) {
+        statusTextEl.textContent = status || 'OFF';
+    }
     
-    // Show modal
-    new bootstrap.Modal(document.getElementById('modalEditPaymentMethod')).show();
-}
+    // Show modal using jQuery (Bootstrap 4 compatible)
+    $('#modalEditPaymentMethod').modal('show');
+};
 
-function deletePaymentMethod(id, namaMetode) {
+// Store delete ID globally
+window.deletePaymentMethodId = null;
+
+window.deletePaymentMethod = function(id, namaMetode) {
+    // Store ID globally
+    window.deletePaymentMethodId = id;
+    
     const modalHtml = `
         <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -307,7 +285,9 @@ function deletePaymentMethod(id, namaMetode) {
                         <h5 class="modal-title" id="deleteConfirmModalLabel">
                             <i class="fa fa-exclamation-triangle me-2"></i>Konfirmasi Hapus
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="close text-white" onclick="$('#deleteConfirmModal').modal('hide');" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     <div class="modal-body text-center py-4">
                         <div class="mb-3">
@@ -315,15 +295,15 @@ function deletePaymentMethod(id, namaMetode) {
                         </div>
                         <h6 class="mb-3">Apakah Anda yakin ingin menghapus metode pembayaran ini?</h6>
                         <p class="text-muted mb-0">
-                            <strong>"${namaMetode}"</strong><br>
+                            <strong>"${(namaMetode || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"</strong><br>
                             <small>Data yang sudah dihapus tidak dapat dikembalikan!</small>
                         </p>
                     </div>
                     <div class="modal-footer border-0 justify-content-center">
-                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary px-4" onclick="$('#deleteConfirmModal').modal('hide');">
                             <i class="fa fa-times me-2"></i>Batal
                         </button>
-                        <button type="button" class="btn btn-danger px-4" onclick="confirmDeletePaymentMethod(${id})">
+                        <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
                             <i class="fa fa-trash me-2"></i>Hapus
                         </button>
                     </div>
@@ -338,12 +318,34 @@ function deletePaymentMethod(id, namaMetode) {
     }
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
-}
-
-function confirmDeletePaymentMethod(id) {
-    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
     
+    // Attach event listener after modal is added to DOM
+    setTimeout(function() {
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function() {
+                window.confirmDeletePaymentMethod();
+            });
+        }
+    }, 100);
+    
+    // Show modal using jQuery (Bootstrap 4 compatible)
+    $('#deleteConfirmModal').modal('show');
+};
+
+window.confirmDeletePaymentMethod = function() {
+    if (!window.deletePaymentMethodId) {
+        console.error('Delete ID not found');
+        showToast('error', 'Error!', 'ID metode pembayaran tidak ditemukan');
+        return;
+    }
+    
+    const id = window.deletePaymentMethodId;
+    
+    // Hide modal first using jQuery (Bootstrap 4 compatible)
+    $('#deleteConfirmModal').modal('hide');
+    
+    // Show loading toast
     showToast('info', 'Memproses...', 'Sedang menghapus metode pembayaran...');
     
     const formData = new FormData();
@@ -361,7 +363,17 @@ function confirmDeletePaymentMethod(id) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            // Try to get JSON error response
+            return response.text().then(text => {
+                console.log('Error response text:', text);
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                } catch (e) {
+                    // If not JSON, throw generic error
+                    throw new Error(`Server error: ${response.status} - ${text.substring(0, 100)}`);
+                }
+            });
         }
         return response.json();
     })
@@ -377,108 +389,237 @@ function confirmDeletePaymentMethod(id) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('error', 'Error!', 'Terjadi kesalahan saat menghapus');
+        showToast('error', 'Error!', error.message || 'Terjadi kesalahan saat menghapus');
+    })
+    .finally(() => {
+        // Reset delete ID
+        window.deletePaymentMethodId = null;
+    });
+};
+
+// Toggle payment method status
+function togglePaymentMethodStatus(methodId, isActive) {
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('status', isActive ? 'ON' : 'OFF');
+    
+    // Disable switch while processing
+    const switchElement = document.getElementById('status_' + methodId);
+    switchElement.disabled = true;
+    
+    fetch('{{ url("manage/accounting/payment-methods") }}/' + methodId + '/toggle-status', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned non-JSON response');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast('success', 'Berhasil!', data.message || 'Status metode pembayaran berhasil diupdate');
+        } else {
+            // Revert switch
+            switchElement.checked = !isActive;
+            showToast('error', 'Gagal!', data.message || 'Gagal mengupdate status metode pembayaran');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert switch
+        switchElement.checked = !isActive;
+        showToast('error', 'Error!', 'Terjadi kesalahan saat mengupdate status');
+    })
+    .finally(() => {
+        // Re-enable switch
+        switchElement.disabled = false;
     });
 }
+
+// showToast function is now global from adminty.blade.php layout
+
+function openCreatePaymentMethodModal() {
+    $('#modalCreatePaymentMethod').modal('show');
+}
+
+function closeCreatePaymentMethodModal() {
+    $('#modalCreatePaymentMethod').modal('hide');
+}
+
+function closeEditPaymentMethodModal() {
+    $('#modalEditPaymentMethod').modal('hide');
+}
+
+// Wait for DOM to be ready
+$(document).ready(function() {
+    // Handle status toggle untuk create
+    const statusCheckbox = document.getElementById('status');
+    if (statusCheckbox) {
+        statusCheckbox.addEventListener('change', function() {
+            const statusText = document.querySelector('.status-text');
+            if (statusText) {
+                statusText.textContent = this.checked ? 'ON' : 'OFF';
+            }
+        });
+    }
+
+    // Handle status toggle untuk edit
+    const editStatusCheckbox = document.getElementById('edit_status');
+    if (editStatusCheckbox) {
+        editStatusCheckbox.addEventListener('change', function() {
+            const statusText = document.querySelector('.edit-status-text');
+            if (statusText) {
+                statusText.textContent = this.checked ? 'ON' : 'OFF';
+            }
+        });
+    }
+
+    // Handle form submission untuk Create
+    const createForm = document.getElementById('formCreatePaymentMethod');
+    if (createForm) {
+        createForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading toast
+            showToast('info', 'Memproses...', 'Sedang menyimpan metode pembayaran...');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Menyimpan...';
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    // Try to get JSON error response
+                    return response.text().then(text => {
+                        console.log('Error response text:', text);
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.message || `Server error: ${response.status}`);
+                        } catch (e) {
+                            // If not JSON, throw generic error
+                            throw new Error(`Server error: ${response.status} - ${text.substring(0, 100)}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Berhasil!', data.message);
+                    this.reset();
+                    $('#modalCreatePaymentMethod').modal('hide');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('error', 'Gagal!', data.message || 'Gagal menyimpan metode pembayaran');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Error!', error.message || 'Terjadi kesalahan saat menyimpan');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+
+    // Handle form submission untuk Edit
+    const editForm = document.getElementById('formEditPaymentMethod');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading toast
+            showToast('info', 'Memproses...', 'Sedang mengupdate metode pembayaran...');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Mengupdate...';
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    // Try to get JSON error response
+                    return response.text().then(text => {
+                        console.log('Error response text:', text);
+                        try {
+                            const errorData = JSON.parse(text);
+                            throw new Error(errorData.message || `Server error: ${response.status}`);
+                        } catch (e) {
+                            // If not JSON, throw generic error
+                            throw new Error(`Server error: ${response.status} - ${text.substring(0, 100)}`);
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Berhasil!', data.message);
+                    $('#modalEditPaymentMethod').modal('hide');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('error', 'Gagal!', data.message || 'Gagal mengupdate metode pembayaran');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Error!', error.message || 'Terjadi kesalahan saat mengupdate');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+});
 
 function refreshKasList() {
     // Optional: reload kas list via AJAX
     location.reload();
 }
-
-// Handle form submission untuk Create
-document.getElementById('formCreatePaymentMethod').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Menyimpan...';
-    
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showToast('success', 'Berhasil!', data.message);
-            this.reset();
-            bootstrap.Modal.getInstance(document.getElementById('modalCreatePaymentMethod')).hide();
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            showToast('error', 'Gagal!', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error!', 'Terjadi kesalahan saat menyimpan');
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    });
-});
-
-// Handle form submission untuk Edit
-document.getElementById('formEditPaymentMethod').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Mengupdate...';
-    
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showToast('success', 'Berhasil!', data.message);
-            bootstrap.Modal.getInstance(document.getElementById('modalEditPaymentMethod')).hide();
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            showToast('error', 'Gagal!', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Error!', 'Terjadi kesalahan saat mengupdate');
-    })
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    });
-});
 </script>
 @endpush

@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -10,7 +10,7 @@
     }
 
     .section-header {
-        background: linear-gradient(135deg, rgb(8, 129, 45) 0%, #006d52 100%);
+        background: #01a9ac;
         color: white;
         padding: 20px 25px;
         border-radius: 15px;
@@ -57,6 +57,40 @@
     .sortable-handle:hover {
         color: #006d52;
         transform: scale(1.1);
+    }
+
+    .action-btn {
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn-view:hover {
+        background-color: #01a9ac !important;
+        color: white !important;
+    }
+
+    .action-btn-edit:hover {
+        background-color: #ff9800 !important;
+        color: white !important;
+    }
+
+    .action-btn-hide:hover {
+        background-color: #6c757d !important;
+        color: white !important;
+    }
+
+    .action-btn-show:hover {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+
+    .action-btn-delete:hover {
+        background-color: #dc3545 !important;
+        color: white !important;
     }
 </style>
 @endpush
@@ -130,27 +164,38 @@
                                                 </span>
                                             </div>
                                             <div class="col-md-3">
-                                                <div class="btn-group" role="group">
+                                                <div class="d-flex" style="gap: 8px;">
                                                     <a href="{{ route('manage.spmb.form-settings.show', $field->id) }}" 
-                                                       class="btn btn-sm btn-outline-primary" title="Lihat Detail">
+                                                       class="btn btn-sm action-btn action-btn-view" 
+                                                       title="Lihat Detail"
+                                                       style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid #01a9ac; border-radius: 4px; background: white; color: #01a9ac;">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     <a href="{{ route('manage.spmb.form-settings.edit', $field->id) }}" 
-                                                       class="btn btn-sm btn-outline-warning" title="Edit">
+                                                       class="btn btn-sm action-btn action-btn-edit" 
+                                                       title="Edit"
+                                                       style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid #ff9800; border-radius: 4px; background: white; color: #ff9800;">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <form method="POST" action="{{ route('manage.spmb.form-settings.toggle-status', $field->id) }}" class="d-inline">
+                                                    <form method="POST" action="{{ route('manage.spmb.form-settings.toggle-status', $field->id) }}" class="d-inline" style="margin: 0;">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm {{ $field->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }}" 
-                                                                title="{{ $field->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                                        <button type="submit" 
+                                                                class="btn btn-sm action-btn {{ $field->is_active ? 'action-btn-hide' : 'action-btn-show' }}" 
+                                                                title="{{ $field->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
+                                                                style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid {{ $field->is_active ? '#6c757d' : '#28a745' }}; border-radius: 4px; background: white; color: {{ $field->is_active ? '#6c757d' : '#28a745' }};">
                                                             <i class="fas {{ $field->is_active ? 'fa-eye-slash' : 'fa-eye' }}"></i>
                                                         </button>
                                                     </form>
                                                     <form method="POST" action="{{ route('manage.spmb.form-settings.destroy', $field->id) }}" 
-                                                          class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus field ini?')">
+                                                          class="d-inline" 
+                                                          style="margin: 0;"
+                                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus field ini?')">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                                        <button type="submit" 
+                                                                class="btn btn-sm action-btn action-btn-delete" 
+                                                                title="Hapus"
+                                                                style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2px solid #dc3545; border-radius: 4px; background: white; color: #dc3545;">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>

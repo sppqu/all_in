@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Add-ons Premium - SPPQU')
 
@@ -37,46 +37,6 @@
         <i class="fas fa-exclamation-triangle me-2"></i>
         {{ session('error') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
-    <!-- User's Active Add-ons -->
-    @if($userAddons->count() > 0)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-check-circle me-2 text-success"></i>
-                        Add-ons Aktif Anda
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach($userAddons as $userAddon)
-                            @if($userAddon->addon)
-                            <div class="col-md-6 col-lg-4 mb-3">
-                                <div class="card border-success">
-                                    <div class="card-body text-center">
-                                        <div class="mb-2">
-                                            <i class="fas fa-check-circle text-success" style="font-size: 2rem;"></i>
-                                        </div>
-                                        <h6 class="card-title">{{ $userAddon->addon->name }}</h6>
-                                        <p class="card-text text-muted small">
-                                            Dibeli: {{ $userAddon->purchased_at->format('d M Y') }}
-                                        </p>
-                                        <span class="badge bg-success">
-                                            <i class="fas fa-check me-1"></i>Aktif
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     @endif
 

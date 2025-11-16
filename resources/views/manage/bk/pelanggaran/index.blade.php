@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -41,7 +41,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label small">Kategori</label>
-                        <select name="kategori_id" class="form-select">
+                        <select name="kategori_id" class="form-control select-primary">
                             <option value="">Semua Kategori</option>
                             @foreach($kategoris as $kategori)
                                 <option value="{{ $kategori->id }}" {{ request('kategori_id') == $kategori->id ? 'selected' : '' }}>
@@ -52,7 +52,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small">Status</label>
-                        <select name="is_active" class="form-select">
+                        <select name="is_active" class="form-control select-primary">
                             <option value="">Semua Status</option>
                             <option value="1" {{ request('is_active') === '1' ? 'selected' : '' }}>Aktif</option>
                             <option value="0" {{ request('is_active') === '0' ? 'selected' : '' }}>Tidak Aktif</option>

@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -104,7 +104,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Jenis</label>
-                                <select name="type" class="form-select">
+                                <select name="type" class="form-control select-primary">
                                     <option value="">Semua Jenis</option>
                                     @foreach($filterOptions['types'] as $type)
                                         <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
@@ -115,7 +115,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Metode</label>
-                                <select name="payment_method" class="form-select">
+                                <select name="payment_method" class="form-control select-primary">
                                     <option value="">Semua Metode</option>
                                     @foreach($filterOptions['payment_methods'] as $method)
                                         <option value="{{ $method }}" {{ request('payment_method') == $method ? 'selected' : '' }}>
@@ -126,7 +126,7 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Status</label>
-                                <select name="status" class="form-select">
+                                <select name="status" class="form-control select-primary">
                                     <option value="">Semua Status</option>
                                     @foreach($filterOptions['statuses'] as $status)
                                         <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>

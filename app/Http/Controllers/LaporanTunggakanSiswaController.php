@@ -214,7 +214,7 @@ class LaporanTunggakanSiswaController extends Controller
                 DB::raw('COALESCE(c.class_name, "Kelas Tidak Diketahui") as class_name'),
                 DB::raw('COALESCE(pos.pos_name, "POS Tidak Diketahui") as pos_name'),
                 'b.bulan_bill',
-                DB::raw('CASE WHEN bulan_status = 1 THEN bulan_bill ELSE 0 END as bulan_pay'), // Untuk bulanan, jika status = 1 berarti lunas
+                DB::raw('0 as bulan_pay'), // Karena query sudah memfilter whereNull('b.bulan_date_pay'), semua data belum dibayar, jadi pay = 0
                 DB::raw('b.bulan_bill as tunggakan'), // Tunggakan = bill karena belum dibayar
                 DB::raw('b.bulan_input_date as tanggal'),
                 DB::raw("'bulanan' as jenis"),
@@ -282,12 +282,23 @@ class LaporanTunggakanSiswaController extends Controller
                         $posNameFormatted = $item->pos_name . '-' . ($item->period_name ?? $item->tahun);
                     }
                     
+                    // Pastikan nilai pay selalu berupa angka, jika belum dibayar = 0
+                    $pay = 0;
+                    if ($item->jenis === 'bulanan') {
+                        // Untuk bulanan, jika belum dibayar (bulan_date_pay NULL), pay = 0
+                        // Karena query sudah memfilter whereNull('b.bulan_date_pay'), semua data belum dibayar
+                        $pay = 0;
+                    } elseif ($item->jenis === 'bebas') {
+                        // Untuk bebas, gunakan bebas_total_pay (bisa 0 jika belum bayar, atau nilai tertentu jika sudah bayar sebagian)
+                        $pay = (float)($item->bebas_total_pay ?? 0);
+                    }
+                    
                     return [
                         'pos_name' => $posNameFormatted,
                         'jenis' => $item->jenis,
-                        'bill' => $item->bulan_bill ?? $item->bebas_bill,
-                        'pay' => $item->bulan_pay ?? $item->bebas_total_pay ?? 0,
-                        'tunggakan' => $item->tunggakan,
+                        'bill' => (float)($item->bulan_bill ?? $item->bebas_bill ?? 0),
+                        'pay' => $pay,
+                        'tunggakan' => (float)($item->tunggakan ?? 0),
                         'tanggal' => $item->tanggal,
                         'bill_id' => $item->bill_id
                     ];
@@ -361,7 +372,7 @@ class LaporanTunggakanSiswaController extends Controller
         $filename = 'Laporan_Tunggakan_Siswa';
         if ($periodId) {
             $period = DB::table('periods')->where('period_id', $periodId)->first();
-            $periodName = $period ? $period->period_start . '/' . $period->period_end : '';
+            $periodName = $period ? $period->period_start . '-' . $period->period_end : '';
             $filename .= '_' . $periodName;
         }
         if ($monthId) {
@@ -372,6 +383,8 @@ class LaporanTunggakanSiswaController extends Controller
         if (!$periodId && !$monthId) {
             $filename .= '_Semua_Data';
         }
+        // Bersihkan karakter yang tidak valid untuk nama file
+        $filename = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $filename);
         $filename .= '.pdf';
         
         return $pdf->download($filename);
@@ -436,6 +449,8 @@ class LaporanTunggakanSiswaController extends Controller
 
         // Nama file
         $filename = 'Tunggakan_' . ($studentData->student_nis ?? 'Siswa') . '.pdf';
+        // Bersihkan karakter yang tidak valid untuk nama file
+        $filename = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '_', $filename);
         return $pdf->download($filename);
     }
 

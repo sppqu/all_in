@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Lihat Pos Penerimaan')
 @section('content-header', 'Lihat Pos Penerimaan')

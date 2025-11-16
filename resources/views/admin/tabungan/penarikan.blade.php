@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Penarikan Tabungan')
 
@@ -41,8 +41,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="jumlah" class="form-label">Jumlah Penarikan <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">Rp</span>
+                                    <div class="input-group input-group-primary">
+                                        <span class="input-group-addon">Rp</span>
                                         <input type="text" class="form-control @error('jumlah') is-invalid @enderror" 
                                                id="jumlah" name="jumlah" value="{{ old('jumlah') }}" 
                                                placeholder="Masukkan jumlah penarikan" required>

@@ -1,6 +1,22 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Daftar Kas')
+
+@push('styles')
+<style>
+    /* Switch styling - menggunakan styling dari template */
+    .form-check.form-switch {
+        padding-left: 0;
+    }
+    
+    .form-check-input.status-switch {
+        width: 3em;
+        height: 1.5em;
+        cursor: pointer;
+        margin-left: 0;
+    }
+</style>
+@endpush
 
 @section('content')
 <div class="container-fluid">
@@ -31,7 +47,7 @@
                         <div>
                             <h6 class="text-muted mb-0">Total Kas: {{ $kasList->count() }}</h6>
                         </div>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateKas">
+                        <button type="button" class="btn btn-primary" onclick="openCreateKasModal()">
                             <i class="fa fa-plus me-2"></i>Tambah Kas
                         </button>
                     </div>
@@ -43,6 +59,8 @@
                                     <th>No.</th>
                                     <th>Nama Kas</th>
                                     <th>Keterangan</th>
+                                    <th>Saldo</th>
+                                    <th>Status</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -56,10 +74,26 @@
                                         <td>
                                             {{ $kas->deskripsi ?: '-' }}
                                         </td>
+                                        <td class="text-end">
+                                            <strong class="{{ $kas->saldo >= 0 ? 'text-success' : 'text-danger' }}">
+                                                Rp {{ number_format($kas->saldo ?? 0, 0, ',', '.') }}
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input status-switch" 
+                                                       type="checkbox" 
+                                                       id="status_{{ $kas->id }}" 
+                                                       data-kas-id="{{ $kas->id }}"
+                                                       {{ $kas->is_active ? 'checked' : '' }}
+                                                       onchange="toggleKasStatus({{ $kas->id }}, this.checked)">
+                                                <label class="form-check-label" for="status_{{ $kas->id }}"></label>
+                                            </div>
+                                        </td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <button type="button" class="btn btn-sm btn-warning" 
-                                                        onclick="editKas({{ $kas->id }}, '{{ addslashes($kas->nama_kas) }}', '{{ $kas->jenis_kas }}', '{{ addslashes($kas->deskripsi ?: '') }}')"
+                                                        onclick="editKas({{ $kas->id }}, '{{ addslashes($kas->nama_kas) }}', '{{ $kas->jenis_kas }}', '{{ addslashes($kas->deskripsi ?: '') }}', {{ $kas->is_active ? 'true' : 'false' }})"
                                                         title="Edit">
                                                     <i class="fa fa-edit"></i>
                                                 </button>
@@ -73,7 +107,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-4">
+                                        <td colspan="6" class="text-center text-muted py-4">
                                             <i class="fa fa-inbox fa-3x mb-3"></i>
                                             <p>Belum ada data kas</p>
                                         </td>
@@ -94,7 +128,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalCreateKasLabel">Membuat Kas Baru</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeCreateKasModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form id="formCreateKas" action="{{ route('manage.accounting.kas.store') }}" method="POST">
                 @csrf
@@ -109,7 +145,7 @@
                         <label for="jenis" class="form-label">
                             Jenis Kas <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" id="jenis" name="jenis" required>
+                        <select class="form-control select-primary" id="jenis" name="jenis" required>
                             <option value="">Pilih Jenis Kas</option>
                             <option value="cash">Tunai</option>
                             <option value="bank">Bank</option>
@@ -125,7 +161,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger" onclick="closeCreateKasModal()">
                         <i class="fa fa-times me-2"></i>Tutup [Esc]
                     </button>
                     <button type="submit" class="btn btn-success">
@@ -143,7 +179,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalEditKasLabel">Edit Kas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close text-white" onclick="closeEditKasModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <form id="formEditKas" method="POST">
                 @csrf
@@ -159,7 +197,7 @@
                         <label for="edit_jenis" class="form-label">
                             Jenis Kas <span class="text-danger">*</span>
                         </label>
-                        <select class="form-select" id="edit_jenis" name="jenis" required>
+                        <select class="form-control select-primary" id="edit_jenis" name="jenis" required>
                             <option value="">Pilih Jenis Kas</option>
                             <option value="cash">Tunai</option>
                             <option value="bank">Bank</option>
@@ -175,7 +213,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger" onclick="closeEditKasModal()">
                         <i class="fa fa-times me-2"></i>Tutup [Esc]
                     </button>
                     <button type="submit" class="btn btn-success">
@@ -191,50 +229,16 @@
 
 @push('scripts')
 <script>
-// Toast notification function
-function showToast(type, title, message) {
-    console.log('showToast called with:', { type, title, message }); // Debug
-    
-    const toastId = 'toast-' + Date.now();
-    const iconClass = type === 'success' ? 'fa-check-circle text-success' : 
-                     type === 'info' ? 'fa-info-circle text-info' : 
-                     'fa-exclamation-circle text-danger';
-    
-    // Force specific colors untuk memastikan tidak ada override
-    const headerStyle = type === 'success' 
-        ? 'background-color: #198754 !important; color: white !important;' 
-        : type === 'info'
-        ? 'background-color: #0dcaf0 !important; color: white !important;'
-        : 'background-color: #dc3545 !important; color: white !important;';
-    
-    const toastHtml = `
-        <div class="toast" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-            <div class="toast-header" style="${headerStyle} border: none;">
-                <i class="fa ${iconClass} me-2"></i>
-                <strong class="me-auto">${title}</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body" style="background-color: white !important; color: black !important; font-weight: 500; border: 1px solid #dee2e6; padding: 12px 16px;">
-                ${message || 'Pesan tidak tersedia'}
-            </div>
-        </div>
-    `;
-    
-    // Add toast to body
-    document.body.insertAdjacentHTML('beforeend', toastHtml);
-    
-    // Show toast
-    const toast = new bootstrap.Toast(document.getElementById(toastId), {
-        delay: 4000
-    });
-    toast.show();
-    
-    // Remove toast element after hiding
-    document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
-        this.remove();
-    });
+// showToast function is now global from adminty.blade.php layout
+function openCreateKasModal() {
+    $('#modalCreateKas').modal('show');
 }
-function editKas(id, namaKas, jenis, deskripsi) {
+
+function closeCreateKasModal() {
+    $('#modalCreateKas').modal('hide');
+}
+
+function editKas(id, namaKas, jenis, deskripsi, isActive) {
     // Set form action untuk update
     document.getElementById('formEditKas').action = '{{ route("manage.accounting.kas.index") }}/' + id;
     
@@ -243,21 +247,84 @@ function editKas(id, namaKas, jenis, deskripsi) {
     document.getElementById('edit_jenis').value = jenis;
     document.getElementById('edit_deskripsi').value = deskripsi;
     
-    // Show modal
-    new bootstrap.Modal(document.getElementById('modalEditKas')).show();
+    // Set is_active checkbox
+    const isActiveCheckbox = document.getElementById('edit_is_active');
+    if (isActiveCheckbox) {
+        isActiveCheckbox.checked = isActive;
+    }
+    
+    // Show modal using jQuery (Bootstrap 4 compatible)
+    $('#modalEditKas').modal('show');
+}
+
+// Toggle kas status
+function toggleKasStatus(kasId, isActive) {
+    const formData = new FormData();
+    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+    formData.append('is_active', isActive ? 1 : 0);
+    
+    // Disable switch while processing
+    const switchElement = document.getElementById('status_' + kasId);
+    switchElement.disabled = true;
+    
+    fetch('{{ url("manage/accounting/kas") }}/' + kasId + '/toggle-status', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned non-JSON response');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Tidak perlu update badge karena sudah dihapus
+            showToast('success', 'Berhasil!', data.message || 'Status kas berhasil diupdate');
+        } else {
+            // Revert switch
+            switchElement.checked = !isActive;
+            showToast('error', 'Gagal!', data.message || 'Gagal mengupdate status kas');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert switch
+        switchElement.checked = !isActive;
+        showToast('error', 'Error!', 'Terjadi kesalahan saat mengupdate status');
+    })
+    .finally(() => {
+        // Re-enable switch
+        switchElement.disabled = false;
+    });
+}
+
+function closeEditKasModal() {
+    $('#modalEditKas').modal('hide');
 }
 
 function deleteKas(id, namaKas) {
     // Create custom confirmation modal
     const modalHtml = `
-        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header bg-danger text-white border-0">
                         <h5 class="modal-title" id="deleteConfirmModalLabel">
                             <i class="fa fa-exclamation-triangle me-2"></i>Konfirmasi Hapus
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="close text-white" onclick="closeDeleteKasModal()" aria-label="Close" style="opacity: 1; font-size: 1.5rem; padding: 0; margin-left: 0.5rem; line-height: 1;">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     <div class="modal-body text-center py-4">
                         <div class="mb-3">
@@ -265,12 +332,12 @@ function deleteKas(id, namaKas) {
                         </div>
                         <h6 class="mb-3">Apakah Anda yakin ingin menghapus kas ini?</h6>
                         <p class="text-muted mb-0">
-                            <strong>"${namaKas}"</strong><br>
+                            <strong>"${namaKas.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"</strong><br>
                             <small>Data yang sudah dihapus tidak dapat dikembalikan!</small>
                         </p>
                     </div>
                     <div class="modal-footer border-0 justify-content-center">
-                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary px-4" onclick="closeDeleteKasModal()">
                             <i class="fa fa-times me-2"></i>Batal
                         </button>
                         <button type="button" class="btn btn-danger px-4" onclick="confirmDelete(${id})">
@@ -291,13 +358,18 @@ function deleteKas(id, namaKas) {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    // Show modal
-    new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+    // Show modal using jQuery (Bootstrap 4 compatible)
+    $('#deleteConfirmModal').modal('show');
+}
+
+// Close modal function
+function closeDeleteKasModal() {
+    $('#deleteConfirmModal').modal('hide');
 }
 
 function confirmDelete(id) {
-    // Hide modal first
-    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+    // Hide modal first using jQuery (Bootstrap 4 compatible)
+    $('#deleteConfirmModal').modal('hide');
     
     // Show loading toast
     showToast('info', 'Memproses...', 'Sedang menghapus data kas...');
@@ -388,7 +460,7 @@ document.getElementById('formCreateKas').addEventListener('submit', function(e) 
             
             // Reset form dan close modal
             this.reset();
-            bootstrap.Modal.getInstance(document.getElementById('modalCreateKas')).hide();
+            $('#modalCreateKas').modal('hide');
             
             // Refresh page after a short delay
             setTimeout(() => {
@@ -454,7 +526,7 @@ document.getElementById('formEditKas').addEventListener('submit', function(e) {
             showToast('success', 'Berhasil!', data.message);
             
             // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('modalEditKas')).hide();
+            $('#modalEditKas').modal('hide');
             
             // Refresh page after a short delay
             setTimeout(() => {

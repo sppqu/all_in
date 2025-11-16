@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -16,7 +16,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Kategori Pelanggaran <span class="text-danger">*</span></label>
-                            <select name="kategori_id" class="form-select @error('kategori_id') is-invalid @enderror" required>
+                            <select name="kategori_id" class="form-control select-primary @error('kategori_id') is-invalid @enderror" required>
                                 <option value="">-- Pilih Kategori --</option>
                                 @foreach($kategoris as $kategori)
                                     <option value="{{ $kategori->id }}" {{ old('kategori_id') == $kategori->id ? 'selected' : '' }}>

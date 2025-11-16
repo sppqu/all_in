@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Pencarian Buku - E-Perpustakaan')
 
@@ -13,12 +13,12 @@
                 <form action="{{ route('library.search') }}" method="GET">
                     <div class="row g-3">
                         <div class="col-md-5">
-                            <input type="text" name="q" class="form-control form-control-lg" 
+                            <input type="text" name="q" class="form-control" 
                                    placeholder="Cari judul, pengarang, penerbit..." 
                                    value="{{ request('q') }}">
                         </div>
                         <div class="col-md-3">
-                            <select name="category" class="form-select form-select-lg">
+                            <select name="category" class="form-control select-primary">
                                 <option value="">Semua Kategori</option>
                                 @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>
@@ -28,14 +28,14 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <select name="sort" class="form-select form-select-lg">
+                            <select name="sort" class="form-control select-primary">
                                 <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Terbaru</option>
                                 <option value="popular" {{ request('sort') == 'popular' ? 'selected' : '' }}>Terpopuler</option>
                                 <option value="title" {{ request('sort') == 'title' ? 'selected' : '' }}>Judul A-Z</option>
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <button type="submit" class="btn btn-primary w-100">
                                 <i class="fas fa-search me-2"></i>Cari
                             </button>
                         </div>

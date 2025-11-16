@@ -35,7 +35,38 @@ class SPMBAdminController extends Controller
         // Get SPMB settings
         $spmbSettings = \App\Models\SPMBSettings::first();
 
-        return view('admin.spmb.index', compact('stats', 'spmbSettings'));
+        // Data untuk grafik garis (pendaftar per hari - 30 hari terakhir)
+        $dailyRegistrations = [];
+        $dailyLabels = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dateLabel = now()->subDays($i)->format('d/m');
+            $count = SPMBRegistration::whereDate('created_at', $date)->count();
+            $dailyLabels[] = $dateLabel;
+            $dailyRegistrations[] = $count;
+        }
+
+        // Data untuk grafik pie (distribusi status)
+        $pieData = [
+            'labels' => ['Diterima', 'Pending', 'Ditolak'],
+            'data' => [
+                $stats['completed'],
+                $stats['pending'],
+                $stats['ditolak']
+            ],
+            'colors' => [
+                'rgba(40, 167, 69, 0.8)',   // Hijau untuk Diterima
+                'rgba(255, 193, 7, 0.8)',   // Kuning untuk Pending
+                'rgba(220, 53, 69, 0.8)'    // Merah untuk Ditolak
+            ],
+            'borderColors' => [
+                'rgba(40, 167, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(220, 53, 69, 1)'
+            ]
+        ];
+
+        return view('admin.spmb.index', compact('stats', 'spmbSettings', 'dailyLabels', 'dailyRegistrations', 'pieData'));
     }
 
     /**

@@ -1,45 +1,125 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
+
+@section('head')
+<style>
+    /* Fix untuk widget card icon tidak tertutup */
+    .widget-card-1 {
+        overflow: visible !important;
+        margin-top: 20px;
+    }
+    
+    .widget-card-1 .card-block {
+        padding: 1.25rem;
+        padding-top: 15px;
+        padding-right: 80px; /* Beri ruang untuk icon di kanan */
+        position: relative;
+        text-align: left !important; /* Rata kiri */
+    }
+    
+    .widget-card-1 .card1-icon {
+        position: absolute;
+        top: -15px;
+        right: 20px;
+        left: auto;
+        width: 60px;
+        height: 60px;
+        font-size: 35px;
+        border-radius: 8px;
+        display: flex;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease-in-out;
+        z-index: 10;
+    }
+    
+    .widget-card-1:hover .card1-icon {
+        top: -25px;
+    }
+    
+    /* Pastikan semua teks di widget card rata kiri */
+    .widget-card-1 .card-block {
+        text-align: left !important;
+    }
+    
+    .widget-card-1 .card-block h6,
+    .widget-card-1 .card-block h4,
+    .widget-card-1 .card-block span,
+    .widget-card-1 .card-block small,
+    .widget-card-1 .card-block div {
+        text-align: left !important;
+    }
+    
+    /* Pastikan teks di atas tidak tertutup icon */
+    .widget-card-1 .card-block > h6:first-child {
+        margin-right: 70px; /* Beri margin kanan agar tidak tertutup icon */
+        padding-right: 0;
+    }
+    
+    /* Khusus untuk card dengan background gradient (Pembayaran Bulan Ini) */
+    .widget-card-1.bg-c-blue .card-block {
+        padding-right: 80px;
+    }
+    
+    .widget-card-1.bg-c-blue .card-block > h6:first-child {
+        margin-right: 70px;
+    }
+</style>
+@endsection
 
 @section('content')
 <div class="container-fluid px-4 py-4">
     <!-- Pratinjau Profil Sekolah -->
-    <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <h5 class="fw-bold mb-0">Pratinjau Profil Sekolah</h5>
-                @php
-                    $isFoundationLevel = auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan';
-                @endphp
-                @if($isFoundationLevel)
-                    <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm">
-                        <i class="fa fa-edit me-2"></i>Lengkapi Profil
-                    </a>
-                @else
-                    <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm">
-                        <i class="fa fa-edit me-2"></i>Lengkapi Profil
-                    </a>
-                @endif
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center" style="padding: 1.5rem; border-radius: 15px 15px 0 0;">
+            <div class="d-flex align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: #1f2937;">
+                        <i class="feather icon-home me-2" style="color: #01a9ac; font-size: 1.1rem;"></i>
+                        Pratinjau Profil Sekolah
+                    </h5>
+                    <small class="text-muted" style="font-size: 0.75rem;">Informasi lengkap profil sekolah</small>
+                </div>
             </div>
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="text-muted small mb-1">Nama Sekolah</label>
-                        <div class="fw-bold">{{ $currentSchool->nama_sekolah ?? 'Belum diisi' }}</div>
+            @php
+                $isFoundationLevel = auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan';
+            @endphp
+            <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #01a9ac 0%, #0ac282 100%); border: none; border-radius: 8px; padding: 0.5rem 1.25rem;">
+                <i class="feather icon-edit me-2"></i>Lengkapi Profil
+            </a>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="info-item p-3 mb-3" style="background: white; border-radius: 12px; border-left: 4px solid #01a9ac; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="feather icon-bookmark text-c-blue me-2"></i>
+                            <label class="text-muted small mb-0" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Nama Sekolah</label>
+                        </div>
+                        <div class="fw-bold" style="color: #1f2937; font-size: 1rem;">{{ $currentSchool->nama_sekolah ?? 'Belum diisi' }}</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="text-muted small mb-1">Kepala Sekolah</label>
-                        <div class="fw-bold">{{ $currentSchool->kepala_sekolah ?? '-' }}</div>
+                    <div class="info-item p-3" style="background: white; border-radius: 12px; border-left: 4px solid #01a9ac; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="feather icon-user text-c-blue me-2"></i>
+                            <label class="text-muted small mb-0" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Kepala Sekolah</label>
+                        </div>
+                        <div class="fw-bold" style="color: #1f2937; font-size: 1rem;">{{ $currentSchool->kepala_sekolah ?? '-' }}</div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label class="text-muted small mb-1">NPSN</label>
-                        <div class="fw-bold">{{ $currentSchool->npsn ?? '-' }}</div>
+                <div class="col-md-6 mb-4">
+                    <div class="info-item p-3 mb-3" style="background: white; border-radius: 12px; border-left: 4px solid #01a9ac; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="feather icon-hash text-c-blue me-2"></i>
+                            <label class="text-muted small mb-0" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">NPSN</label>
+                        </div>
+                        <div class="fw-bold" style="color: #1f2937; font-size: 1rem;">{{ $currentSchool->npsn ?? '-' }}</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="text-muted small mb-1">Alamat</label>
-                        <div class="fw-bold">
+                    <div class="info-item p-3" style="background: white; border-radius: 12px; border-left: 4px solid #01a9ac; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="feather icon-map-pin text-c-blue me-2"></i>
+                            <label class="text-muted small mb-0" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Alamat</label>
+                        </div>
+                        <div class="fw-bold" style="color: #1f2937; font-size: 1rem; line-height: 1.6;">
                             @if($currentSchool->alamat_baris_1)
                                 {{ $currentSchool->alamat_baris_1 }}
                                 @if($currentSchool->alamat_baris_2)
@@ -87,42 +167,54 @@
         <!-- Top Rank Pembayaran User -->
         <div class="col-md-4 mb-4">
             <div class="card shadow-sm border-0" style="border-radius: 15px; height: 100%;">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center" style="padding: 1.25rem 1.5rem;">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+                            <i class="feather icon-award text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Top Rank Pembayaran</h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">Berdasarkan Jumlah Transaksi</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-c-green text-white">{{ $selectedPeriod ? $selectedPeriod->period_start . '/' . $selectedPeriod->period_end : date('Y') . '/' . (date('Y') + 1) }}</span>
+                </div>
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted mb-0" style="font-size: 0.9rem;">🏆 Top Rank Pembayaran</h6>
-                        <span class="badge bg-success">{{ now()->year }}</span>
-                    </div>
-                    <div class="mb-2">
-                        <small class="text-muted">Berdasarkan Jumlah Transaksi</small>
-                    </div>
                     <div style="height: 220px; overflow-y: auto;">
                         @forelse($topPaymentUsers ?? [] as $index => $user)
-                        <div class="d-flex align-items-center mb-3 p-2 rounded" style="background: {{ $index < 3 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(243, 244, 246, 0.5)' }};">
-                            <div class="me-3">
-                                @if($index === 0)
-                                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.8rem;">🥇</span>
-                                @elseif($index === 1)
-                                    <span class="badge bg-secondary fw-bold" style="font-size: 0.8rem;">🥈</span>
-                                @elseif($index === 2)
-                                    <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.8rem;">🥉</span>
-                                @else
-                                    <span class="badge bg-light text-dark fw-bold" style="font-size: 0.8rem;">#{{ $index + 1 }}</span>
-                                @endif
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $user['name'] }}</div>
-                                <small class="text-muted">{{ $user['class'] ?? 'N/A' }}</small>
-                            </div>
-                            <div class="text-end">
-                                <div class="fw-bold text-success">{{ $user['transaction_count'] }}x</div>
-                                <small class="text-muted">transaksi</small>
+                        <div class="rank-item mb-3 p-3" style="background: linear-gradient(135deg, {{ $index < 3 ? '#f0fdf4' : '#f9fafb' }} 0%, {{ $index < 3 ? '#dcfce7' : '#ffffff' }} 100%); border-radius: 12px; border-left: 4px solid {{ $index == 0 ? '#10b981' : ($index == 1 ? '#3b82f6' : ($index == 2 ? '#8b5cf6' : '#6b7280')) }}; transition: all 0.3s ease; cursor: pointer;" onmouseover="this.style.transform='translateX(5px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='translateX(0)'; this.style.boxShadow='none';">
+                            <div class="d-flex align-items-center">
+                                <div class="rank-number me-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: linear-gradient(135deg, {{ $index == 0 ? '#10b981' : ($index == 1 ? '#3b82f6' : ($index == 2 ? '#8b5cf6' : '#6b7280')) }} 0%, {{ $index == 0 ? '#059669' : ($index == 1 ? '#2563eb' : ($index == 2 ? '#7c3aed' : '#4b5563')) }} 100%); box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                        @if($index === 0)
+                                            <i class="feather icon-award text-white" style="font-size: 1.2rem;"></i>
+                                        @elseif($index === 1)
+                                            <i class="feather icon-award text-white" style="font-size: 1.2rem;"></i>
+                                        @elseif($index === 2)
+                                            <i class="feather icon-award text-white" style="font-size: 1.2rem;"></i>
+                                        @else
+                                            <span class="text-white fw-bold" style="font-size: 1.1rem;">{{ $index + 1 }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold mb-1" style="color: #1f2937; font-size: 0.95rem;">{{ $user['name'] }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">{{ $user['class'] ?? 'N/A' }}</span>
+                                        <span class="text-muted" style="font-size: 0.8rem;">
+                                            <i class="feather icon-shopping-cart me-1"></i>{{ $user['transaction_count'] }} transaksi
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @empty
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
-                            <div>Belum ada data transaksi</div>
-                    </div>
+                        <div class="text-center text-muted py-5">
+                            <div class="mb-3">
+                                <i class="feather icon-inbox" style="font-size: 3rem; opacity: 0.3;"></i>
+                            </div>
+                            <p class="mb-0" style="font-size: 0.9rem;">Belum ada data transaksi</p>
+                        </div>
                         @endforelse
                     </div>
                 </div>
@@ -134,28 +226,22 @@
     <div class="row mb-4">
         <!-- Pembayaran Bulan Ini -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="icon-box bg-white bg-opacity-25 rounded-circle p-3 me-3">
-                            <i class="fas fa-wallet fa-lg"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0" style="font-size: 0.85rem; opacity: 0.9;">Pembayaran Bulan Ini</h6>
-                        </div>
+            <div class="card widget-card-1" style="position: relative; background: white;">
+                <div class="card-block">
+                    <div class="card1-icon bg-c-blue" style="background: linear-gradient(135deg, #01a9ac 0%, #0ac282 100%);">
+                        <i class="feather icon-pie-chart"></i>
                     </div>
-                    <h2 class="fw-bold mb-2">Rp {{ number_format($monthPayments ?? 0, 0, ',', '.') }}</h2>
-                    <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                            <span class="badge bg-white text-dark me-2" style="font-size: 0.7rem;">
-                                {{ number_format($monthPaymentsCount ?? 0) }} transaksi
-                            </span>
-                        </div>
+                    <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Pembayaran Bulan Ini</h6>
+                    <h4 class="mt-2 mb-2" style="color: #01a9ac; font-weight: 600;">Rp {{ number_format($monthPayments ?? 0, 0, ',', '.') }}</h4>
+                    <div class="d-flex align-items-center mt-3">
+                        <span style="color: #919aa3; font-size: 0.75rem;">
+                            {{ number_format($monthPaymentsCount ?? 0) }} transaksi
+                        </span>
                         @php
                             $monthGrowth = $monthPaymentsGrowth ?? 0;
                             $isMonthGrowthPositive = $monthGrowth >= 0;
                         @endphp
-                        <span class="badge" style="background-color: {{ $isMonthGrowthPositive ? '#10b981' : '#ef4444' }}; font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+                        <span class="badge ms-auto" style="background-color: {{ $isMonthGrowthPositive ? '#10b981' : '#ef4444' }}; font-size: 0.75rem; padding: 0.35rem 0.65rem;">
                             <i class="fas fa-arrow-{{ $isMonthGrowthPositive ? 'up' : 'down' }}"></i> {{ abs($monthGrowth) }}%
                         </span>
                     </div>
@@ -165,23 +251,18 @@
 
         <!-- Persentase Lunas -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                            <i class="fas fa-bullseye fa-lg text-white"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Target Prosentase Pembayaran Bulan Ini</h6>
-                        </div>
+            <div class="card widget-card-1" style="position: relative;">
+                <div class="card-block">
+                    <div class="card1-icon bg-c-blue" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="feather icon-target"></i>
                     </div>
-                    <h2 class="fw-bold mb-2 text-dark">{{ number_format($paymentCompletionPercent ?? 0, 1) }}%</h2>
-                    <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
+                    <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Target Prosentase Pembayaran Bulan Ini</h6>
+                    <h4 class="mt-2 mb-3" style="color: #4facfe; font-weight: 600;">{{ number_format($paymentCompletionPercent ?? 0, 1) }}%</h4>
+                    <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
                         <div class="progress-bar" role="progressbar" 
                              style="width: {{ $paymentCompletionPercent ?? 0 }}%; 
-                                    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
                                     border-radius: 10px;
-                                    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);"></div>
+                                    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);"></div>
                     </div>
                 </div>
             </div>
@@ -189,53 +270,40 @@
 
         <!-- Countdown Berlangganan -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-                            <i class="fas fa-clock fa-lg text-white"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Sisa Waktu Berlangganan</h6>
-                        </div>
+            <div class="card widget-card-1" style="position: relative;">
+                <div class="card-block">
+                    <div class="card1-icon bg-c-yellow" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="feather icon-clock"></i>
                     </div>
+                    <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Sisa Waktu Berlangganan</h6>
                     @if(isset($subscriptionDaysLeft) && $subscriptionDaysLeft > 0)
                         @if($subscriptionDaysLeft >= 30)
-                            <h2 class="fw-bold mb-2" style="color: #10b981;">{{ floor($subscriptionDaysLeft / 30) }} Bulan</h2>
-                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: 100%; 
-                                            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-                                            border-radius: 10px;
-                                            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);"></div>
+                            <h4 class="mt-2 mb-3" style="color: #0ac282; font-weight: 600;">{{ floor($subscriptionDaysLeft / 30) }} Bulan</h4>
+                            <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar bg-c-green" role="progressbar" 
+                                     style="width: 100%; border-radius: 10px;"></div>
                             </div>
                         @elseif($subscriptionDaysLeft >= 7)
-                            <h2 class="fw-bold mb-2" style="color: #f59e0b;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h2>
-                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; 
-                                            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-                                            border-radius: 10px;
-                                            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);"></div>
+                            <h4 class="mt-2 mb-3" style="color: #fe9365; font-weight: 600;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h4>
+                            <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar bg-c-yellow" role="progressbar" 
+                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; border-radius: 10px;"></div>
                             </div>
                         @else
-                            <h2 class="fw-bold mb-2" style="color: #dc2626;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h2>
-                            <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; 
-                                            background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
-                                            border-radius: 10px;
-                                            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4);"></div>
+                            <h4 class="mt-2 mb-3" style="color: #fe5d70; font-weight: 600;">{{ number_format($subscriptionDaysLeft, 0, '', '') }} Hari</h4>
+                            <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                                <div class="progress-bar bg-c-pink" role="progressbar" 
+                                     style="width: {{ floor(($subscriptionDaysLeft / 30) * 100) }}%; border-radius: 10px;"></div>
                             </div>
                         @endif
                     @else
-                        <h2 class="fw-bold mb-2 text-danger">Expired</h2>
-                        <div class="progress" style="height: 10px; border-radius: 10px; background-color: #e9ecef;">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%;"></div>
+                        <h4 class="mt-2 mb-3" style="color: #fe5d70; font-weight: 600;">Expired</h4>
+                        <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
+                            <div class="progress-bar bg-c-pink" role="progressbar" style="width: 0%;"></div>
                         </div>
                     @endif
                     <div class="mt-2">
-                        <small class="text-muted">Berakhir: {{ $subscriptionExpiresAt ?? '-' }}</small>
+                        <small style="color: #919aa3;">Berakhir: {{ $subscriptionExpiresAt ?? '-' }}</small>
                     </div>
                 </div>
             </div>
@@ -243,26 +311,22 @@
 
         <!-- Kalender -->
         <div class="col-md-3 mb-3">
-            <div class="card shadow-sm border-0" style="border-radius: 15px; background: white;">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle p-3 me-3" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                            <i class="fas fa-calendar-alt fa-lg text-white"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0 text-muted" style="font-size: 0.85rem;">Kalender Hari Ini</h6>
-                        </div>
+            <div class="card widget-card-1" style="position: relative;">
+                <div class="card-block">
+                    <div class="card1-icon bg-c-blue" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                        <i class="feather icon-calendar"></i>
                     </div>
+                    <h6 class="mb-0" style="color: #919aa3; font-size: 0.85rem;">Kalender Hari Ini</h6>
                     @php
                         $currentDate = \Carbon\Carbon::now();
                         $dayName = $currentDate->locale('id')->isoFormat('dddd');
                         $dateNumber = $currentDate->format('d');
                         $monthYear = $currentDate->locale('id')->isoFormat('MMMM YYYY');
                     @endphp
-                    <div class="text-center mb-3">
+                    <div class="text-center mb-3 mt-3">
                         <div class="fw-bold mb-1" style="color: #8b5cf6; font-size: 3rem; line-height: 1;">{{ $dateNumber }}</div>
-                        <div class="text-muted" style="font-size: 0.9rem;">{{ $monthYear }}</div>
-                        <div class="badge mt-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); font-size: 0.75rem;">
+                        <div style="color: #919aa3; font-size: 0.9rem;">{{ $monthYear }}</div>
+                        <div class="badge bg-c-blue mt-2" style="color: white; font-size: 0.75rem;">
                             {{ $dayName }}
                         </div>
                     </div>
@@ -294,7 +358,7 @@
                 <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center" style="padding: 1.25rem 1.5rem;">
                     <h6 class="mb-0 fw-bold">💸 Penerimaan vs Pengeluaran</h6>
                     <form method="GET" action="" class="d-flex align-items-center" style="gap:8px">
-                        <select name="period_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 150px; border-radius: 20px;">
+                        <select name="period_id" class="form-control select-primary" onchange="this.form.submit()" style="min-width: 150px;">
                             @foreach(($periods ?? []) as $p)
                                 <option value="{{ $p->period_id }}" {{ ($selectedPeriodId ?? '') == $p->period_id ? 'selected' : '' }}>
                                     {{ $p->period_start }}/{{ $p->period_end }}
@@ -342,15 +406,25 @@
                                     <td><span class="badge bg-danger">{{ $class['unpaid_students'] }}</span></td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-2" style="height: 24px; border-radius: 12px; background-color: #e9ecef;">
+                                            <div class="progress flex-grow-1 me-2" style="height: 28px; border-radius: 14px; background-color: #e9ecef; position: relative; overflow: visible;">
                                                 <div class="progress-bar" 
-                                                     style="width: {{ $class['percentage'] }}%; 
+                                                     style="width: {{ max($class['percentage'], 5) }}%; 
+                                                            min-width: {{ $class['percentage'] > 0 ? '30px' : '0' }};
                                                             background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-                                                            border-radius: 12px;
-                                                            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);" 
+                                                            border-radius: 14px;
+                                                            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+                                                            display: flex;
+                                                            align-items: center;
+                                                            justify-content: center;
+                                                            position: relative;" 
                                                      role="progressbar">
-                                                    <span class="small fw-bold text-white" style="text-shadow: 0 1px 2px rgba(0,0,0,0.2);">{{ number_format($class['percentage'], 1) }}%</span>
+                                                    @if($class['percentage'] > 0)
+                                                    <span class="small fw-bold text-white" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3); font-size: 0.75rem; white-space: nowrap;">{{ number_format($class['percentage'], 1) }}%</span>
+                                                    @endif
                                                 </div>
+                                                @if($class['percentage'] == 0)
+                                                <span class="position-absolute" style="left: 50%; transform: translateX(-50%); color: #6b7280; font-size: 0.75rem; font-weight: 600;">{{ number_format($class['percentage'], 1) }}%</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>

@@ -2453,6 +2453,7 @@ class PaymentController extends Controller
             abort(403, 'Akses ditolak: Sekolah belum dipilih.');
         }
         
+        // Ambil periode sesuai school_id yang sedang aktif
         $periods = Period::where('school_id', $currentSchoolId)
             ->orderBy('period_start', 'desc')
             ->get();

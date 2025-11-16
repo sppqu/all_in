@@ -25,6 +25,7 @@ Route::middleware(['auth'])->prefix('jurnal/siswa')->name('jurnal.siswa.')->grou
 // Guru Routes
 Route::middleware(['auth'])->prefix('jurnal/guru')->name('jurnal.guru.')->group(function () {
     Route::get('/', [JurnalGuruController::class, 'index'])->name('index');
+    Route::get('/lihat', [JurnalGuruController::class, 'lihat'])->name('lihat');
     Route::get('/laporan-siswa', [JurnalGuruController::class, 'laporanSiswa'])->name('laporan-siswa');
     Route::get('/laporan-siswa-pdf', [JurnalGuruController::class, 'laporanSiswaPdf'])->name('laporan-siswa-pdf');
     Route::get('/laporan-kelas', [JurnalGuruController::class, 'laporanKelas'])->name('laporan-kelas');

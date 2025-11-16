@@ -14,13 +14,48 @@ class BookController extends Controller
     /**
      * Display a listing of books
      */
-    public function index()
+    public function index(Request $request)
     {
-        $books = Book::with(['category', 'uploader'])
-            ->latest()
-            ->paginate(15);
+        $query = Book::with(['category', 'uploader']);
+
+        // Search by keyword
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Sort
+        $sortBy = $request->get('sort', 'latest');
+        switch ($sortBy) {
+            case 'title':
+                $query->orderBy('judul', 'asc');
+                break;
+            case 'pengarang':
+                $query->orderBy('pengarang', 'asc');
+                break;
+            case 'views':
+                $query->orderBy('total_views', 'desc');
+                break;
+            case 'oldest':
+                $query->oldest();
+                break;
+            default:
+                $query->latest();
+        }
+
+        $books = $query->paginate(15)->appends($request->query());
+        $categories = BookCategory::active()->ordered()->get();
         
-        return view('library.books.index', compact('books'));
+        return view('library.books.index', compact('books', 'categories'));
     }
 
     /**
@@ -70,7 +105,7 @@ class BookController extends Controller
 
         Book::create($validated);
 
-        return redirect()->route('library.books.index')
+        return redirect()->route('manage.library.books.index')
             ->with('success', 'Buku berhasil ditambahkan!');
     }
 
@@ -140,7 +175,7 @@ class BookController extends Controller
 
         $book->update($validated);
 
-        return redirect()->route('library.books.index')
+        return redirect()->route('manage.library.books.index')
             ->with('success', 'Buku berhasil diupdate!');
     }
 
@@ -161,7 +196,7 @@ class BookController extends Controller
 
         $book->delete();
 
-        return redirect()->route('library.books.index')
+        return redirect()->route('manage.library.books.index')
             ->with('success', 'Buku berhasil dihapus!');
     }
 }

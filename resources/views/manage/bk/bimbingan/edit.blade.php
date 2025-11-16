@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid px-4">
@@ -54,7 +54,7 @@
                     <!-- Jenis Bimbingan -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold required">Jenis Bimbingan</label>
-                        <select name="jenis_bimbingan" class="form-select @error('jenis_bimbingan') is-invalid @enderror" required>
+                        <select name="jenis_bimbingan" class="form-control select-primary @error('jenis_bimbingan') is-invalid @enderror" required>
                             <option value="">-- Pilih Jenis --</option>
                             <option value="akademik" {{ old('jenis_bimbingan', $bimbingan->jenis_bimbingan) == 'akademik' ? 'selected' : '' }}>Akademik</option>
                             <option value="pribadi" {{ old('jenis_bimbingan', $bimbingan->jenis_bimbingan) == 'pribadi' ? 'selected' : '' }}>Pribadi</option>
@@ -69,7 +69,7 @@
                     <!-- Kategori -->
                     <div class="col-md-4">
                         <label class="form-label fw-semibold required">Kategori</label>
-                        <select name="kategori" class="form-select @error('kategori') is-invalid @enderror" required>
+                        <select name="kategori" class="form-control select-primary @error('kategori') is-invalid @enderror" required>
                             <option value="">-- Pilih Kategori --</option>
                             <option value="ringan" {{ old('kategori', $bimbingan->kategori) == 'ringan' ? 'selected' : '' }}>Ringan</option>
                             <option value="sedang" {{ old('kategori', $bimbingan->kategori) == 'sedang' ? 'selected' : '' }}>Sedang</option>
@@ -94,7 +94,7 @@
                     <!-- Status -->
                     <div class="col-md-6">
                         <label class="form-label fw-semibold required">Status</label>
-                        <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <select name="status" class="form-control select-primary @error('status') is-invalid @enderror" required>
                             <option value="dijadwalkan" {{ old('status', $bimbingan->status) == 'dijadwalkan' ? 'selected' : '' }}>Dijadwalkan</option>
                             <option value="berlangsung" {{ old('status', $bimbingan->status) == 'berlangsung' ? 'selected' : '' }}>Berlangsung</option>
                             <option value="selesai" {{ old('status', $bimbingan->status) == 'selesai' ? 'selected' : '' }}>Selesai</option>

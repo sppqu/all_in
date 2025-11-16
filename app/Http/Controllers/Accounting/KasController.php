@@ -16,7 +16,7 @@ class KasController extends Controller
     public function index()
     {
         $kasList = DB::table('kas')
-            ->select('id', 'nama_kas', 'jenis_kas', 'deskripsi')
+            ->select('id', 'nama_kas', 'jenis_kas', 'deskripsi', 'is_active', 'saldo')
             ->orderBy('nama_kas')
             ->get();
         
@@ -158,6 +158,47 @@ class KasController extends Controller
             return redirect()->back()
                 ->with('error', 'Gagal mengupdate kas: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    /**
+     * Toggle kas status (aktif/tidak aktif)
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        try {
+            $kas = DB::table('kas')->where('id', $id)->first();
+            
+            if (!$kas) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kas tidak ditemukan!'
+                ], 404);
+            }
+            
+            $isActive = $request->input('is_active', 0);
+            
+            DB::table('kas')
+                ->where('id', $id)
+                ->update([
+                    'is_active' => $isActive,
+                    'updated_at' => now()
+                ]);
+            
+            $statusText = $isActive ? 'diaktifkan' : 'dinonaktifkan';
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Kas berhasil {$statusText}!"
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error toggling kas status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengupdate status kas: ' . $e->getMessage()
+            ], 500);
         }
     }
 

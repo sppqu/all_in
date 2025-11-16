@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Detail Peminjaman - E-Perpustakaan')
 
@@ -226,7 +226,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Kondisi Buku</label>
-                        <select name="kondisi" class="form-select">
+                        <select name="kondisi" class="form-control select-primary">
                             <option value="baik">Baik</option>
                             <option value="rusak_ringan">Rusak Ringan</option>
                             <option value="rusak_berat">Rusak Berat</option>

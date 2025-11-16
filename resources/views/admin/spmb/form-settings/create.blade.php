@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -8,7 +8,7 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .section-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #01a9ac;
         color: white;
         padding: 15px 20px;
         border-radius: 10px;
@@ -27,6 +27,16 @@
     }
     .option-item:last-child {
         margin-bottom: 0;
+    }
+    .btn-save {
+        background-color: #01a9ac;
+        border-color: #01a9ac;
+        color: white;
+    }
+    .btn-save:hover {
+        background-color: #018a8d;
+        border-color: #018a8d;
+        color: white;
     }
 </style>
 @endpush
@@ -232,15 +242,16 @@
 
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <div class="form-check">
+                                <div class="form-check d-flex align-items-center">
                                     <input class="form-check-input @error('is_required') is-invalid @enderror" 
                                            type="checkbox" 
                                            id="is_required" 
                                            name="is_required" 
                                            value="1"
+                                           style="width: 18px; height: 18px; margin-right: 10px; margin-top: 0; cursor: pointer;"
                                            {{ old('is_required') ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="is_required">
-                                        <i class="fas fa-asterisk me-1"></i>Field Wajib
+                                    <label class="form-check-label mb-0" for="is_required" style="cursor: pointer; font-size: 0.95rem;">
+                                        Field Wajib
                                     </label>
                                     @error('is_required')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -249,14 +260,15 @@
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <div class="form-check">
+                                <div class="form-check d-flex align-items-center">
                                     <input class="form-check-input @error('is_active') is-invalid @enderror" 
                                            type="checkbox" 
                                            id="is_active" 
                                            name="is_active" 
                                            value="1"
+                                           style="width: 18px; height: 18px; margin-right: 10px; margin-top: 0; cursor: pointer;"
                                            {{ old('is_active', true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="is_active">
+                                    <label class="form-check-label mb-0" for="is_active" style="cursor: pointer; font-size: 0.95rem;">
                                         <i class="fas fa-eye me-1"></i>Field Aktif
                                     </label>
                                     @error('is_active')
@@ -266,14 +278,15 @@
                             </div>
 
                             <div class="col-md-4 mb-3">
-                                <div class="form-check">
+                                <div class="form-check d-flex align-items-center">
                                     <input class="form-check-input @error('show_in_print') is-invalid @enderror" 
                                            type="checkbox" 
                                            id="show_in_print" 
                                            name="show_in_print" 
                                            value="1"
+                                           style="width: 18px; height: 18px; margin-right: 10px; margin-top: 0; cursor: pointer;"
                                            {{ old('show_in_print', true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="show_in_print">
+                                    <label class="form-check-label mb-0" for="show_in_print" style="cursor: pointer; font-size: 0.95rem;">
                                         <i class="fas fa-print me-1"></i>Tampil di Cetak
                                     </label>
                                     @error('show_in_print')
@@ -288,7 +301,7 @@
                             <a href="{{ route('manage.spmb.form-settings.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-times me-1"></i>Batal
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-save">
                                 <i class="fas fa-save me-1"></i>Simpan Field
                             </button>
                         </div>

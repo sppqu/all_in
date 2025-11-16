@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Laporan Tunggakan Siswa')
 
@@ -30,7 +30,7 @@
                                             <!-- Tahun Pelajaran -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="period_id" class="form-label">Tahun Pelajaran</label>
-                                                <select class="form-select" id="period_id" name="period_id">
+                                                <select class="form-control select-primary" id="period_id" name="period_id">
                                                     <option value="">Semua Tahun Pelajaran</option>
                                                     @foreach($periods as $period)
                                                         <option value="{{ $period->period_id }}" {{ $periodId == $period->period_id ? 'selected' : '' }}>
@@ -42,7 +42,7 @@
                                             <!-- Bulan -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="month_id" class="form-label">Sampai Bulan</label>
-                                                <select class="form-select" id="month_id" name="month_id">
+                                                <select class="form-control select-primary" id="month_id" name="month_id">
                                                     <option value="">Semua Bulan</option>
                                                     @foreach($months as $month)
                                                         <option value="{{ $month['id'] }}" {{ $monthId == $month['id'] ? 'selected' : '' }}>
@@ -55,7 +55,7 @@
                                             <!-- Siswa -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="student_id" class="form-label">Siswa</label>
-                                                <select class="form-select" id="student_id" name="student_id">
+                                                <select class="form-control select-primary" id="student_id" name="student_id">
                                                     <option value="">Semua Siswa</option>
                                                     @foreach($students as $student)
                                                         <option value="{{ $student->student_id }}" {{ $studentId == $student->student_id ? 'selected' : '' }}>
@@ -68,7 +68,7 @@
                                             <!-- POS -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="pos_id" class="form-label">POS</label>
-                                                <select class="form-select" id="pos_id" name="pos_id">
+                                                <select class="form-control select-primary" id="pos_id" name="pos_id">
                                                     <option value="">Semua POS</option>
                                                     @foreach($posList as $pos)
                                                         <option value="{{ $pos->pos_id }}" {{ $posId == $pos->pos_id ? 'selected' : '' }}>
@@ -81,7 +81,7 @@
                                             <!-- Kelas -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="class_id" class="form-label">Kelas</label>
-                                                <select class="form-select" id="class_id" name="class_id">
+                                                <select class="form-control select-primary" id="class_id" name="class_id">
                                                     <option value="">Semua Kelas</option>
                                                     @foreach($classes as $class)
                                                         <option value="{{ $class->class_id }}" {{ $classId == $class->class_id ? 'selected' : '' }}>
@@ -94,7 +94,7 @@
                                             <!-- Status Siswa -->
                                             <div class="col-md-3 mb-3">
                                                 <label for="student_status" class="form-label">Status Siswa</label>
-                                                <select class="form-select" id="student_status" name="student_status">
+                                                <select class="form-control select-primary" id="student_status" name="student_status">
                                                     <option value="">Semua Status</option>
                                                     <option value="1" {{ $studentStatus === '1' ? 'selected' : '' }}>Aktif</option>
                                                     <option value="0" {{ $studentStatus === '0' ? 'selected' : '' }}>Tidak Aktif</option>
@@ -242,21 +242,23 @@
 </div>
 
 <!-- Detail Modal -->
-<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="detailModalLabel">Detail Tunggakan Siswa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body" id="detailModalBody">
                 <!-- Content will be loaded here -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger me-2" onclick="downloadTunggakanPdf()" style="color: white;">
-                    <i class="fas fa-file-pdf me-1" style="color: white;"></i>Unduh PDF
+                <button type="button" class="btn btn-danger mr-2" onclick="downloadTunggakanPdf()" style="color: white;">
+                    <i class="fas fa-file-pdf mr-1" style="color: white;"></i>Unduh PDF
                 </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -264,11 +266,12 @@
 
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
     // Global variable to store current student data
     let currentStudentData = null;
     
+    // Define functions first
     function resetFilter() {
         // Reset form ke URL tanpa parameter
         window.location.href = '{{ route("manage.laporan.tunggakan-siswa") }}';
@@ -306,11 +309,9 @@
         document.body.removeChild(exportForm);
     }
 
-
-
     function showDetail(studentId) {
         // Find the data for this student
-        const data = @json($tunggakanData);
+        const data = @json($tunggakanData ?? []);
         const studentData = data.find(item => item.student_id == studentId);
         
         // Store current student data globally
@@ -320,42 +321,54 @@
             let detailHtml = `
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>Nama Siswa:</strong> ${studentData.student_name}<br>
-                        <strong>NIS:</strong> ${studentData.student_nis}<br>
-                        <strong>Kelas:</strong> ${studentData.class_name}
+                        <strong>Nama Siswa:</strong> ${studentData.student_name || '-'}<br>
+                        <strong>NIS:</strong> ${studentData.student_nis || '-'}<br>
+                        <strong>Kelas:</strong> ${studentData.class_name || '-'}
                     </div>
                     <div class="col-md-6">
-                        <strong>Total Tunggakan:</strong> <span class="text-danger fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(studentData.total_tunggakan)}</span><br>
-                        <strong>Jumlah Item:</strong> ${studentData.jumlah_item} item
+                        <strong>Total Tunggakan:</strong> <span class="text-danger font-weight-bold">Rp ${new Intl.NumberFormat('id-ID').format(studentData.total_tunggakan || 0)}</span><br>
+                        <strong>Jumlah Item:</strong> ${studentData.jumlah_item || 0} item
                     </div>
                 </div>
                 <hr>
                 <h6>Detail Item Tunggakan:</h6>
                 <div class="table-responsive">
-                                         <table class="table table-sm table-bordered">
-                         <thead class="table-light">
-                             <tr>
-                                 <th style="width: 5%; text-align: center;">No.</th>
-                                 <th style="width: 40%;">POS</th>
-                                 <th style="width: 20%;">Tagihan</th>
-                                 <th style="width: 20%;">Terbayar</th>
-                                 <th style="width: 15%;">Tunggakan</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-             `;
+                    <table class="table table-sm table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 5%; text-align: center;">No.</th>
+                                <th style="width: 40%;">POS</th>
+                                <th style="width: 20%;">Tagihan</th>
+                                <th style="width: 20%;">Terbayar</th>
+                                <th style="width: 15%;">Tunggakan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
              
-             studentData.detail_tunggakan.forEach((item, index) => {
-                 detailHtml += `
-                     <tr>
-                         <td style="text-align: center; color: #000;">${index + 1}</td>
-                         <td>${item.pos_name}</td>
-                         <td>Rp ${new Intl.NumberFormat('id-ID').format(item.bill)}</td>
-                         <td>Rp ${new Intl.NumberFormat('id-ID').format(item.pay)}</td>
-                         <td class="text-danger fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(item.tunggakan)}</td>
-                     </tr>
-                 `;
-             });
+            if (studentData.detail_tunggakan && studentData.detail_tunggakan.length > 0) {
+                studentData.detail_tunggakan.forEach((item, index) => {
+                    const bill = parseFloat(item.bill || 0);
+                    const pay = parseFloat(item.pay || 0);
+                    const tunggakan = parseFloat(item.tunggakan || 0);
+                    
+                    detailHtml += `
+                        <tr>
+                            <td style="text-align: center; color: #000;">${index + 1}</td>
+                            <td>${item.pos_name || '-'}</td>
+                            <td>Rp ${new Intl.NumberFormat('id-ID').format(bill)}</td>
+                            <td>Rp ${new Intl.NumberFormat('id-ID').format(pay)}</td>
+                            <td class="text-danger font-weight-bold">Rp ${new Intl.NumberFormat('id-ID').format(tunggakan)}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                detailHtml += `
+                    <tr>
+                        <td colspan="5" class="text-center">Tidak ada data tunggakan</td>
+                    </tr>
+                `;
+            }
             
             detailHtml += `
                         </tbody>
@@ -364,7 +377,10 @@
             `;
             
             document.getElementById('detailModalBody').innerHTML = detailHtml;
-            new bootstrap.Modal(document.getElementById('detailModal')).show();
+            // Use jQuery for Bootstrap 4 modal
+            $('#detailModal').modal('show');
+        } else {
+            alert('Data siswa tidak ditemukan');
         }
     }
 
@@ -648,21 +664,26 @@
         exportForm.submit();
         document.body.removeChild(exportForm);
     }
-
-    // Initialize DataTable
+    
+    // Make functions global immediately (not waiting for DOM ready)
+    window.showDetail = showDetail;
+    window.downloadTunggakanPdf = downloadTunggakanPdf;
+    window.resetFilter = resetFilter;
+    window.exportPdf = exportPdf;
+    
+    // Initialize DataTable after DOM is ready
     $(document).ready(function() {
-        // Check if DataTable is available
-        if (typeof $.fn.DataTable !== 'undefined') {
+        // Initialize DataTable if available
+        if (typeof $.fn.DataTable !== 'undefined' && $('#tunggakanTable').length) {
             $('#tunggakanTable').DataTable({
                 pageLength: 25,
-                order: [[5, 'desc']], // Sort by total tunggakan descending
+                order: [[6, 'desc']], // Sort by total tunggakan descending
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
                 }
             });
-        } else {
-            console.warn('DataTable plugin not loaded. Table will work without DataTable features.');
         }
     });
+
  </script>
- @endpush 
+ @endsection 

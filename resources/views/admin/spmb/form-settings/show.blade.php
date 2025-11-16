@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
@@ -8,7 +8,7 @@
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .section-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #01a9ac;
         color: white;
         padding: 15px 20px;
         border-radius: 10px;

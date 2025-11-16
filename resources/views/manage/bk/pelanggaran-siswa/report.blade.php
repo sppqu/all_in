@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('content')
 <div class="container-fluid">
@@ -98,7 +98,7 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <label class="form-label">Filter Kelas</label>
-                                        <select name="kelas_id" class="form-select" onchange="document.getElementById('filterForm').submit()">
+                                        <select name="kelas_id" class="form-control select-primary" onchange="document.getElementById('filterForm').submit()">
                                             <option value="">-- Semua Kelas --</option>
                                             @foreach($classes as $class)
                                                 <option value="{{ $class->class_id }}" {{ $kelasId == $class->class_id ? 'selected' : '' }}>

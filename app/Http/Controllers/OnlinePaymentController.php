@@ -1484,8 +1484,8 @@ class OnlinePaymentController extends Controller
 
             // Jika verified, return dengan redirect URL ke halaman cetak kuitansi
             if ($request->verification_status === 'verified') {
-                return response()->json([
-                    'success' => true,
+            return response()->json([
+                'success' => true,
                     'message' => 'Pembayaran berhasil diverifikasi',
                     'redirect' => route('online-payment.receipt', $id)
                 ]);

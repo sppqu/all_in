@@ -79,14 +79,36 @@ class CashTransferController extends Controller
             $noTransaksi = 'TRF-' . $today->format('ymd') . '-001';
             
             // Cek apakah kas asal memiliki saldo cukup
-            $saldoKasAsal = DB::table('kas')
+            $kasAsal = DB::table('kas')
                 ->where('id', $request->kas_asal_id)
-                ->value('saldo') ?? 0;
+                ->first();
             
-            if ($saldoKasAsal < $request->jumlah_transfer) {
+            if (!$kasAsal) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Saldo kas asal tidak mencukupi untuk transfer ini!'
+                    'message' => 'Kas asal tidak ditemukan!'
+                ], 422);
+            }
+            
+            // Konversi ke float untuk perbandingan yang akurat
+            $saldoKasAsal = (float) ($kasAsal->saldo ?? 0);
+            $jumlahTransfer = (float) $request->jumlah_transfer;
+            
+            // Log untuk debugging
+            \Log::info('Cash Transfer - Saldo Check', [
+                'kas_asal_id' => $request->kas_asal_id,
+                'saldo_kas_asal' => $saldoKasAsal,
+                'jumlah_transfer' => $jumlahTransfer,
+                'saldo_type' => gettype($kasAsal->saldo),
+                'transfer_type' => gettype($request->jumlah_transfer)
+            ]);
+            
+            if ($saldoKasAsal < $jumlahTransfer) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Saldo kas asal tidak mencukupi untuk transfer ini! Saldo: Rp ' . number_format($saldoKasAsal, 0, ',', '.') . ', Transfer: Rp ' . number_format($jumlahTransfer, 0, ',', '.')
                 ], 422);
             }
             
@@ -115,31 +137,8 @@ class CashTransferController extends Controller
                 ->where('id', $request->kas_tujuan_id)
                 ->increment('saldo', $request->jumlah_transfer);
             
-            // Insert ke debit (kas tujuan)
-            DB::table('debit')->insert([
-                'tanggal' => $request->tanggal_transfer,
-                'kas_id' => $request->kas_tujuan_id,
-                'pos_id' => null, // Transfer antar kas
-                'keterangan' => 'Transfer dari ' . $request->keterangan,
-                'jumlah' => $request->jumlah_transfer,
-                'operator' => auth()->user()->name,
-                'status' => 'confirmed',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-            
-            // Insert ke kredit (kas asal)
-            DB::table('kredit')->insert([
-                'tanggal' => $request->tanggal_transfer,
-                'kas_id' => $request->kas_asal_id,
-                'pos_id' => null, // Transfer antar kas
-                'keterangan' => 'Transfer ke ' . $request->keterangan,
-                'jumlah' => $request->jumlah_transfer,
-                'operator' => auth()->user()->name,
-                'status' => 'confirmed',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+            // Tidak perlu insert ke debit/kredit karena sudah menggunakan tabel cash_transfers
+            // Transfer kas sudah tercatat di cash_transfers dan saldo kas sudah diupdate
             
             DB::commit();
             
@@ -248,18 +247,8 @@ class CashTransferController extends Controller
                 ->where('id', $transfer->kas_tujuan_id)
                 ->decrement('saldo', $transfer->jumlah_transfer);
             
-            // Hapus record debit dan kredit yang terkait
-            DB::table('debit')
-                ->where('tanggal', $transfer->tanggal_transfer)
-                ->where('keterangan', 'LIKE', '%Transfer%')
-                ->where('jumlah', $transfer->jumlah_transfer)
-                ->delete();
-            
-            DB::table('kredit')
-                ->where('tanggal', $transfer->tanggal_transfer)
-                ->where('keterangan', 'LIKE', '%Transfer%')
-                ->where('jumlah', $transfer->jumlah_transfer)
-                ->delete();
+            // Tidak perlu hapus dari debit/kredit karena tabel tersebut tidak digunakan
+            // Transfer kas sudah tercatat di cash_transfers dan saldo kas sudah diupdate
             
             // Hapus transfer
             DB::table('cash_transfers')->where('id', $id)->delete();

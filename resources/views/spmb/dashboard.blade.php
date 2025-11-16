@@ -636,12 +636,18 @@
                                         @endif
                                     </div>
                                     <small style="font-size: 0.7rem; color: {{ $registration->step >= $i ? '#2c3e50' : '#adb5bd' }}; display: block; font-weight: {{ $registration->step == $i ? '600' : '400' }};">
-                                        @if($i == 1) Daftar
-                                        @elseif($i == 2) Bayar
-                                        @elseif($i == 3) Formulir
-                                        @elseif($i == 4) Dokumen
-                                        @elseif($i == 5) Biaya SPMB
-                                        @else Selesai
+                                        @if($i == 1)
+                                            Daftar
+                                        @elseif($i == 2)
+                                            Bayar
+                                        @elseif($i == 3)
+                                            Formulir
+                                        @elseif($i == 4)
+                                            Dokumen
+                                        @elseif($i == 5)
+                                            Biaya SPMB
+                                        @else
+                                            Selesai
                                         @endif
                                     </small>
                                 </div>

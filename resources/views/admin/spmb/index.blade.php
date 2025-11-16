@@ -1,472 +1,162 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @push('styles')
 <style>
-    .container-fluid {
-        min-height: calc(100vh - 200px);
-        width: 100%;
-        clear: both;
-    }
-
-    .stats-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    .info-card {
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
         transition: all 0.3s ease;
-        border-left: 4px solid #008060;
-        padding: 1rem;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .stats-icon {
-        font-size: 1.5rem;
-        color: #008060;
-        margin-right: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .stats-content {
-        display: flex;
-        align-items: center;
-        text-align: left;
-    }
-
-    .stats-info {
-        flex: 1;
-    }
-
-    .stats-number {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.25rem;
-        color: #333;
-    }
-
-    .stats-label {
-        font-size: 0.85rem;
-        color: #6c757d;
-        margin: 0;
-    }
-
-    .table-card {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        border-radius: 25px;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #008060 0%, #006d52 100%);
-        border: none;
-        border-radius: 15px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
         position: relative;
         overflow: hidden;
     }
 
-    .btn-primary::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
     }
 
-    .btn-primary:hover::before {
-        left: 100%;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 128, 96, 0.4);
-    }
-
-    .btn-outline-primary {
-        border: 2px solid #008060;
-        color: #008060;
-        background: transparent;
-        border-radius: 15px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .btn-outline-primary:hover {
-        background: #008060;
-        border-color: #008060;
-        color: white;
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0, 128, 96, 0.4);
-    }
-
-    /* Standardize all button styles */
-    .btn {
-        border-radius: 15px;
-        padding: 12px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: left 0.5s;
-    }
-
-    .btn:hover::before {
-        left: 100%;
-    }
-
-    .btn:hover {
-        transform: translateY(-3px);
-    }
-
-    .btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: linear-gradient(135deg, #1e7e34 0%, #155724 100%);
-        box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
-    }
-
-    .btn-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-info:hover {
-        background: linear-gradient(135deg, #138496 0%, #0f6674 100%);
-        box-shadow: 0 10px 25px rgba(23, 162, 184, 0.4);
-    }
-
-    .btn-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        border: none;
-        color: #212529;
-    }
-
-    .btn-warning:hover {
-        background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
-        box-shadow: 0 10px 25px rgba(255, 193, 7, 0.4);
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #008060 0%, #006d52 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: linear-gradient(135deg, #006d52 0%, #004d3a 100%);
-        box-shadow: 0 10px 25px rgba(0, 128, 96, 0.4);
-    }
-
-    .btn-danger {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
-        box-shadow: 0 10px 25px rgba(220, 53, 69, 0.4);
-    }
-
-    .status-badge {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .alert {
-        border-radius: 15px;
-        border: none;
-        padding: 15px 20px;
-    }
-
-    .table {
-        border-radius: 15px;
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: white;
-        color: #333;
-        border: none;
-        font-weight: 600;
-        border-bottom: 2px solid #008060;
-    }
-
-    .table tbody tr:hover {
-        background: rgba(0, 128, 96, 0.05);
-    }
-
-    /* Action Buttons Styling */
-    .action-buttons {
+    .info-card-header {
         display: flex;
-        gap: 2px;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.9);
-        border: 2px solid rgba(0, 128, 96, 0.1);
-        border-radius: 15px;
-        padding: 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
     }
 
-    .action-buttons:hover {
-        border-color: rgba(0, 128, 96, 0.3);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .action-btn {
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        display: inline-flex;
+    .info-card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        border: none;
-        position: relative;
-        overflow: hidden;
+        font-size: 1.5rem;
+        color: #ffffff;
+        flex-shrink: 0;
     }
 
-    .action-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transition: left 0.5s;
+    .info-card-icon.primary {
+        background: #01a9ac;
     }
 
-    .action-btn:hover::before {
-        left: 100%;
+    .info-card-icon.success {
+        background: #28a745;
     }
 
-    .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    .info-card-icon.warning {
+        background: #ffc107;
     }
 
-    /* Bulk Actions Styling */
-    .bulk-actions {
-        background: rgba(220, 53, 69, 0.1);
-        border: 1px solid rgba(220, 53, 69, 0.3);
-        border-radius: 15px;
-        padding: 8px 16px;
-        transition: all 0.3s ease;
+    .info-card-icon.danger {
+        background: #dc3545;
     }
 
-    .bulk-actions.show {
-        background: rgba(220, 53, 69, 0.2);
-        border-color: rgba(220, 53, 69, 0.5);
+    .info-card-icon.info {
+        background: #17a2b8;
     }
 
-    .selected-count {
+    .info-card-title {
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 600;
+        margin: 0;
+        text-align: right;
+        flex: 1;
+        padding-left: 1rem;
     }
 
-    .dropdown-menu {
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        border: none;
+    .info-card-title.primary {
+        color: #01a9ac;
     }
 
-    .dropdown-item {
-        border-radius: 8px;
-        margin: 2px 8px;
-        transition: all 0.2s ease;
-    }
-
-    .dropdown-item:hover {
-        background: rgba(220, 53, 69, 0.1);
-        color: #dc3545;
-    }
-
-    .dropdown-item.text-danger:hover {
-        background: rgba(220, 53, 69, 0.15);
-        color: #dc3545;
-    }
-
-    .dropdown-item.text-success:hover {
-        background: rgba(40, 167, 69, 0.15);
+    .info-card-title.success {
         color: #28a745;
     }
 
-    .dropdown-item.text-warning:hover {
-        background: rgba(255, 193, 7, 0.15);
+    .info-card-title.warning {
         color: #ffc107;
     }
 
-    /* Checkbox styling */
-    .form-check-input {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
+    .info-card-title.danger {
+        color: #dc3545;
     }
 
-    .form-check-input:checked {
-        background-color: #008060;
-        border-color: #008060;
+    .info-card-title.info {
+        color: #17a2b8;
     }
 
-    /* Mobile Responsive Menu */
-    .mobile-menu-container {
-        display: none;
-    }
-
-    .mobile-menu-container.show {
-        display: block;
-    }
-
-    .mobile-menu-toggle {
-        display: none;
-        background: #008060;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-bottom: 15px;
-    }
-
-    .mobile-menu-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
-        margin-bottom: 20px;
-    }
-
-    .mobile-menu-item {
-        background: white;
-        border: 2px solid #e9ecef;
-        border-radius: 12px;
-        padding: 15px 10px;
-        text-align: center;
-        text-decoration: none;
-        color: #333;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .mobile-menu-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        text-decoration: none;
-        color: #333;
-    }
-
-    .mobile-menu-item i {
-        font-size: 24px;
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .mobile-menu-item .btn-text {
-        font-size: 12px;
-        font-weight: 600;
+    .info-card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1rem;
         line-height: 1.2;
     }
 
-    /* Button colors for mobile */
-    .mobile-menu-item.btn-success { border-color: #28a745; color: #28a745; }
-    .mobile-menu-item.btn-info { border-color: #17a2b8; color: #17a2b8; }
-    .mobile-menu-item.btn-warning { border-color: #ffc107; color: #e0a800; }
-    .mobile-menu-item.btn-primary { border-color: #007bff; color: #007bff; }
-    .mobile-menu-item.btn-danger { border-color: #dc3545; color: #dc3545; }
-
-    .mobile-menu-item.btn-success:hover { background: #28a745; color: white; }
-    .mobile-menu-item.btn-info:hover { background: #17a2b8; color: white; }
-    .mobile-menu-item.btn-warning:hover { background: #ffc107; color: #333; }
-    .mobile-menu-item.btn-primary:hover { background: #007bff; color: white; }
-    .mobile-menu-item.btn-danger:hover { background: #dc3545; color: white; }
-
-    /* Desktop menu - hide on mobile */
-    .desktop-menu {
+    .info-card-footer {
         display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        margin-top: auto;
     }
 
-    /* Mobile responsive breakpoints */
-    @media (max-width: 768px) {
-        .mobile-menu-toggle {
-            display: block !important;
-        }
-        
-        .mobile-menu-container {
-            display: block;
-        }
-        
-        .desktop-menu {
-            display: none !important;
-        }
-        
-        .mobile-menu-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
+    .info-card-footer-icon {
+        font-size: 0.875rem;
     }
 
-    @media (min-width: 769px) {
-        .mobile-menu-toggle {
-            display: none !important;
-        }
-        
-        .mobile-menu-container {
-            display: none !important;
-        }
-        
-        .desktop-menu {
-            display: flex !important;
-        }
+    .info-card-footer-text {
+        color: #6c757d;
     }
 
-    @media (max-width: 480px) {
-        .mobile-menu-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .mobile-menu-item {
-            padding: 20px 15px;
-        }
-        
-        .mobile-menu-item i {
-            font-size: 28px;
-        }
-        
-        .mobile-menu-item .btn-text {
-            font-size: 14px;
-        }
+    .info-card-footer.primary .info-card-footer-icon,
+    .info-card-footer.primary .info-card-footer-text {
+        color: #01a9ac;
+    }
+
+    .info-card-footer.success .info-card-footer-icon,
+    .info-card-footer.success .info-card-footer-text {
+        color: #28a745;
+    }
+
+    .info-card-footer.warning .info-card-footer-icon,
+    .info-card-footer.warning .info-card-footer-text {
+        color: #ffc107;
+    }
+
+    .info-card-footer.danger .info-card-footer-icon,
+    .info-card-footer.danger .info-card-footer-text {
+        color: #dc3545;
+    }
+
+    .info-card-footer.info .info-card-footer-icon,
+    .info-card-footer.info .info-card-footer-text {
+        color: #17a2b8;
+    }
+
+    .chart-card {
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-card-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
     }
 </style>
 @endpush
@@ -483,171 +173,237 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
+    <!-- Info Cards -->
+    <div class="row">
         <div class="col-md-3 mb-3">
-            <div class="stats-card">
-                <div class="stats-content">
-                    <div class="stats-icon text-primary">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon primary">
                         <i class="fas fa-users"></i>
                     </div>
-                    <div class="stats-info">
-                        <div class="stats-number">{{ $stats['total'] }}</div>
-                        <p class="stats-label mb-0">Total Pendaftar</p>
-                    </div>
+                    <div class="info-card-title primary">Total Pendaftar</div>
+                </div>
+                <div class="info-card-value">{{ $stats['total'] }}</div>
+                <div class="info-card-footer primary">
+                    <i class="fas fa-chart-line info-card-footer-icon"></i>
+                    <span class="info-card-footer-text">Semua pendaftar</span>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="stats-card">
-                <div class="stats-content">
-                    <div class="stats-icon text-success">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon success">
                         <i class="fas fa-check-circle"></i>
                     </div>
-                    <div class="stats-info">
-                        <div class="stats-number">{{ $stats['completed'] }}</div>
-                        <p class="stats-label mb-0">Diterima</p>
-                    </div>
+                    <div class="info-card-title success">Diterima</div>
+                </div>
+                <div class="info-card-value">{{ $stats['completed'] }}</div>
+                <div class="info-card-footer success">
+                    <i class="fas fa-calendar-check info-card-footer-icon"></i>
+                    <span class="info-card-footer-text">Status diterima</span>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="stats-card">
-                <div class="stats-content">
-                    <div class="stats-icon text-warning">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon warning">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <div class="stats-info">
-                        <div class="stats-number">{{ $stats['pending'] }}</div>
-                        <p class="stats-label mb-0">Pending</p>
-                    </div>
+                    <div class="info-card-title warning">Pending</div>
+                </div>
+                <div class="info-card-value">{{ $stats['pending'] }}</div>
+                <div class="info-card-footer warning">
+                    <i class="fas fa-hourglass-half info-card-footer-icon"></i>
+                    <span class="info-card-footer-text">Menunggu verifikasi</span>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="stats-card">
-                <div class="stats-content">
-                    <div class="stats-icon text-danger">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon danger">
                         <i class="fas fa-times-circle"></i>
                     </div>
-                    <div class="stats-info">
-                        <div class="stats-number">{{ $stats['ditolak'] }}</div>
-                        <p class="stats-label mb-0">Pendaftar Ditolak</p>
-                    </div>
+                    <div class="info-card-title danger">Ditolak</div>
+                </div>
+                <div class="info-card-value">{{ $stats['ditolak'] }}</div>
+                <div class="info-card-footer danger">
+                    <i class="fas fa-ban info-card-footer-icon"></i>
+                    <span class="info-card-footer-text">Pendaftar ditolak</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SPMB Settings Info Card -->
-    @if($spmbSettings)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="stats-card">
-                <div class="p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0 fw-bold">
-                            <i class="fas fa-cogs me-2 text-primary"></i>Informasi Pengaturan SPMB
-                        </h6>
-                        <a href="{{ route('manage.spmb.settings') }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-edit me-1"></i>Edit
-                        </a>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 mb-2">
-                            <label class="text-muted small d-block mb-1">Status Pendaftaran</label>
-                            <div>
-                                @if($spmbSettings->pendaftaran_dibuka)
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-unlock me-1"></i>Dibuka
-                                    </span>
-                                @else
-                                    <span class="badge bg-danger">
-                                        <i class="fas fa-lock me-1"></i>Ditutup
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <label class="text-muted small d-block mb-1">Periode</label>
-                            <div class="fw-bold">{{ $spmbSettings->tahun_pelajaran }}</div>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <label class="text-muted small d-block mb-1">Tanggal Buka</label>
-                            <div>
-                                @if($spmbSettings->tanggal_buka)
-                                    {{ $spmbSettings->tanggal_buka->format('d/m/Y') }}
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <label class="text-muted small d-block mb-1">Tanggal Tutup</label>
-                            <div>
-                                @if($spmbSettings->tanggal_tutup)
-                                    {{ $spmbSettings->tanggal_tutup->format('d/m/Y') }}
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+    <!-- Charts Section -->
+    <div class="row mt-4">
+        <!-- Grafik Garis - Data Pendaftar Per Hari -->
+        <div class="col-md-8 mb-3">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <h5 class="chart-card-title">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Data Pendaftar Per Hari (30 Hari Terakhir)
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dailyRegistrationsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafik Pie - Distribusi Status Pendaftar -->
+        <div class="col-md-4 mb-3">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <h5 class="chart-card-title">
+                        <i class="fas fa-chart-pie me-2 text-success"></i>Distribusi Status Pendaftar
+                    </h5>
+                </div>
+                <div class="chart-container">
+                    <canvas id="statusDistributionChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-    @endif
-
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
-        <i class="fas fa-bars me-2"></i>Menu Admin SPMB
-    </button>
 </div>
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-    // Mobile Menu Toggle Function
-    function toggleMobileMenu() {
-        const mobileMenu = document.getElementById('mobileMenu');
-        const toggleBtn = document.querySelector('.mobile-menu-toggle');
-        
-        if (mobileMenu.classList.contains('show')) {
-            mobileMenu.classList.remove('show');
-            toggleBtn.innerHTML = '<i class="fas fa-bars me-2"></i>Menu Admin SPMB';
-        } else {
-            mobileMenu.classList.add('show');
-            toggleBtn.innerHTML = '<i class="fas fa-times me-2"></i>Tutup Menu';
-        }
-    }
-
-    // Auto-hide mobile menu on window resize
-    window.addEventListener('resize', function() {
-        const mobileMenu = document.getElementById('mobileMenu');
-        const toggleBtn = document.querySelector('.mobile-menu-toggle');
-        
-        if (window.innerWidth > 768) {
-            mobileMenu.classList.remove('show');
-            toggleBtn.innerHTML = '<i class="fas fa-bars me-2"></i>Menu Admin SPMB';
+document.addEventListener('DOMContentLoaded', function() {
+    // Grafik Garis - Data Pendaftar Per Hari
+    const dailyCtx = document.getElementById('dailyRegistrationsChart').getContext('2d');
+    const dailyChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: @json($dailyLabels),
+            datasets: [{
+                label: 'Jumlah Pendaftar',
+                data: @json($dailyRegistrations),
+                borderColor: '#01a9ac',
+                backgroundColor: 'rgba(1, 169, 172, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#01a9ac',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            return 'Pendaftar: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    }
+                }
+            }
         }
     });
 
-    // Initialize mobile menu state
-    document.addEventListener('DOMContentLoaded', function() {
-        const mobileMenu = document.getElementById('mobileMenu');
-        const toggleBtn = document.querySelector('.mobile-menu-toggle');
-        
-        // Hide mobile menu by default
-        mobileMenu.classList.remove('show');
-        
-        // Show/hide toggle button based on screen size
-        if (window.innerWidth <= 768) {
-            toggleBtn.style.display = 'block';
-        } else {
-            toggleBtn.style.display = 'none';
+    // Grafik Pie - Distribusi Status Pendaftar
+    const pieCtx = document.getElementById('statusDistributionChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: @json($pieData['labels']),
+            datasets: [{
+                data: @json($pieData['data']),
+                backgroundColor: @json($pieData['colors']),
+                borderColor: @json($pieData['borderColors']),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
         }
     });
-
+});
 </script>
 @endpush

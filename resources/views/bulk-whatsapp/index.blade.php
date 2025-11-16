@@ -1,4 +1,4 @@
-@extends('layouts.coreui')
+@extends('layouts.adminty')
 
 @section('title', 'Kirim Tagihan Masal WhatsApp')
 
@@ -18,7 +18,7 @@
                     <div class="row mb-4">
                         <div class="col-md-2">
                             <label for="period_id" class="form-label">Tahun Ajaran <span class="text-danger">*</span></label>
-                            <select class="form-select" id="period_id" required>
+                            <select class="form-control select-primary" id="period_id" required>
                                 <option value="all" selected>Semua Tahun Ajaran</option>
                                 @foreach($periods as $period)
                                     <option value="{{ $period->period_id }}">
@@ -29,7 +29,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="pos_id" class="form-label">POS Pembayaran <span class="text-danger">*</span></label>
-                            <select class="form-select" id="pos_id" required>
+                            <select class="form-control select-primary" id="pos_id" required>
                                 <option value="all" selected>Semua POS</option>
                                 @foreach($posPembayaran as $pos)
                                     <option value="{{ $pos->pos_id }}">{{ $pos->pos_name }}</option>
@@ -38,7 +38,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="class_id" class="form-label">Kelas (Opsional)</label>
-                            <select class="form-select" id="class_id">
+                            <select class="form-control select-primary" id="class_id">
                                 <option value="" selected>Semua Kelas</option>
                                 @foreach($classes as $class)
                                     <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
@@ -47,7 +47,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="month_id" class="form-label">Bulan (Opsional)</label>
-                            <select class="form-select" id="month_id">
+                            <select class="form-control select-primary" id="month_id">
                                 <option value="" selected>Semua Bulan</option>
                                 <option value="1">Juli</option>
                                 <option value="2">Agustus</option>
@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="student_status" class="form-label">Status Siswa</label>
-                            <select class="form-select" id="student_status">
+                            <select class="form-control select-primary" id="student_status">
                                 <option value="" selected>Semua Status</option>
                                 <option value="aktif">Aktif</option>
                                 <option value="tidak aktif">Tidak Aktif</option>
@@ -73,7 +73,7 @@
                         </div>
                         <div class="col-md-2">
                             <label for="bill_type" class="form-label">Jenis Tagihan</label>
-                            <select class="form-select" id="bill_type">
+                            <select class="form-control select-primary" id="bill_type">
                                 <option value="all" selected>Semua Tagihan</option>
                                 <option value="bulanan">Tagihan Bulanan</option>
                                 <option value="bebas">Tagihan Bebas</option>
@@ -185,8 +185,10 @@
                         <table class="table table-striped table-hover" id="billsDataTable">
                             <thead class="table-dark">
                                 <tr>
-                                    <th width="50">
-                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    <th width="50" style="text-align: center;">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input type="checkbox" id="selectAll" class="form-check-input" style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                                        </div>
                                     </th>
                                     <th>NIS</th>
                                     <th>Nama Siswa</th>
@@ -270,10 +272,189 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+/* Checkbox Styling in Table */
+.table-responsive .form-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20px;
+}
+
+.table-responsive .form-check-input {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    cursor: pointer;
+    border: 2px solid #ced4da;
+    border-radius: 0.25rem;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    position: relative;
+    vertical-align: middle;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.table-responsive .form-check-input:checked {
+    background-color: #01a9ac;
+    border-color: #01a9ac;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+}
+
+.table-responsive .form-check-input:focus {
+    border-color: #01a9ac;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(1, 169, 172, 0.25);
+}
+
+.table-responsive .form-check-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #e9ecef;
+}
+
+.table-responsive .form-check-input:hover:not(:disabled) {
+    border-color: #01a9ac;
+}
+
+/* Table Header Checkbox */
+.table-dark .form-check-input {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.table-dark .form-check-input:checked {
+    background-color: #01a9ac;
+    border-color: #01a9ac;
+}
+
+.table-dark .form-check-input:focus {
+    border-color: #01a9ac;
+    box-shadow: 0 0 0 0.2rem rgba(1, 169, 172, 0.5);
+}
+
+/* Table Cell Alignment */
+.table-responsive th:first-child,
+.table-responsive td:first-child {
+    text-align: center;
+    vertical-align: middle;
+}
+</style>
+@endpush
+
 @section('scripts')
 <script>
 let billsData = [];
 let selectedBills = [];
+
+// Define showDetail function early (before DOM ready)
+function showDetail(studentId) {
+    // Find the data for this student
+    const studentData = billsData.find(item => item.student_id == studentId);
+    
+    if (!studentData) {
+        console.error('Student data not found for ID:', studentId);
+        if (typeof showToast === 'function') {
+            showToast('Data siswa tidak ditemukan', 'error');
+        } else {
+            alert('Data siswa tidak ditemukan');
+        }
+        return;
+    }
+    
+    let detailHtml = `
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Nama Siswa:</strong> ${studentData.nama || '-'}<br>
+                <strong>NIS:</strong> ${studentData.nis || '-'}<br>
+                <strong>Kelas:</strong> ${studentData.kelas || '-'}
+            </div>
+            <div class="col-md-6">
+                <strong>Total Tunggakan:</strong> <span class="text-danger fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(studentData.unpaid_amount || 0)}</span><br>
+                <strong>Jumlah Item:</strong> ${studentData.unpaid_bills || 0} item
+            </div>
+        </div>
+        <hr>
+        <h6>Detail Item Tunggakan:</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>POS</th>
+                        <th>Jenis</th>
+                        <th>Detail</th>
+                        <th>Tagihan</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (studentData.bill_details && studentData.bill_details.length > 0) {
+        studentData.bill_details.forEach(item => {
+            const statusBadge = item.is_paid ? 
+                '<span class="badge bg-success">Lunas</span>' : 
+                '<span class="badge bg-warning">Belum Lunas</span>';
+            
+            const jenisBadge = item.bill_type === 'bulanan' ? 
+                '<span class="badge bg-primary">Bulanan</span>' : 
+                '<span class="badge bg-info">Bebas</span>';
+            
+            detailHtml += `
+                <tr>
+                    <td>${item.pos_name || '-'}</td>
+                    <td>${jenisBadge}</td>
+                    <td>${item.detail || '-'}</td>
+                    <td>Rp ${new Intl.NumberFormat('id-ID').format(item.amount || 0)}</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        });
+    } else {
+        detailHtml += '<tr><td colspan="5" class="text-center">Tidak ada data tagihan</td></tr>';
+    }
+    
+    detailHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    // Buat modal untuk menampilkan detail
+    if ($('#detailModal').length === 0) {
+        $('body').append(`
+            <div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="detailModalLabel">Detail Tagihan Siswa</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="detailModalBody">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+    
+    $('#detailModalBody').html(detailHtml);
+    $('#detailModal').modal('show');
+}
+
+// Make showDetail function global
+window.showDetail = showDetail;
 
 $(document).ready(function() {
     // Search bills
@@ -295,7 +476,13 @@ $(document).ready(function() {
         updateSelectedBills();
     });
 
-
+    // Handle detail button click using event delegation
+    $(document).on('click', '.btn-detail-bill', function() {
+        const studentId = $(this).data('student-id');
+        if (studentId) {
+            window.showDetail(studentId);
+        }
+    });
 
     // Send consolidated bills
     $('#btnSendConsolidated').on('click', function() {
@@ -397,10 +584,13 @@ function displayBills(bills) {
         console.log('Processing student:', student);
         const row = `
             <tr>
-                <td>
-                    <input type="checkbox" class="form-check-input student-checkbox" 
-                           value="${student.student_id}" data-index="${index}"
-                           ${!student.has_phone ? 'disabled' : ''}>
+                <td style="text-align: center;">
+                    <div class="form-check d-flex justify-content-center">
+                        <input type="checkbox" class="form-check-input student-checkbox" 
+                               value="${student.student_id}" data-index="${index}"
+                               style="width: 18px; height: 18px; margin: 0; cursor: pointer;"
+                               ${!student.has_phone ? 'disabled' : ''}>
+                    </div>
                 </td>
                 <td>${student.nis || '-'}</td>
                 <td>${student.nama || '-'}</td>
@@ -420,7 +610,7 @@ function displayBills(bills) {
                     }
                 </td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-info" onclick="showDetail(${student.student_id})">
+                    <button type="button" class="btn btn-sm btn-info btn-detail-bill" data-student-id="${student.student_id}" style="cursor: pointer;">
                         <i class="fa fa-eye"></i> Detail
                     </button>
                 </td>
@@ -537,90 +727,6 @@ function updateSelectedBills() {
     }
 }
 
-function showDetail(studentId) {
-    // Find the data for this student
-    const studentData = billsData.find(item => item.student_id == studentId);
-    
-    if (studentData) {
-        let detailHtml = `
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <strong>Nama Siswa:</strong> ${studentData.nama}<br>
-                    <strong>NIS:</strong> ${studentData.nis}<br>
-                    <strong>Kelas:</strong> ${studentData.kelas}
-                </div>
-                <div class="col-md-6">
-                    <strong>Total Tunggakan:</strong> <span class="text-danger fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(studentData.unpaid_amount)}</span><br>
-                    <strong>Jumlah Item:</strong> ${studentData.unpaid_bills} item
-                </div>
-            </div>
-            <hr>
-            <h6>Detail Item Tunggakan:</h6>
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th>POS</th>
-                            <th>Jenis</th>
-                            <th>Detail</th>
-                            <th>Tagihan</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        studentData.bill_details.forEach(item => {
-            const statusBadge = item.is_paid ? 
-                '<span class="badge bg-success">Lunas</span>' : 
-                '<span class="badge bg-warning">Belum Lunas</span>';
-            
-            const jenisBadge = item.bill_type === 'bulanan' ? 
-                '<span class="badge bg-primary">Bulanan</span>' : 
-                '<span class="badge bg-info">Bebas</span>';
-            
-            detailHtml += `
-                <tr>
-                    <td>${item.pos_name}</td>
-                    <td>${jenisBadge}</td>
-                    <td>${item.detail}</td>
-                    <td>Rp ${new Intl.NumberFormat('id-ID').format(item.amount)}</td>
-                    <td>${statusBadge}</td>
-                </tr>
-            `;
-        });
-        
-        detailHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        // Buat modal untuk menampilkan detail
-        if ($('#detailModal').length === 0) {
-            $('body').append(`
-                <div class="modal fade" id="detailModal" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Detail Tagihan Siswa</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body" id="detailModalBody">
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `);
-        }
-        
-        document.getElementById('detailModalBody').innerHTML = detailHtml;
-        new bootstrap.Modal(document.getElementById('detailModal')).show();
-    }
-}
 
 
 
