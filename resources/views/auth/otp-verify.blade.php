@@ -1,37 +1,51 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi OTP - SPPQU</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="SPPQU - Sistem Pembayaran Peserta Didik">
+    <meta name="keywords" content="SPPQU, Pembayaran, Sekolah">
+    <meta name="author" content="SPPQU">
+    
+    <title>Verifikasi OTP - {{ config('app.name', 'SPPQU') }}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    
+    <!-- Google font -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet">
+    
+    <!-- Required Framework - Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/bower_components/bootstrap/css/bootstrap.min.css') }}">
+    
+    <!-- Feather Icons -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/assets/icon/feather/css/feather.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Style.css -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/assets/css/style.css') }}">
+    
+    <!-- Custom Login Styles -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
+            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Open Sans', sans-serif;
             position: relative;
+            overflow: hidden;
+            padding: 20px;
         }
-
+        
         /* Animated Background */
-        .animated-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-
-        .animated-bg::before {
+        body::before {
             content: '';
             position: absolute;
             top: 0;
@@ -40,81 +54,30 @@
             height: 100%;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
             animation: float 20s ease-in-out infinite;
+            z-index: 0;
         }
-
+        
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(1deg); }
         }
-
-        /* Floating Elements */
-        .floating-elements {
-            position: fixed;
-            top: 0;
-            left: 0;
+        
+        .login-container {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
+            max-width: 600px;
+            padding: 0;
         }
-
-        .floating-element {
-            position: absolute;
-            background: rgba(255, 140, 0, 0.15);
-            border-radius: 50%;
-            animation: floatElement 15s ease-in-out infinite;
-        }
-
-        .floating-element:nth-child(1) {
-            width: 100px;
-            height: 100px;
-            top: 15%;
-            left: 15%;
-            animation-delay: 0s;
-        }
-
-        .floating-element:nth-child(2) {
-            width: 150px;
-            height: 150px;
-            top: 70%;
-            left: 10%;
-            animation-delay: 3s;
-        }
-
-        .floating-element:nth-child(3) {
-            width: 80px;
-            height: 80px;
-            bottom: 15%;
-            left: 25%;
-            animation-delay: 6s;
-        }
-
-        @keyframes floatElement {
-            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-            50% { transform: translateY(-40px) rotate(180deg); opacity: 0.6; }
-        }
-
-        .container-fluid {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-
-
+        
         .otp-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 25px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
-            max-width: 500px;
-            width: 100%;
             animation: slideInRight 1s ease-out 0.3s both;
         }
-
+        
         @keyframes slideInRight {
             from {
                 opacity: 0;
@@ -125,16 +88,16 @@
                 transform: translateX(0);
             }
         }
-
+        
         .otp-header {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
+            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
             color: white;
             padding: 40px 30px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-
+        
         .otp-header::before {
             content: '';
             position: absolute;
@@ -145,12 +108,12 @@
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
             animation: slide 20s linear infinite;
         }
-
+        
         @keyframes slide {
             0% { transform: translateX(0); }
             100% { transform: translateX(-20px); }
         }
-
+        
         .logo-sppqu {
             width: 90px;
             height: 90px;
@@ -165,7 +128,7 @@
             z-index: 1;
             animation: bounceIn 1s ease-out 0.5s both;
         }
-
+        
         @keyframes bounceIn {
             0% {
                 opacity: 0;
@@ -183,13 +146,13 @@
                 transform: scale(1);
             }
         }
-
+        
         .logo-sppqu img {
             width: 70px;
             height: 70px;
             object-fit: contain;
         }
-
+        
         .otp-header h3 {
             font-size: 2rem;
             font-weight: 700;
@@ -197,26 +160,26 @@
             position: relative;
             z-index: 1;
         }
-
+        
         .otp-header p {
             font-size: 1.1rem;
-            opacity: 0.9;
+            opacity: 0.95;
             position: relative;
             z-index: 1;
         }
-
+        
         .otp-body {
             padding: 50px 40px;
         }
-
+        
         .alert {
             border: none;
-            border-radius: 15px;
+            border-radius: 10px;
             padding: 15px 20px;
             margin-bottom: 25px;
             animation: slideInDown 0.5s ease-out;
         }
-
+        
         @keyframes slideInDown {
             from {
                 opacity: 0;
@@ -227,53 +190,59 @@
                 transform: translateY(0);
             }
         }
-
+        
         .alert-success {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            background: #d4edda;
             color: #155724;
             border-left: 4px solid #28a745;
         }
-
+        
         .alert-danger {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            background: #f8d7da;
             color: #721c24;
             border-left: 4px solid #dc3545;
         }
-
+        
         .phone-display {
-            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-            border-radius: 15px;
+            background: #e8f5e8;
+            border-radius: 10px;
             padding: 20px;
             text-align: center;
             margin-bottom: 30px;
             border-left: 4px solid #28a745;
             animation: slideInDown 0.5s ease-out 0.2s both;
+            word-break: break-word;
         }
-
+        
         .phone-display .text-muted {
             font-size: 0.9rem;
             margin-bottom: 8px;
             color: #6c757d !important;
         }
-
+        
         .phone-number {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #008060;
+            color: #01a9ac;
         }
-
+        
         .form-label {
             font-weight: 600;
             color: #333;
             margin-bottom: 12px;
-            font-size: 1.1rem;
+            display: block;
+            font-size: 1rem;
+            text-align: center;
         }
-
+        
         .otp-input-container {
             position: relative;
             margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
         }
-
+        
         .otp-hidden-input {
             position: absolute;
             top: 0;
@@ -283,20 +252,27 @@
             opacity: 0;
             z-index: 1;
             cursor: pointer;
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 20px;
+            border: none;
+            background: transparent;
         }
-
+        
         .otp-display {
             display: flex;
             gap: 12px;
             justify-content: center;
             align-items: center;
+            flex-wrap: wrap;
+            width: 100%;
         }
-
+        
         .otp-digit {
             width: 60px;
             height: 60px;
             border: 2px solid #e9ecef;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -305,39 +281,41 @@
             background: white;
             transition: all 0.3s ease;
             position: relative;
+            flex-shrink: 0;
+            min-width: 60px;
         }
-
+        
         .otp-digit.filled {
-            border-color: #008060;
+            border-color: #01a9ac;
             background: #f8f9fa;
         }
-
+        
         .otp-digit.filled::after {
             content: attr(data-value);
-            color: #008060;
+            color: #01a9ac;
             font-size: 24px;
             font-weight: 700;
         }
-
+        
         .otp-digit.active {
-            border-color: #008060;
-            box-shadow: 0 0 0 0.2rem rgba(0, 128, 96, 0.25);
+            border-color: #01a9ac;
+            box-shadow: 0 0 0 0.2rem rgba(1, 169, 172, 0.25);
             transform: translateY(-2px);
         }
-
+        
         .form-text {
             color: #6c757d;
             font-size: 0.9rem;
             margin-top: 8px;
             text-align: center;
         }
-
+        
         .countdown-section {
             text-align: center;
             margin-bottom: 25px;
             animation: slideInDown 0.5s ease-out 0.4s both;
         }
-
+        
         .countdown {
             color: #6c757d;
             font-size: 1rem;
@@ -347,13 +325,13 @@
             justify-content: center;
             gap: 8px;
         }
-
+        
         .countdown i {
-            color: #ff8c00;
+            color: #ffd700;
         }
-
+        
         .resend-link {
-            color: #008060;
+            color: #01a9ac;
             text-decoration: none;
             font-weight: 600;
             display: inline-flex;
@@ -362,28 +340,28 @@
             transition: all 0.3s ease;
             padding: 10px 20px;
             border-radius: 10px;
-            background: rgba(0, 128, 96, 0.1);
+            background: rgba(1, 169, 172, 0.1);
         }
-
+        
         .resend-link:hover {
-            color: #006d52;
-            background: rgba(0, 128, 96, 0.15);
+            color: #008060;
+            background: rgba(1, 169, 172, 0.15);
             transform: translateY(-2px);
         }
-
+        
         .resend-link.disabled {
             color: #6c757d;
             background: rgba(108, 117, 125, 0.1);
             pointer-events: none;
         }
-
+        
         .action-links {
             text-align: center;
             animation: slideInDown 0.5s ease-out 0.6s both;
         }
-
+        
         .action-link {
-            color: #008060;
+            color: #01a9ac;
             text-decoration: none;
             font-weight: 600;
             display: inline-flex;
@@ -392,24 +370,36 @@
             margin-top: 15px;
             transition: all 0.3s ease;
         }
-
+        
         .action-link:hover {
-            color: #006d52;
+            color: #008060;
             transform: translateX(-5px);
         }
-
-        /* Responsive Design */
+        
+        /* Responsive */
         @media (max-width: 992px) {
-            .container-fluid {
-                padding: 10px;
+            body {
+                padding: 15px;
             }
             
-            .otp-card {
+            .login-container {
                 max-width: 100%;
             }
         }
-
-        @media (max-width: 576px) {
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .login-container {
+                max-width: 100%;
+            }
+            
+            .otp-card {
+                border-radius: 15px;
+            }
+            
             .otp-body {
                 padding: 30px 25px;
             }
@@ -417,40 +407,238 @@
             .otp-header {
                 padding: 30px 25px;
             }
+            
+            .logo-sppqu {
+                width: 80px;
+                height: 80px;
+                margin-bottom: 20px;
+            }
+            
+            .logo-sppqu img {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .otp-header h3 {
+                font-size: 1.75rem;
+            }
+            
+            .otp-header p {
+                font-size: 1rem;
+            }
+            
+            .otp-display {
+                gap: 10px;
+            }
+            
+            .otp-digit {
+                width: 55px;
+                height: 55px;
+                font-size: 22px;
+                min-width: 55px;
+            }
+            
+            .otp-digit.filled::after {
+                font-size: 22px;
+            }
+            
+            .otp-hidden-input {
+                font-size: 22px;
+                letter-spacing: 18px;
+            }
+            
+            .phone-display {
+                padding: 18px;
+            }
+            
+            .phone-number {
+                font-size: 1.15rem;
+            }
+            
+            .countdown {
+                font-size: 0.95rem;
+            }
+            
+            .resend-link {
+                padding: 12px 20px;
+                font-size: 0.95rem;
+            }
         }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
+        
+        @media (max-width: 576px) {
+            body {
+                padding: 10px 5px;
+            }
+            
+            .otp-body {
+                padding: 25px 20px;
+            }
+            
+            .otp-header {
+                padding: 25px 20px;
+            }
+            
+            .logo-sppqu {
+                width: 70px;
+                height: 70px;
+                margin-bottom: 15px;
+            }
+            
+            .logo-sppqu img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .otp-header h3 {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+            
+            .otp-header p {
+                font-size: 0.9rem;
+            }
+            
+            .otp-display {
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .otp-digit {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                border-radius: 8px;
+                min-width: 50px;
+            }
+            
+            .otp-digit.filled::after {
+                font-size: 20px;
+            }
+            
+            .otp-hidden-input {
+                font-size: 20px;
+                letter-spacing: 16px;
+            }
+            
+            .phone-display {
+                padding: 15px;
+                margin-bottom: 25px;
+            }
+            
+            .phone-display .text-muted {
+                font-size: 0.85rem;
+            }
+            
+            .phone-number {
+                font-size: 1.1rem;
+            }
+            
+            .form-label {
+                font-size: 0.95rem;
+                margin-bottom: 15px;
+            }
+            
+            .form-text {
+                font-size: 0.85rem;
+            }
+            
+            .countdown-section {
+                margin-bottom: 20px;
+            }
+            
+            .countdown {
+                font-size: 0.9rem;
+                margin-bottom: 12px;
+            }
+            
+            .resend-link {
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+            
+            .action-link {
+                font-size: 0.9rem;
+                margin-top: 12px;
+            }
+            
+            .alert {
+                padding: 12px 18px;
+                font-size: 0.9rem;
+            }
         }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #006d52 0%, #005a45 100%);
+        
+        @media (max-width: 400px) {
+            body {
+                padding: 5px;
+            }
+            
+            .otp-body {
+                padding: 20px 15px;
+            }
+            
+            .otp-header {
+                padding: 20px 15px;
+            }
+            
+            .logo-sppqu {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 12px;
+            }
+            
+            .logo-sppqu img {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .otp-header h3 {
+                font-size: 1.3rem;
+            }
+            
+            .otp-header p {
+                font-size: 0.85rem;
+            }
+            
+            .otp-display {
+                gap: 6px;
+            }
+            
+            .otp-digit {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            .otp-digit.filled::after {
+                font-size: 18px;
+            }
+            
+            .otp-hidden-input {
+                font-size: 18px;
+                letter-spacing: 15px;
+            }
+            
+            .phone-display {
+                padding: 12px;
+            }
+            
+            .phone-number {
+                font-size: 1rem;
+            }
+            
+            .countdown {
+                font-size: 0.85rem;
+            }
+            
+            .resend-link {
+                padding: 8px 15px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="animated-bg"></div>
-
-    <!-- Floating Elements -->
-    <div class="floating-elements">
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-    </div>
-
-    <div class="container-fluid">
-        <!-- OTP Verification Card -->
+    <div class="login-container">
         <div class="otp-card">
             <div class="otp-header">
                 <div class="logo-sppqu">
@@ -471,7 +659,7 @@
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <ul class="mb-0">
+                        <ul class="mb-0" style="padding-left: 20px;">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -536,7 +724,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="{{ asset('template-assets/bower_components/jquery/js/jquery.min.js') }}"></script>
+    <!-- Bootstrap JS -->
+    <script src="{{ asset('template-assets/bower_components/bootstrap/js/bootstrap.min.js') }}"></script>
+    
     <script>
         // Auto-focus ke input OTP
         document.getElementById('otp').focus();
@@ -627,47 +819,6 @@
         // Disable resend link selama countdown
         resendLink.classList.add('disabled');
         resendLink.href = "#";
-
-        // Add ripple effect to resend link
-        document.getElementById('resendLink').addEventListener('click', function(e) {
-            if (!this.classList.contains('disabled')) {
-                const ripple = document.createElement('span');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.width = ripple.style.height = size + 'px';
-                ripple.style.left = x + 'px';
-                ripple.style.top = y + 'px';
-                ripple.classList.add('ripple');
-                
-                this.appendChild(ripple);
-                
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            }
-        });
     </script>
-
-    <style>
-    /* Ripple effect */
-    .ripple {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(0, 128, 96, 0.3);
-        transform: scale(0);
-        animation: ripple-animation 0.6s linear;
-        pointer-events: none;
-    }
-
-    @keyframes ripple-animation {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-    </style>
 </body>
 </html>

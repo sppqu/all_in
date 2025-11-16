@@ -159,6 +159,27 @@
             opacity: 1;
         }
         
+        /* Logout Menu Styling */
+        .pcoded-item li form a {
+            display: block;
+            padding: 10px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .pcoded-item li form a:hover {
+            background: rgba(220, 53, 69, 0.1) !important;
+            color: #dc3545 !important;
+        }
+        
+        .pcoded-item li form a .pcoded-micon {
+            color: #dc3545;
+        }
+        
+        .pcoded-item li form a .pcoded-mtext {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        
         /* Custom Select Styling */
         .form-control.select-default,
         select.form-control.select-default {
@@ -933,6 +954,20 @@
                             </ul>
                             @endif
                             @endif
+                            
+                            <!-- Logout Menu -->
+                            <div class="pcoded-navigatio-lavel" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;"></div>
+                            <ul class="pcoded-item pcoded-left-item">
+                                <li>
+                                    <form method="POST" action="{{ route('manage.logout') }}" id="logoutForm" style="margin: 0;">
+                                        @csrf
+                                        <a href="javascript:void(0)" onclick="document.getElementById('logoutForm').submit();" style="color: #dc3545;">
+                                            <span class="pcoded-micon"><i class="feather icon-log-out"></i></span>
+                                            <span class="pcoded-mtext">Logout</span>
+                                        </a>
+                                    </form>
+                                </li>
+                            </ul>
                             
                         </div>
                     </nav>

@@ -1,37 +1,50 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Email - SPPQU</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="SPPQU - Sistem Pembayaran Peserta Didik">
+    <meta name="keywords" content="SPPQU, Pembayaran, Sekolah">
+    <meta name="author" content="SPPQU">
+    
+    <title>Login - {{ config('app.name', 'SPPQU') }}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    
+    <!-- Google font -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600" rel="stylesheet">
+    
+    <!-- Required Framework - Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/bower_components/bootstrap/css/bootstrap.min.css') }}">
+    
+    <!-- Feather Icons -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/assets/icon/feather/css/feather.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Style.css -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('template-assets/assets/css/style.css') }}">
+    
+    <!-- Custom Login Styles -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
+            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Open Sans', sans-serif;
             position: relative;
+            overflow: hidden;
         }
-
+        
         /* Animated Background */
-        .animated-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-
-        .animated-bg::before {
+        body::before {
             content: '';
             position: absolute;
             top: 0;
@@ -40,173 +53,77 @@
             height: 100%;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
             animation: float 20s ease-in-out infinite;
+            z-index: 0;
         }
-
+        
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(1deg); }
         }
-
-        /* Floating Elements */
-        .floating-elements {
-            position: fixed;
-            top: 0;
-            left: 0;
+        
+        .login-container {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .floating-element {
-            position: absolute;
-            background: rgba(255, 140, 0, 0.15);
-            border-radius: 50%;
-            animation: floatElement 15s ease-in-out infinite;
-        }
-
-        .floating-element:nth-child(1) {
-            width: 100px;
-            height: 100px;
-            top: 15%;
-            left: 15%;
-            animation-delay: 0s;
-        }
-
-        .floating-element:nth-child(2) {
-            width: 150px;
-            height: 150px;
-            top: 70%;
-            left: 10%;
-            animation-delay: 3s;
-        }
-
-        .floating-element:nth-child(3) {
-            width: 80px;
-            height: 80px;
-            bottom: 15%;
-            left: 25%;
-            animation-delay: 6s;
-        }
-
-        @keyframes floatElement {
-            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-            50% { transform: translateY(-40px) rotate(180deg); opacity: 0.6; }
-        }
-
-        .container-fluid {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
+            max-width: 1200px;
             padding: 20px;
         }
-
-        .left-section {
+        
+        .login-wrapper {
+            display: flex;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            min-height: 600px;
+        }
+        
+        .login-left {
             flex: 1;
+            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
             color: white;
-            padding: 40px;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .login-left-content {
             position: relative;
             z-index: 1;
         }
-
-        .welcome-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            animation: slideInLeft 1s ease-out;
-        }
         
-        .welcome-title .welcome-text {
-            color: white;
-        }
-        
-        .welcome-title .brand-text {
-            color: #ff8c00;
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .welcome-subtitle {
-            font-size: 1.3rem;
-            margin-bottom: 30px;
-            opacity: 0.9;
-            line-height: 1.6;
-            animation: slideInLeft 1s ease-out 0.2s both;
-        }
-
-        .features-list {
-            list-style: none;
-            animation: slideInLeft 1s ease-out 0.4s both;
-        }
-
-        .features-list li {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-        }
-
-        .features-list li i {
-            margin-right: 15px;
-            font-size: 1.2rem;
-            color: #ff8c00;
-        }
-
-        .otp-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 25px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            max-width: 500px;
-            width: 100%;
-            animation: slideInRight 1s ease-out 0.3s both;
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .otp-header {
-            background: white;
-            color: white;
-            padding: 40px 30px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .logo-sppqu {
-            width: 90px;
-            height: 90px;
+        .login-logo {
+            width: 100px;
+            height: 100px;
             background: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 1;
-            animation: bounceIn 1s ease-out 0.5s both;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: bounceIn 1s ease-out;
         }
-
+        
         @keyframes bounceIn {
             0% {
                 opacity: 0;
@@ -224,114 +141,202 @@
                 transform: scale(1);
             }
         }
-
-        .logo-sppqu img {
+        
+        .login-logo img {
             width: 70px;
             height: 70px;
             object-fit: contain;
         }
-
-        .otp-header h3 {
+        
+        .login-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            animation: slideInLeft 1s ease-out 0.2s both;
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .login-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.95;
+            line-height: 1.6;
+            animation: slideInLeft 1s ease-out 0.4s both;
+        }
+        
+        .login-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            animation: slideInLeft 1s ease-out 0.6s both;
+        }
+        
+        .login-features li {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+        
+        .login-features li i {
+            margin-right: 15px;
+            font-size: 1.3rem;
+            color: #ffd700;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .login-right {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #fff;
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .login-card-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideInRight 1s ease-out 0.3s both;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .login-card-header h2 {
             font-size: 2rem;
             font-weight: 700;
+            color: #01a9ac;
             margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
         }
         
-        .otp-header h3 .login-text {
-            color: #008060;
+        .login-card-header p {
+            color: #6c757d;
+            font-size: 1rem;
         }
         
-        .otp-header h3 .brand-text {
-            color: #ff8c00;
+        .form-group {
+            margin-bottom: 25px;
+            animation: slideInRight 1s ease-out 0.5s both;
         }
-
-        .otp-header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            position: relative;
-            z-index: 1;
-            color: #008060;
-        }
-
-        .otp-body {
-            padding: 50px 40px;
-        }
-
-        .form-label {
+        
+        .form-group label {
             font-weight: 600;
             color: #333;
-            margin-bottom: 12px;
-            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 0.95rem;
         }
-
-        .form-input {
+        
+        .input-group {
             position: relative;
-            margin-bottom: 20px;
         }
-
-        .form-input .form-control {
-            border-radius: 15px;
+        
+        .input-group .form-control {
+            border-radius: 10px;
             border: 2px solid #e9ecef;
-            padding: 18px 20px 18px 60px;
-            font-size: 16px;
+            padding: 15px 50px 15px 50px;
+            font-size: 15px;
             transition: all 0.3s ease;
-            background: white;
+            height: 50px;
         }
-
-        .form-input .form-control:focus {
-            border-color: #008060;
-            box-shadow: 0 0 0 0.2rem rgba(0, 128, 96, 0.25);
-            transform: translateY(-2px);
+        
+        .input-group .form-control:focus {
+            border-color: #01a9ac;
+            box-shadow: 0 0 0 0.2rem rgba(1, 169, 172, 0.25);
+            outline: none;
         }
-
-        .form-icon {
+        
+        .input-group-icon {
             position: absolute;
-            left: 20px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: #008060;
+            color: #01a9ac !important;
             font-size: 18px;
-            z-index: 2;
+            z-index: 10;
+            pointer-events: none;
+            transition: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
         }
-
-        .password-toggle {
+        
+        .input-group:focus-within .input-group-icon,
+        .input-group .form-control:focus + .input-group-icon,
+        .input-group .form-control:active + .input-group-icon,
+        .input-group .form-control:hover + .input-group-icon,
+        .input-group .form-control:valid + .input-group-icon,
+        .input-group .form-control:invalid + .input-group-icon {
+            color: #01a9ac !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+        }
+        
+        .input-group-toggle {
             position: absolute;
-            right: 20px;
+            right: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: #008060;
+            color: #6c757d !important;
             cursor: pointer;
             font-size: 18px;
-            z-index: 2;
-            transition: all 0.3s ease;
+            z-index: 10;
+            transition: color 0.3s ease;
+            pointer-events: auto;
         }
-
-        .password-toggle:hover {
-            color: #006d52;
+        
+        .input-group-toggle:hover {
+            color: #01a9ac !important;
         }
-
-        .form-text {
-            color: #6c757d;
-            font-size: 0.9rem;
-            margin-top: 8px;
+        
+        .input-group .form-control:focus ~ .input-group-toggle {
+            color: #6c757d !important;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
+        
+        .btn-login {
+            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
             border: none;
-            border-radius: 15px;
-            padding: 18px 30px;
+            border-radius: 10px;
+            padding: 15px 30px;
             font-size: 16px;
             font-weight: 600;
             width: 100%;
+            color: white;
             transition: all 0.3s ease;
+            height: 50px;
             position: relative;
             overflow: hidden;
+            animation: slideInRight 1s ease-out 0.7s both;
         }
-
-        .btn-primary::before {
+        
+        .btn-login::before {
             content: '';
             position: absolute;
             top: 0;
@@ -341,47 +346,33 @@
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
             transition: left 0.5s;
         }
-
-        .btn-primary:hover::before {
+        
+        .btn-login:hover::before {
             left: 100%;
         }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 128, 96, 0.4);
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(1, 169, 172, 0.4);
         }
-
-        .btn-primary:active {
-            transform: translateY(-1px);
+        
+        .btn-login:active {
+            transform: translateY(0);
         }
-
-        .back-link {
-            color: #008060;
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            margin-top: 20px;
-            transition: all 0.3s ease;
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
-
-        .back-link:hover {
-            color: #006d52;
-            transform: translateX(-5px);
-        }
-
-        .back-link i {
-            margin-right: 8px;
-        }
-
+        
         .alert {
-            border: none;
-            border-radius: 15px;
+            border-radius: 10px;
             padding: 15px 20px;
             margin-bottom: 25px;
+            border: none;
             animation: slideInDown 0.5s ease-out;
         }
-
+        
         @keyframes slideInDown {
             from {
                 opacity: 0;
@@ -392,234 +383,343 @@
                 transform: translateY(0);
             }
         }
-
+        
         .alert-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-            color: white;
+            background: #f8d7da;
+            color: #721c24;
         }
-
+        
         .alert-success {
-            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
-            color: white;
+            background: #d4edda;
+            color: #155724;
         }
-
-        /* Loading Animation */
-        .loading {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            animation: slideInRight 1s ease-out 0.9s both;
         }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        
+        .login-footer a {
+            color: #01a9ac;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        .login-footer a:hover {
+            color: #008060;
         }
-
-        /* Responsive Design */
+        
+        .login-footer a i {
+            margin-right: 8px;
+        }
+        
+        /* Responsive */
         @media (max-width: 992px) {
-            .container-fluid {
+            body {
+                padding: 10px;
+            }
+            
+            .login-container {
+                padding: 10px;
+                max-width: 100%;
+            }
+            
+            .login-wrapper {
                 flex-direction: column;
+                min-height: auto;
             }
             
-            .left-section {
-                text-align: center;
-                padding: 20px;
+            .login-left {
+                padding: 40px 30px;
+                min-height: auto;
             }
             
-            .welcome-title {
-                font-size: 2.5rem;
-            }
-            
-            .otp-card {
-                margin-top: 30px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .welcome-title {
+            .login-title {
                 font-size: 2rem;
             }
             
-            .welcome-subtitle {
+            .login-subtitle {
                 font-size: 1.1rem;
             }
             
-            .otp-body {
-                padding: 30px 25px;
+            .login-features li {
+                font-size: 1rem;
+                margin-bottom: 15px;
             }
             
-            .otp-header {
-                padding: 30px 25px;
+            .login-right {
+                padding: 40px 30px;
             }
         }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
+        
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 5px;
+            }
+            
+            .login-wrapper {
+                border-radius: 15px;
+            }
+            
+            .login-left {
+                padding: 30px 20px;
+            }
+            
+            .login-logo {
+                width: 80px;
+                height: 80px;
+                margin-bottom: 20px;
+            }
+            
+            .login-logo img {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .login-title {
+                font-size: 1.75rem;
+                margin-bottom: 10px;
+            }
+            
+            .login-subtitle {
+                font-size: 1rem;
+                margin-bottom: 30px;
+            }
+            
+            .login-features {
+                margin-top: 20px;
+            }
+            
+            .login-features li {
+                font-size: 0.95rem;
+                margin-bottom: 12px;
+            }
+            
+            .login-features li i {
+                font-size: 1.1rem;
+                width: 20px;
+            }
+            
+            .login-right {
+                padding: 30px 20px;
+            }
+            
+            .login-card-header h2 {
+                font-size: 1.75rem;
+            }
+            
+            .login-card-header p {
+                font-size: 0.95rem;
+            }
+            
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            .input-group .form-control {
+                padding: 12px 45px 12px 45px;
+                font-size: 14px;
+                height: 45px;
+            }
+            
+            .input-group-icon {
+                left: 15px;
+                font-size: 16px;
+            }
+            
+            .btn-login {
+                padding: 12px 25px;
+                font-size: 15px;
+                height: 45px;
+            }
         }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        
+        @media (max-width: 576px) {
+            .login-left {
+                padding: 25px 15px;
+            }
+            
+            .login-logo {
+                width: 70px;
+                height: 70px;
+                margin-bottom: 15px;
+            }
+            
+            .login-logo img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .login-title {
+                font-size: 1.5rem;
+            }
+            
+            .login-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 20px;
+            }
+            
+            .login-features li {
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+            }
+            
+            .login-right {
+                padding: 25px 15px;
+            }
+            
+            .login-card-header {
+                margin-bottom: 30px;
+            }
+            
+            .login-card-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .login-card-header p {
+                font-size: 0.9rem;
+            }
         }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #008060 0%, #006d52 100%);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #006d52 0%, #005a45 100%);
+        
+        /* Loading Spinner */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
         }
     </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="animated-bg"></div>
-
-    <!-- Floating Elements -->
-    <div class="floating-elements">
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-    </div>
-
-    <div class="container-fluid">
-        <!-- Left Section - Welcome Content -->
-        <div class="left-section">
-            <h1 class="welcome-title">
-                <span class="welcome-text">Welcome to </span>
-                <span class="brand-text">SPPQU</span>
-            </h1>
-            <p class="welcome-subtitle">
-                Experience secure and convenient login with Email and Password. 
-                Get instant access to your school's financial management system.
-            </p>
-            
-            <ul class="features-list">
-                <li>
-                    <i class="fas fa-shield-alt"></i>
-                    Secure email and password authentication
-                </li>
-                <li>
-                    <i class="fas fa-bolt"></i>
-                    Quick and reliable access to your account
-                </li>
-                <li>
-                    <i class="fas fa-envelope"></i>
-                    Login with your registered email address
-                </li>
-                <li>
-                    <i class="fas fa-chart-line"></i>
-                    Access comprehensive financial reports
-                </li>
-            </ul>
-        </div>
-
-        <!-- Right Section - Login Card -->
-        <div class="otp-card">
-            <div class="otp-header">
-                <div class="logo-sppqu">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo SPPQU" onerror="this.style.display='none'">
+    <div class="login-container">
+        <div class="login-wrapper">
+            <!-- Left Section - Welcome -->
+            <div class="login-left">
+                <div class="login-left-content">
+                    <div class="login-logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo SPPQU" onerror="this.style.display='none'">
+                    </div>
+                    <h1 class="login-title">Welcome to SPPQU</h1>
+                    <p class="login-subtitle">
+                        Sistem Pembayaran Peserta Didik yang aman dan terpercaya. 
+                        Akses semua fitur manajemen keuangan sekolah Anda dengan mudah.
+                    </p>
+                    <ul class="login-features">
+                        <li>
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Autentikasi email dan password yang aman</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-bolt"></i>
+                            <span>Akses cepat dan andal ke akun Anda</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>Login dengan alamat email terdaftar</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-chart-line"></i>
+                            <span>Akses laporan keuangan lengkap</span>
+                        </li>
+                    </ul>
                 </div>
-                <h3>
-                    <span class="login-text">Login </span>
-                    <span class="brand-text">SPPQU</span>
-                </h3>
-                <p>Masukkan email dan password Anda untuk login</p>
             </div>
             
-            <div class="otp-body">
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+            <!-- Right Section - Login Form -->
+            <div class="login-right">
+                <div class="login-card">
+                    <div class="login-card-header">
+                        <h2>Login</h2>
+                        <p>Masukkan email dan password Anda untuk masuk</p>
                     </div>
-                @endif
-
-                @if(session('success'))
-                    <div class="alert alert-success">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('login.post') }}" id="loginForm">
-                    @csrf
                     
-                    <div class="mb-4">
-                        <label for="email" class="form-label">Email</label>
-                        <div class="form-input">
-                            <i class="fas fa-envelope form-icon"></i>
-                            <input type="email" 
-                                   class="form-control @error('email') is-invalid @enderror" 
-                                   id="email" 
-                                   name="email" 
-                                   placeholder="nama@email.com"
-                                   value="{{ old('email') }}"
-                                   required
-                                   autofocus>
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0" style="padding-left: 20px;">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
-                        @error('email')
-                            <div class="form-text text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    @endif
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="form-input">
-                            <i class="fas fa-lock form-icon"></i>
-                            <input type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   id="password" 
-                                   name="password" 
-                                   placeholder="Masukkan password Anda"
-                                   required>
-                            <span class="password-toggle" onclick="togglePassword()">
-                                <i class="fas fa-eye" id="passwordToggleIcon"></i>
-                            </span>
+                    @if(session('success'))
+                        <div class="alert alert-success">
+                            {{ session('success') }}
                         </div>
-                        @error('password')
-                            <div class="form-text text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    @endif
 
-                    <div class="d-grid mb-3">
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            <span class="btn-text">
-                                <i class="fas fa-sign-in-alt me-2"></i>
-                                Masuk
-                            </span>
-                            <div class="loading">
-                                <div class="spinner"></div>
+                    <form method="POST" action="{{ route('login.post') }}" id="loginForm">
+                        @csrf
+                        
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <div class="input-group">
+                                <input type="email" 
+                                       class="form-control @error('email') is-invalid @enderror" 
+                                       id="email" 
+                                       name="email" 
+                                       placeholder="nama@email.com"
+                                       value="{{ old('email') }}"
+                                       required
+                                       autofocus>
+                                <i class="fas fa-envelope input-group-icon"></i>
                             </div>
-                        </button>
-                    </div>
+                            @error('email')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
 
-                    <div class="text-center">
-                        <a href="{{ route('otp.request') }}" class="back-link">
-                            <i class="fas fa-arrow-left"></i>
-                            Login dengan WhatsApp OTP
-                        </a>
-                    </div>
-                </form>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       class="form-control @error('password') is-invalid @enderror" 
+                                       id="password" 
+                                       name="password" 
+                                       placeholder="Masukkan password Anda"
+                                       required>
+                                <i class="fas fa-lock input-group-icon"></i>
+                                <span class="input-group-toggle" onclick="togglePassword()">
+                                    <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                </span>
+                            </div>
+                            @error('password')
+                                <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-login" id="submitBtn">
+                                <span class="btn-text">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Masuk
+                                </span>
+                                <span class="btn-loading" style="display: none;">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Memproses...
+                                </span>
+                            </button>
+                        </div>
+
+                        <div class="login-footer">
+                            <a href="{{ route('otp.request') }}">
+                                <i class="fas fa-arrow-left"></i>
+                                Login dengan WhatsApp OTP
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="{{ asset('template-assets/bower_components/jquery/js/jquery.min.js') }}"></script>
+    <!-- Bootstrap JS -->
+    <script src="{{ asset('template-assets/bower_components/bootstrap/js/bootstrap.min.js') }}"></script>
+    
     <script>
         // Toggle password visibility
         function togglePassword() {
@@ -641,51 +741,12 @@
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             const btn = document.getElementById('submitBtn');
             const btnText = btn.querySelector('.btn-text');
-            const loading = btn.querySelector('.loading');
+            const btnLoading = btn.querySelector('.btn-loading');
             
             btnText.style.display = 'none';
-            loading.style.display = 'block';
+            btnLoading.style.display = 'inline-block';
             btn.disabled = true;
         });
-
-        // Add ripple effect to button
-        document.getElementById('submitBtn').addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            ripple.classList.add('ripple');
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => {
-                ripple.remove();
-            }, 600);
-        });
     </script>
-
-    <style>
-    /* Ripple effect */
-    .ripple {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(0);
-        animation: ripple-animation 0.6s linear;
-        pointer-events: none;
-    }
-
-    @keyframes ripple-animation {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
-    }
-    </style>
 </body>
 </html>
