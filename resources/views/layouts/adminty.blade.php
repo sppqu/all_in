@@ -89,15 +89,22 @@
             display: none !important;
         }
         
+        /* Tampilkan chevron custom dari ::before */
+        .pcoded-hasmenu > a .pcoded-mcaret::before {
+            content: ">" !important;
+            display: block !important;
+            color: inherit;
+            font-weight: bold;
+        }
+        
         .pcoded-hasmenu.pcoded-trigger > a .pcoded-mcaret {
             transform: rotate(90deg);
         }
         
-        .pcoded-hasmenu > a .pcoded-mcaret::before {
-            content: ">";
-            display: block;
-            color: inherit;
-            font-weight: bold;
+        /* Pastikan tidak ada chevron lain dari template pada tag <a> */
+        .pcoded-hasmenu > a::after,
+        .pcoded-hasmenu > a::before {
+            display: none !important;
         }
         
         /* Logo styling */
@@ -847,6 +854,7 @@
                                     <a href="javascript:void(0)">
                                         <span class="pcoded-micon"><i class="feather icon-book"></i></span>
                                         <span class="pcoded-mtext">E-Jurnal</span>
+                                        <span class="pcoded-mcaret"></span>
                                     </a>
                                     <ul class="pcoded-submenu">
                                         <li class="{{ request()->routeIs('jurnal.guru.index') ? 'active' : '' }}">
@@ -869,6 +877,7 @@
                                     <a href="javascript:void(0)">
                                         <span class="pcoded-micon"><i class="feather icon-book"></i></span>
                                         <span class="pcoded-mtext">E-Perpustakaan</span>
+                                        <span class="pcoded-mcaret"></span>
                                     </a>
                                     <ul class="pcoded-submenu">
                                         <li class="{{ request()->routeIs('library.index') ? 'active' : '' }}">
