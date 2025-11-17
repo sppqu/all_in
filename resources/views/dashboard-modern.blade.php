@@ -213,14 +213,32 @@
                                     <td><span class="badge bg-success">{{ $class['paid_students'] }}</span></td>
                                     <td><span class="badge bg-danger">{{ $class['unpaid_students'] }}</span></td>
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="progress flex-grow-1 me-2" style="height: 20px; border-radius: 10px;">
-                                                <div class="progress-bar bg-gradient" 
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 30px; border-radius: 15px; background-color: #f0f0f0; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                                <div class="progress-bar" 
                                                      style="width: {{ $class['percentage'] }}%; 
-                                                            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);" 
-                                                     role="progressbar">
-                                                    <span class="small fw-bold">{{ number_format($class['percentage'], 1) }}%</span>
+                                                            min-width: {{ $class['percentage'] > 0 ? '40px' : '0' }};
+                                                            background: {{ $class['percentage'] >= 90 ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)' : ($class['percentage'] >= 70 ? 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' : ($class['percentage'] >= 50 ? 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)')) }};
+                                                            border-radius: 15px;
+                                                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                                            display: flex;
+                                                            align-items: center;
+                                                            justify-content: {{ $class['percentage'] > 15 ? 'center' : 'flex-end' }};
+                                                            padding: {{ $class['percentage'] > 15 ? '0' : '0 8px' }};
+                                                            position: relative;
+                                                            transition: width 0.6s ease;
+                                                            animation: progressAnimation 0.6s ease-out;" 
+                                                     role="progressbar"
+                                                     aria-valuenow="{{ $class['percentage'] }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    @if($class['percentage'] > 15)
+                                                    <span class="small fw-bold text-white" style="text-shadow: 0 1px 3px rgba(0,0,0,0.4); font-size: 0.8rem; white-space: nowrap; letter-spacing: 0.5px;">{{ number_format($class['percentage'], 1) }}%</span>
+                                                    @endif
                                                 </div>
+                                                @if($class['percentage'] <= 15)
+                                                <span class="position-absolute" style="left: 50%; transform: translateX(-50%); color: #6b7280; font-size: 0.8rem; font-weight: 700; z-index: 1;">{{ number_format($class['percentage'], 1) }}%</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -485,6 +503,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .progress-bar {
     transition: width 0.6s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes progressAnimation {
+    from {
+        width: 0;
+    }
 }
 
 .table-hover tbody tr:hover {
