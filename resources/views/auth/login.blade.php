@@ -33,7 +33,7 @@
     <!-- Custom Login Styles -->
     <style>
         body {
-            background: #f5f5f5;
+            background: #2d2d2d;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -51,7 +51,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="black" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="black" opacity="0.05"/><circle cx="50" cy="10" r="0.5" fill="black" opacity="0.05"/><circle cx="10" cy="60" r="0.5" fill="black" opacity="0.05"/><circle cx="90" cy="40" r="0.5" fill="black" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.03"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.03"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.03"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.03"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
             animation: float 20s ease-in-out infinite;
             z-index: 0;
         }
@@ -80,68 +80,6 @@
         
         .login-card {
             width: 100%;
-        }
-        
-        .login-logo-section {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .login-logo {
-            width: 60px;
-            height: 60px;
-            background: #f0f0f0;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-        
-        .login-logo img {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-        }
-        
-        .login-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #333;
-            margin: 0;
-        }
-        
-        .login-tabs {
-            display: flex;
-            border-bottom: 2px solid #e9ecef;
-            margin-bottom: 30px;
-        }
-        
-        .login-tab {
-            flex: 1;
-            padding: 12px 0;
-            text-align: center;
-            font-weight: 600;
-            color: #6c757d;
-            cursor: pointer;
-            border: none;
-            background: none;
-            position: relative;
-            transition: color 0.3s ease;
-        }
-        
-        .login-tab.active {
-            color: #333;
-        }
-        
-        .login-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #333;
         }
         
         .login-card-header {
@@ -399,23 +337,9 @@
     <div class="login-container">
         <div class="login-wrapper">
             <div class="login-card">
-                <!-- Logo Section -->
-                <div class="login-logo-section">
-                    <div class="login-logo">
-                        <img src="{{ asset('images/logo.png') }}" alt="Logo SPPQU" onerror="this.style.display='none'">
-                    </div>
-                    <h1 class="login-brand">SPPQU</h1>
-                </div>
-                
-                <!-- Tabs -->
-                <div class="login-tabs">
-                    <button class="login-tab active">Log In</button>
-                </div>
-                
                 <!-- Login Header -->
                 <div class="login-card-header">
-                    <h2>Login</h2>
-                    <p>Masukkan email dan password Anda untuk masuk</p>
+                    <h2>Log In</h2>
                 </div>
                     
                     @if ($errors->any())
