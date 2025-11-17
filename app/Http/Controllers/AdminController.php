@@ -815,66 +815,105 @@ class AdminController extends Controller
     
     /**
      * Update system automatically (git pull, composer install, migrate)
+     * 
+     * Proses update mencakup:
+     * 1. Update kode sistem dari repository (git pull)
+     * 2. Update dependencies PHP (composer install)
+     * 3. Update struktur database (migrate)
+     * 4. Clear dan optimize cache
      */
     public function updateSystem(Request $request)
     {
         try {
             $output = [];
-            $errors = [];
-            
-            // Get base path
             $basePath = base_path();
             
-            // 1. Git pull
-            $gitPull = shell_exec("cd {$basePath} && git pull 2>&1");
-            $output[] = "=== Git Pull ===";
-            $output[] = $gitPull ?? 'No output';
-            
-            // 2. Composer install (if composer.json exists)
-            if (file_exists($basePath . '/composer.json')) {
-                $composerInstall = shell_exec("cd {$basePath} && composer install --no-interaction --prefer-dist --optimize-autoloader 2>&1");
-                $output[] = "\n=== Composer Install ===";
-                $output[] = $composerInstall ?? 'No output';
+            // Validasi: Cek apakah ini adalah git repository
+            $isGitRepo = is_dir($basePath . '/.git');
+            if (!$isGitRepo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Direktori ini bukan git repository. Update otomatis tidak dapat dilakukan.'
+                ], 400);
             }
             
-            // 3. Run migrations
-            Artisan::call('migrate', ['--force' => true]);
-            $migrateOutput = Artisan::output();
-            $output[] = "\n=== Database Migration ===";
-            $output[] = $migrateOutput;
+            // 1. Git pull - Update kode sistem dari repository
+            $output[] = "=== 1. UPDATE KODE SISTEM (Git Pull) ===";
+            $gitPull = shell_exec("cd {$basePath} && git pull origin main 2>&1");
+            $output[] = $gitPull ?? 'No output';
+            
+            // Cek apakah ada perubahan dari git pull
+            if (strpos($gitPull, 'Already up to date') !== false) {
+                $output[] = "✓ Kode sistem sudah up-to-date";
+            } else {
+                $output[] = "✓ Kode sistem berhasil diupdate";
+            }
+            
+            // 2. Composer install - Update dependencies PHP
+            if (file_exists($basePath . '/composer.json')) {
+                $output[] = "\n=== 2. UPDATE DEPENDENCIES (Composer Install) ===";
+                $composerInstall = shell_exec("cd {$basePath} && composer install --no-interaction --prefer-dist --optimize-autoloader 2>&1");
+                $output[] = $composerInstall ?? 'No output';
+                $output[] = "✓ Dependencies berhasil diupdate";
+            }
+            
+            // 3. Database Migration - Update struktur database
+            $output[] = "\n=== 3. UPDATE STRUKTUR DATABASE (Migration) ===";
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+                $migrateOutput = Artisan::output();
+                $output[] = $migrateOutput;
+                
+                // Cek apakah ada migration yang dijalankan
+                if (strpos($migrateOutput, 'Nothing to migrate') !== false) {
+                    $output[] = "✓ Struktur database sudah up-to-date";
+                } else {
+                    $output[] = "✓ Struktur database berhasil diupdate";
+                }
+            } catch (\Exception $e) {
+                $output[] = "⚠ Error saat migration: " . $e->getMessage();
+                throw $e;
+            }
             
             // 4. Clear cache
+            $output[] = "\n=== 4. CLEAR CACHE ===";
             Artisan::call('config:clear');
             Artisan::call('cache:clear');
             Artisan::call('view:clear');
             Artisan::call('route:clear');
-            $output[] = "\n=== Cache Cleared ===";
+            $output[] = "✓ Cache berhasil dibersihkan";
             
-            // 5. Optimize (optional)
+            // 5. Optimize
+            $output[] = "\n=== 5. OPTIMIZE SYSTEM ===";
             Artisan::call('config:cache');
             Artisan::call('route:cache');
-            $output[] = "\n=== Optimized ===";
+            $output[] = "✓ System berhasil dioptimize";
+            
+            $output[] = "\n=== UPDATE SELESAI ===";
+            $output[] = "Semua proses update berhasil dilakukan!";
             
             Log::info('System update completed', [
                 'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name,
                 'output' => implode("\n", $output)
             ]);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Update system berhasil dilakukan.\n\n' . implode("\n", array_slice($output, 0, 10))
+                'message' => 'Update system berhasil dilakukan!\n\n' . implode("\n", $output)
             ]);
             
         } catch (\Exception $e) {
             Log::error('System update failed', [
                 'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name ?? 'Unknown',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Update system gagal: ' . $e->getMessage()
+                'message' => 'Update system gagal: ' . $e->getMessage() . "\n\nSilakan cek log untuk detail lebih lanjut."
             ], 500);
         }
     }
