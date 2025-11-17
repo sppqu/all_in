@@ -1014,6 +1014,7 @@ Route::post('/general-setting', [GeneralSettingController::class, 'update'])->na
 
 // Dashboard Routes
 Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard')->middleware('auth', 'session.timeout');
+Route::post('/system/update', [AdminController::class, 'updateSystem'])->name('admin.system.update')->middleware('auth', 'session.timeout');
 
 // Logout Routes
 Route::post('/logout', function () {
@@ -1883,6 +1884,7 @@ Route::post('/general-setting', [GeneralSettingController::class, 'update'])->na
 
 // Dashboard Routes
 Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard')->middleware('auth', 'session.timeout');
+Route::post('/system/update', [AdminController::class, 'updateSystem'])->name('admin.system.update')->middleware('auth', 'session.timeout');
 
 // Logout Routes
 Route::post('/logout', function () {
