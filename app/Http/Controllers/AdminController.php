@@ -8,6 +8,8 @@ use App\Models\Student;
 use App\Models\Payment;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\PaymentController as RekapController;
 
 class AdminController extends Controller
@@ -809,5 +811,71 @@ class AdminController extends Controller
             'siswaAktifReguler','siswaAktifPindahan','siswaAktifMasukKembali',
             'jumlahKelasTA','totalAlumni','totalSiswaKeluar','selectedPeriod'
         ));
+    }
+    
+    /**
+     * Update system automatically (git pull, composer install, migrate)
+     */
+    public function updateSystem(Request $request)
+    {
+        try {
+            $output = [];
+            $errors = [];
+            
+            // Get base path
+            $basePath = base_path();
+            
+            // 1. Git pull
+            $gitPull = shell_exec("cd {$basePath} && git pull 2>&1");
+            $output[] = "=== Git Pull ===";
+            $output[] = $gitPull ?? 'No output';
+            
+            // 2. Composer install (if composer.json exists)
+            if (file_exists($basePath . '/composer.json')) {
+                $composerInstall = shell_exec("cd {$basePath} && composer install --no-interaction --prefer-dist --optimize-autoloader 2>&1");
+                $output[] = "\n=== Composer Install ===";
+                $output[] = $composerInstall ?? 'No output';
+            }
+            
+            // 3. Run migrations
+            Artisan::call('migrate', ['--force' => true]);
+            $migrateOutput = Artisan::output();
+            $output[] = "\n=== Database Migration ===";
+            $output[] = $migrateOutput;
+            
+            // 4. Clear cache
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('view:clear');
+            Artisan::call('route:clear');
+            $output[] = "\n=== Cache Cleared ===";
+            
+            // 5. Optimize (optional)
+            Artisan::call('config:cache');
+            Artisan::call('route:cache');
+            $output[] = "\n=== Optimized ===";
+            
+            Log::info('System update completed', [
+                'user_id' => auth()->id(),
+                'output' => implode("\n", $output)
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Update system berhasil dilakukan.\n\n' . implode("\n", array_slice($output, 0, 10))
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('System update failed', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Update system gagal: ' . $e->getMessage()
+            ], 500);
+        }
     }
 } 
