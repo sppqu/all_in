@@ -6,7 +6,7 @@
 .tab-pane-setting {
     display: none;
 }
-#tab-profile.tab-pane-setting {
+#tab-rekening.tab-pane-setting {
     display: block;
 }
 [data-tab] {
@@ -80,8 +80,7 @@
 
                     <div class="mb-4">
                         <div class="btn-group w-100" role="group" aria-label="General Setting Tabs" id="settingTabGroup">
-                            <button type="button" class="btn btn-outline-success active" data-tab="profile">Profile Sekolah</button>
-                            <button type="button" class="btn btn-outline-success" data-tab="rekening">Rekening Bank</button>
+                            <button type="button" class="btn btn-outline-success active" data-tab="rekening">Rekening Bank</button>
                             <button type="button" class="btn btn-outline-success {{ !$hasPaymentGatewayAddon ? 'disabled' : '' }}" data-tab="gateway" {{ !$hasPaymentGatewayAddon ? 'disabled' : '' }}>
                                 Payment Gateway
                                 @if(!$hasPaymentGatewayAddon)
@@ -97,75 +96,8 @@
                         </div>
                     </div>
 
-                    <!-- Profile Sekolah Tab -->
-                    <div id="tab-profile" class="tab-pane-setting">
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <h5 class="mb-3">Profile Sekolah</h5>
-                                <table class="table table-bordered">
-                                    <tr><th width="200">Jenjang</th><td>{{ $profile->jenjang ?? '-' }}</td></tr>
-                                    <tr><th>Nama Sekolah</th><td>{{ $profile->nama_sekolah ?? '-' }}</td></tr>
-                                    <tr><th>Alamat</th><td>{{ $profile->alamat ?? '-' }}</td></tr>
-                                    <tr><th>No. Telp</th><td>{{ $profile->no_telp ?? '-' }}</td></tr>
-                                    <tr><th>Logo Sekolah</th><td>
-                                        @if(!empty($profile->logo_sekolah) && $profile->logo_sekolah !== 'Logo')
-                                            <img src="{{ asset('storage/'.$profile->logo_sekolah) }}" alt="Logo" height="60" id="logoPreview">
-                                        @else
-                                            <span class="text-muted">Belum diupload</span>
-                                        @endif
-                                    </td></tr>
-                                </table>
-                            </div>
-                            <div class="col-lg-6">
-                                <h5 class="mb-3">Edit Profile Sekolah</h5>
-                                <form method="POST" action="{{ route('manage.general.setting.update') }}" enctype="multipart/form-data" id="profileForm">
-                                    @csrf
-                                    <div class="row mb-3">
-                                        <label class="col-sm-3 col-form-label">Jenjang</label>
-                                        <div class="col-sm-9">
-                                            <input type="text" class="form-control" name="jenjang" value="{{ old('jenjang', $profile->jenjang ?? '') }}">
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label class="col-sm-3 col-form-label">Nama Sekolah</label>
-                                        <div class="col-sm-9">
-                                            <input type="text" class="form-control" name="nama_sekolah" value="{{ old('nama_sekolah', $profile->nama_sekolah ?? '') }}">
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label class="col-sm-3 col-form-label">Alamat</label>
-                                        <div class="col-sm-9">
-                                            <textarea class="form-control" name="alamat" rows="2">{{ old('alamat', $profile->alamat ?? '') }}</textarea>
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label class="col-sm-3 col-form-label">No. Telp</label>
-                                        <div class="col-sm-9">
-                                            <input type="text" class="form-control" name="no_telp" value="{{ old('no_telp', $profile->no_telp ?? '') }}">
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label class="col-sm-3 col-form-label">Logo Sekolah</label>
-                                        <div class="col-sm-9">
-                                            <input type="file" class="form-control" name="logo_sekolah" id="logoInput">
-                                            <small class="text-muted">Biarkan kosong jika tidak ingin mengubah logo.</small>
-                                            <div class="mt-2">
-                                                <img id="logoPreview" src="" alt="Preview" style="max-height: 100px; display: none;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <div class="col-sm-9 offset-sm-3">
-                                            <button type="submit" class="btn btn-success text-white">Simpan Profile</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Rekening Bank Tab -->
-                    <div id="tab-rekening" class="tab-pane-setting">
+                    <div id="tab-rekening" class="tab-pane-setting" style="display: block;">
                         <div class="row">
                             <div class="col-lg-6">
                                 <h5 class="mb-3">Info Rekening Bank Sekolah</h5>
@@ -467,25 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Logo preview
-    const logoInput = document.getElementById('logoInput');
-    if (logoInput) {
-        logoInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('logoPreview');
-                    if (preview) {
-                        preview.src = e.target.result;
-                        preview.style.display = 'block';
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-    
     // Initialize default tab display
     function initDefaultTab() {
         console.log('Initializing default tab display');
@@ -496,18 +409,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Hiding tab:', tab.id);
         });
         
-        // Show profile tab by default
-        const profileTab = document.getElementById('tab-profile');
-        if (profileTab) {
-            profileTab.style.display = 'block';
-            console.log('Profile tab displayed');
+        // Show rekening tab by default
+        const rekeningTab = document.getElementById('tab-rekening');
+        if (rekeningTab) {
+            rekeningTab.style.display = 'block';
+            console.log('Rekening tab displayed');
         }
         
-        // Ensure profile button is active
-        const profileButton = document.querySelector('[data-tab="profile"]');
-        if (profileButton) {
-            profileButton.classList.add('active');
-            console.log('Profile button activated');
+        // Ensure rekening button is active
+        const rekeningButton = document.querySelector('[data-tab="rekening"]');
+        if (rekeningButton) {
+            rekeningButton.classList.add('active');
+            console.log('Rekening button activated');
         }
         
         // Log final state
@@ -536,28 +449,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
     
 
-    
-    // Form submission debugging
-    const profileForm = document.getElementById('profileForm');
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-            console.log('Form submitted');
-            console.log('Form data:', new FormData(this));
-            
-            // Check if logo file is selected
-            const logoInput = document.getElementById('logoInput');
-            if (logoInput && logoInput.files.length > 0) {
-                const file = logoInput.files[0];
-                console.log('Logo file selected:', {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type
-                });
-            } else {
-                console.log('No logo file selected');
-            }
-        });
-    }
 });
 </script>
 @endsection 
