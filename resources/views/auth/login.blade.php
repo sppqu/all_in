@@ -65,184 +65,105 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 1200px;
+            max-width: 450px;
             padding: 20px;
+            margin: 0 auto;
         }
         
         .login-wrapper {
-            display: flex;
             background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             overflow: hidden;
-            min-height: 600px;
-        }
-        
-        .login-left {
-            flex: 1;
-            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
-            color: white;
-            padding: 60px 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .login-left::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 15s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-        
-        .login-left-content {
-            position: relative;
-            z-index: 1;
-        }
-        
-        .login-logo {
-            width: 100px;
-            height: 100px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            animation: bounceIn 1s ease-out;
-        }
-        
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        .login-logo img {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
-        }
-        
-        .login-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            animation: slideInLeft 1s ease-out 0.2s both;
-        }
-        
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .login-subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 40px;
-            opacity: 0.95;
-            line-height: 1.6;
-            animation: slideInLeft 1s ease-out 0.4s both;
-        }
-        
-        .login-features {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            animation: slideInLeft 1s ease-out 0.6s both;
-        }
-        
-        .login-features li {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-        }
-        
-        .login-features li i {
-            margin-right: 15px;
-            font-size: 1.3rem;
-            color: #ffd700;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .login-right {
-            flex: 1;
-            padding: 60px 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: #fff;
+            padding: 40px;
         }
         
         .login-card {
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+        }
+        
+        .login-logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .login-logo img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
+        .login-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin: 0;
+        }
+        
+        .login-tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+        
+        .login-tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            border: none;
+            background: none;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .login-tab.active {
+            color: #333;
+        }
+        
+        .login-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #333;
         }
         
         .login-card-header {
             text-align: center;
-            margin-bottom: 40px;
-            animation: slideInRight 1s ease-out 0.3s both;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            margin-bottom: 30px;
         }
         
         .login-card-header h2 {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #01a9ac;
-            margin-bottom: 10px;
+            color: #333;
+            margin-bottom: 8px;
         }
         
         .login-card-header p {
             color: #6c757d;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            margin: 0;
         }
         
         .form-group {
-            margin-bottom: 25px;
-            animation: slideInRight 1s ease-out 0.5s both;
+            margin-bottom: 20px;
         }
         
         .form-group label {
@@ -396,8 +317,9 @@
         
         .login-footer {
             text-align: center;
-            margin-top: 30px;
-            animation: slideInRight 1s ease-out 0.9s both;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e9ecef;
         }
         
         .login-footer a {
@@ -405,6 +327,9 @@
             text-decoration: none;
             font-weight: 600;
             transition: color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .login-footer a:hover {
@@ -412,121 +337,33 @@
         }
         
         .login-footer a i {
-            margin-right: 8px;
+            font-size: 0.9rem;
         }
         
         /* Responsive */
-        @media (max-width: 992px) {
-            body {
-                padding: 10px;
-            }
-            
+        @media (max-width: 768px) {
             .login-container {
-                padding: 10px;
+                padding: 15px;
                 max-width: 100%;
             }
             
             .login-wrapper {
-                flex-direction: column;
-                min-height: auto;
-            }
-            
-            .login-left {
-                padding: 40px 30px;
-                min-height: auto;
-            }
-            
-            .login-title {
-                font-size: 2rem;
-            }
-            
-            .login-subtitle {
-                font-size: 1.1rem;
-            }
-            
-            .login-features li {
-                font-size: 1rem;
-                margin-bottom: 15px;
-            }
-            
-            .login-right {
-                padding: 40px 30px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .login-container {
-                padding: 5px;
-            }
-            
-            .login-wrapper {
-                border-radius: 15px;
-            }
-            
-            .login-left {
-                padding: 30px 20px;
-            }
-            
-            .login-logo {
-                width: 80px;
-                height: 80px;
-                margin-bottom: 20px;
-            }
-            
-            .login-logo img {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .login-title {
-                font-size: 1.75rem;
-                margin-bottom: 10px;
-            }
-            
-            .login-subtitle {
-                font-size: 1rem;
-                margin-bottom: 30px;
-            }
-            
-            .login-features {
-                margin-top: 20px;
-            }
-            
-            .login-features li {
-                font-size: 0.95rem;
-                margin-bottom: 12px;
-            }
-            
-            .login-features li i {
-                font-size: 1.1rem;
-                width: 20px;
-            }
-            
-            .login-right {
-                padding: 30px 20px;
+                padding: 30px 25px;
+                border-radius: 12px;
             }
             
             .login-card-header h2 {
-                font-size: 1.75rem;
-            }
-            
-            .login-card-header p {
-                font-size: 0.95rem;
+                font-size: 1.5rem;
             }
             
             .form-group {
-                margin-bottom: 20px;
+                margin-bottom: 18px;
             }
             
             .input-group .form-control {
                 padding: 12px 45px 12px 45px;
                 font-size: 14px;
                 height: 45px;
-            }
-            
-            .input-group-icon {
-                left: 15px;
-                font-size: 16px;
             }
             
             .btn-login {
@@ -537,45 +374,12 @@
         }
         
         @media (max-width: 576px) {
-            .login-left {
-                padding: 25px 15px;
-            }
-            
-            .login-logo {
-                width: 70px;
-                height: 70px;
-                margin-bottom: 15px;
-            }
-            
-            .login-logo img {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .login-title {
-                font-size: 1.5rem;
-            }
-            
-            .login-subtitle {
-                font-size: 0.9rem;
-                margin-bottom: 20px;
-            }
-            
-            .login-features li {
-                font-size: 0.9rem;
-                margin-bottom: 10px;
-            }
-            
-            .login-right {
-                padding: 25px 15px;
-            }
-            
-            .login-card-header {
-                margin-bottom: 30px;
+            .login-wrapper {
+                padding: 25px 20px;
             }
             
             .login-card-header h2 {
-                font-size: 1.5rem;
+                font-size: 1.35rem;
             }
             
             .login-card-header p {
@@ -594,45 +398,25 @@
 <body>
     <div class="login-container">
         <div class="login-wrapper">
-            <!-- Left Section - Welcome -->
-            <div class="login-left">
-                <div class="login-left-content">
+            <div class="login-card">
+                <!-- Logo Section -->
+                <div class="login-logo-section">
                     <div class="login-logo">
                         <img src="{{ asset('images/logo.png') }}" alt="Logo SPPQU" onerror="this.style.display='none'">
                     </div>
-                    <h1 class="login-title">Welcome to SPPQU</h1>
-                    <p class="login-subtitle">
-                        Sistem Pembayaran Peserta Didik yang aman dan terpercaya. 
-                        Akses semua fitur manajemen keuangan sekolah Anda dengan mudah.
-                    </p>
-                    <ul class="login-features">
-                        <li>
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Autentikasi email dan password yang aman</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-bolt"></i>
-                            <span>Akses cepat dan andal ke akun Anda</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-envelope"></i>
-                            <span>Login dengan alamat email terdaftar</span>
-                        </li>
-                        <li>
-                            <i class="fas fa-chart-line"></i>
-                            <span>Akses laporan keuangan lengkap</span>
-                        </li>
-                    </ul>
+                    <h1 class="login-brand">SPPQU</h1>
                 </div>
-            </div>
-            
-            <!-- Right Section - Login Form -->
-            <div class="login-right">
-                <div class="login-card">
-                    <div class="login-card-header">
-                        <h2>Login</h2>
-                        <p>Masukkan email dan password Anda untuk masuk</p>
-                    </div>
+                
+                <!-- Tabs -->
+                <div class="login-tabs">
+                    <button class="login-tab active">Log In</button>
+                </div>
+                
+                <!-- Login Header -->
+                <div class="login-card-header">
+                    <h2>Login</h2>
+                    <p>Masukkan email dan password Anda untuk masuk</p>
+                </div>
                     
                     @if ($errors->any())
                         <div class="alert alert-danger">
@@ -705,13 +489,12 @@
 
                         <div class="login-footer">
                             <a href="{{ route('otp.request') }}">
-                                <i class="fas fa-arrow-left"></i>
-                                Login dengan WhatsApp OTP
+                                <i class="fas fa-mobile-alt"></i>
+                                Login dengan OTP
                             </a>
                         </div>
                     </form>
                 </div>
-            </div>
         </div>
     </div>
 
