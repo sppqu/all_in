@@ -83,6 +83,28 @@
             width: 100%;
         }
         
+        .login-logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .login-logo img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
         .login-card-header {
             text-align: center;
             margin-bottom: 30px;
@@ -324,6 +346,13 @@
     <div class="login-container">
         <div class="login-wrapper">
             <div class="login-card">
+                <!-- Logo Section -->
+                <div class="login-logo-section">
+                    <div class="login-logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo SPPQU" onerror="this.style.display='none'">
+                    </div>
+                </div>
+                
                 <!-- Login Header -->
                 <div class="login-card-header">
                     <h2>Log In</h2>

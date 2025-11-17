@@ -33,7 +33,7 @@
     <!-- Custom Login Styles -->
     <style>
         body {
-            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
+            background: #2d2d2d;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -52,7 +52,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.03"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.03"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.03"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.03"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
             animation: float 20s ease-in-out infinite;
             z-index: 0;
         }
@@ -66,110 +66,56 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 600px;
-            padding: 0;
+            max-width: 450px;
+            padding: 20px;
+            margin: 0 auto;
         }
         
         .otp-card {
             background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             overflow: hidden;
-            animation: slideInRight 1s ease-out 0.3s both;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            padding: 40px;
         }
         
         .otp-header {
-            background: linear-gradient(135deg, #01a9ac 0%, #008060 100%);
-            color: white;
-            padding: 40px 30px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .otp-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
-            animation: slide 20s linear infinite;
-        }
-        
-        @keyframes slide {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-20px); }
+            margin-bottom: 30px;
         }
         
         .logo-sppqu {
-            width: 90px;
-            height: 90px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            position: relative;
-            z-index: 1;
-            animation: bounceIn 1s ease-out 0.5s both;
-        }
-        
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-            70% {
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+            margin-bottom: 15px;
         }
         
         .logo-sppqu img {
-            width: 70px;
-            height: 70px;
+            width: 40px;
+            height: 40px;
             object-fit: contain;
         }
         
         .otp-header h3 {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
+            color: #333;
+            margin-bottom: 8px;
         }
         
         .otp-header p {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            position: relative;
-            z-index: 1;
+            color: #6c757d;
+            font-size: 0.95rem;
+            margin: 0;
         }
         
         .otp-body {
-            padding: 50px 40px;
+            padding: 0;
         }
         
         .alert {
@@ -465,33 +411,40 @@
             }
         }
         
-        @media (max-width: 576px) {
-            body {
-                padding: 10px 5px;
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 15px;
+                max-width: 100%;
             }
             
-            .otp-body {
-                padding: 25px 20px;
-            }
-            
-            .otp-header {
-                padding: 25px 20px;
-            }
-            
-            .logo-sppqu {
-                width: 70px;
-                height: 70px;
-                margin-bottom: 15px;
-            }
-            
-            .logo-sppqu img {
-                width: 50px;
-                height: 50px;
+            .otp-card {
+                padding: 30px 25px;
+                border-radius: 12px;
             }
             
             .otp-header h3 {
                 font-size: 1.5rem;
-                margin-bottom: 8px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .otp-card {
+                padding: 25px 20px;
+            }
+            
+            .logo-sppqu {
+                width: 50px;
+                height: 50px;
+                margin-bottom: 12px;
+            }
+            
+            .logo-sppqu img {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .otp-header h3 {
+                font-size: 1.35rem;
             }
             
             .otp-header p {
