@@ -824,10 +824,11 @@ class AdminController extends Controller
      */
     public function updateSystem(Request $request)
     {
+        $output = [];
+        $errors = [];
+        $basePath = base_path();
+        
         try {
-            $output = [];
-            $basePath = base_path();
-            
             // Validasi: Cek apakah ini adalah git repository
             $isGitRepo = is_dir($basePath . '/.git');
             if (!$isGitRepo) {
@@ -839,22 +840,68 @@ class AdminController extends Controller
             
             // 1. Git pull - Update kode sistem dari repository
             $output[] = "=== 1. UPDATE KODE SISTEM (Git Pull) ===";
-            $gitPull = shell_exec("cd {$basePath} && git pull origin main 2>&1");
-            $output[] = $gitPull ?? 'No output';
-            
-            // Cek apakah ada perubahan dari git pull
-            if (strpos($gitPull, 'Already up to date') !== false) {
-                $output[] = "✓ Kode sistem sudah up-to-date";
-            } else {
-                $output[] = "✓ Kode sistem berhasil diupdate";
+            try {
+                // Cek apakah git command tersedia
+                $gitCheck = shell_exec("which git 2>&1") ?: shell_exec("where git 2>&1");
+                if (empty($gitCheck) || strpos($gitCheck, 'not found') !== false) {
+                    $output[] = "⚠ Git command tidak ditemukan. Melewati git pull.";
+                    $errors[] = "Git tidak tersedia";
+                } else {
+                    // Escape path untuk shell command
+                    $escapedPath = escapeshellarg($basePath);
+                    $gitPull = shell_exec("cd {$escapedPath} && git pull origin main 2>&1");
+                    
+                    if ($gitPull === null) {
+                        $output[] = "⚠ Tidak dapat menjalankan git pull. Cek permission.";
+                        $errors[] = "Git pull gagal";
+                    } else {
+                        $output[] = $gitPull;
+                        // Cek apakah ada perubahan dari git pull
+                        if (strpos($gitPull, 'Already up to date') !== false) {
+                            $output[] = "✓ Kode sistem sudah up-to-date";
+                        } elseif (strpos($gitPull, 'error') !== false || strpos($gitPull, 'fatal') !== false) {
+                            $output[] = "⚠ Error saat git pull: " . $gitPull;
+                            $errors[] = "Git pull error";
+                        } else {
+                            $output[] = "✓ Kode sistem berhasil diupdate";
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                $output[] = "⚠ Error saat git pull: " . $e->getMessage();
+                $errors[] = "Git pull exception: " . $e->getMessage();
             }
             
             // 2. Composer install - Update dependencies PHP
             if (file_exists($basePath . '/composer.json')) {
                 $output[] = "\n=== 2. UPDATE DEPENDENCIES (Composer Install) ===";
-                $composerInstall = shell_exec("cd {$basePath} && composer install --no-interaction --prefer-dist --optimize-autoloader 2>&1");
-                $output[] = $composerInstall ?? 'No output';
-                $output[] = "✓ Dependencies berhasil diupdate";
+                try {
+                    // Cek apakah composer command tersedia
+                    $composerCheck = shell_exec("which composer 2>&1") ?: shell_exec("where composer 2>&1");
+                    if (empty($composerCheck) || strpos($composerCheck, 'not found') !== false) {
+                        $output[] = "⚠ Composer command tidak ditemukan. Melewati composer install.";
+                        $errors[] = "Composer tidak tersedia";
+                    } else {
+                        $escapedPath = escapeshellarg($basePath);
+                        $composerInstall = shell_exec("cd {$escapedPath} && composer install --no-interaction --prefer-dist --optimize-autoloader 2>&1");
+                        
+                        if ($composerInstall === null) {
+                            $output[] = "⚠ Tidak dapat menjalankan composer install. Cek permission.";
+                            $errors[] = "Composer install gagal";
+                        } else {
+                            $output[] = $composerInstall;
+                            if (strpos($composerInstall, 'error') !== false || strpos($composerInstall, 'Exception') !== false) {
+                                $output[] = "⚠ Error saat composer install";
+                                $errors[] = "Composer install error";
+                            } else {
+                                $output[] = "✓ Dependencies berhasil diupdate";
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $output[] = "⚠ Error saat composer install: " . $e->getMessage();
+                    $errors[] = "Composer install exception: " . $e->getMessage();
+                }
             }
             
             // 3. Database Migration - Update struktur database
@@ -867,40 +914,65 @@ class AdminController extends Controller
                 // Cek apakah ada migration yang dijalankan
                 if (strpos($migrateOutput, 'Nothing to migrate') !== false) {
                     $output[] = "✓ Struktur database sudah up-to-date";
+                } elseif (strpos($migrateOutput, 'error') !== false || strpos($migrateOutput, 'Exception') !== false) {
+                    $output[] = "⚠ Error saat migration";
+                    $errors[] = "Migration error";
                 } else {
                     $output[] = "✓ Struktur database berhasil diupdate";
                 }
             } catch (\Exception $e) {
                 $output[] = "⚠ Error saat migration: " . $e->getMessage();
-                throw $e;
+                $errors[] = "Migration exception: " . $e->getMessage();
             }
             
             // 4. Clear cache
             $output[] = "\n=== 4. CLEAR CACHE ===";
-            Artisan::call('config:clear');
-            Artisan::call('cache:clear');
-            Artisan::call('view:clear');
-            Artisan::call('route:clear');
-            $output[] = "✓ Cache berhasil dibersihkan";
+            try {
+                Artisan::call('config:clear');
+                Artisan::call('cache:clear');
+                Artisan::call('view:clear');
+                Artisan::call('route:clear');
+                $output[] = "✓ Cache berhasil dibersihkan";
+            } catch (\Exception $e) {
+                $output[] = "⚠ Error saat clear cache: " . $e->getMessage();
+                $errors[] = "Clear cache exception: " . $e->getMessage();
+            }
             
             // 5. Optimize
             $output[] = "\n=== 5. OPTIMIZE SYSTEM ===";
-            Artisan::call('config:cache');
-            Artisan::call('route:cache');
-            $output[] = "✓ System berhasil dioptimize";
+            try {
+                Artisan::call('config:cache');
+                Artisan::call('route:cache');
+                $output[] = "✓ System berhasil dioptimize";
+            } catch (\Exception $e) {
+                $output[] = "⚠ Error saat optimize: " . $e->getMessage();
+                $errors[] = "Optimize exception: " . $e->getMessage();
+            }
             
             $output[] = "\n=== UPDATE SELESAI ===";
-            $output[] = "Semua proses update berhasil dilakukan!";
+            
+            // Jika ada error tapi tidak critical, tetap return success dengan warning
+            if (count($errors) > 0) {
+                $output[] = "⚠ Update selesai dengan beberapa warning:";
+                foreach ($errors as $error) {
+                    $output[] = "  - " . $error;
+                }
+                $output[] = "\nBeberapa proses mungkin tidak berhasil. Silakan cek log untuk detail.";
+            } else {
+                $output[] = "✓ Semua proses update berhasil dilakukan!";
+            }
             
             Log::info('System update completed', [
                 'user_id' => auth()->id(),
-                'user_name' => auth()->user()->name,
-                'output' => implode("\n", $output)
+                'user_name' => auth()->user()->name ?? 'Unknown',
+                'output' => implode("\n", $output),
+                'errors' => $errors
             ]);
             
             return response()->json([
-                'success' => true,
-                'message' => 'Update system berhasil dilakukan!\n\n' . implode("\n", $output)
+                'success' => count($errors) === 0,
+                'message' => implode("\n", $output),
+                'errors' => $errors
             ]);
             
         } catch (\Exception $e) {
@@ -908,12 +980,20 @@ class AdminController extends Controller
                 'user_id' => auth()->id(),
                 'user_name' => auth()->user()->name ?? 'Unknown',
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'output' => $output
             ]);
+            
+            $errorMessage = 'Update system gagal: ' . $e->getMessage();
+            if (!empty($output)) {
+                $errorMessage .= "\n\nOutput:\n" . implode("\n", array_slice($output, 0, 20));
+            }
+            $errorMessage .= "\n\nSilakan cek log untuk detail lebih lanjut.";
             
             return response()->json([
                 'success' => false,
-                'message' => 'Update system gagal: ' . $e->getMessage() . "\n\nSilakan cek log untuk detail lebih lanjut."
+                'message' => $errorMessage,
+                'errors' => array_merge($errors, [$e->getMessage()])
             ], 500);
         }
     }
