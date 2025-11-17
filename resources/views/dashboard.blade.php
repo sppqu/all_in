@@ -84,14 +84,9 @@
             @php
                 $isFoundationLevel = auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin_yayasan';
             @endphp
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="updateSystemBtn" style="border-radius: 8px; padding: 0.5rem 1.25rem;">
-                    <i class="feather icon-refresh-cw me-2"></i>Update System
-                </button>
-                <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #01a9ac 0%, #0ac282 100%); border: none; border-radius: 8px; padding: 0.5rem 1.25rem;">
-                    <i class="feather icon-edit me-2"></i>Lengkapi Profil
-                </a>
-            </div>
+            <a href="{{ route('manage.foundation.schools.edit', $currentSchool->id) }}" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #01a9ac 0%, #0ac282 100%); border: none; border-radius: 8px; padding: 0.5rem 1.25rem;">
+                <i class="feather icon-edit me-2"></i>Lengkapi Profil
+            </a>
         </div>
         <div class="card-body p-4">
             <div class="row">
@@ -725,66 +720,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 @endsection
 
-@section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const updateSystemBtn = document.getElementById('updateSystemBtn');
-    
-    if (updateSystemBtn) {
-        updateSystemBtn.addEventListener('click', function() {
-            if (!confirm('Apakah Anda yakin ingin melakukan update system? Proses ini akan mengambil update terbaru dari repository dan menjalankan migrasi database.')) {
-                return;
-            }
-            
-            // Disable button and show loading
-            const originalHtml = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<i class="feather icon-loader spin me-2"></i>Memproses...';
-            
-            // Call update system endpoint
-            fetch('{{ route("admin.system.update") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Update system berhasil!\n\n' + (data.message || ''));
-                    // Optionally reload page
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    alert('Update system gagal:\n\n' + (data.message || 'Terjadi kesalahan'));
-                    this.disabled = false;
-                    this.innerHTML = originalHtml;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat melakukan update system.');
-                this.disabled = false;
-                this.innerHTML = originalHtml;
-            });
-        });
-    }
-    
-    // Add spin animation for loading icon
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-    `;
-    document.head.appendChild(style);
-});
-</script>
-@endsection
 
