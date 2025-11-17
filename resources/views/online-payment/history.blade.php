@@ -80,15 +80,26 @@
                                     </select>
                                 </div>
                                 <div class="col-md-2">
+                                    <label for="date_from" class="form-label">Tanggal Dari</label>
+                                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                                           value="{{ request('date_from') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="date_to" class="form-label">Tanggal Sampai</label>
+                                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                                           value="{{ request('date_to') }}">
+                                </div>
+                                <div class="col-md-2">
                                     <label for="per_page" class="form-label">Data per Halaman</label>
                                     <select class="form-control select-primary" id="per_page" name="per_page">
-                                        <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                                        <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
-                                        <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
-                                        <option value="100" {{ request('per_page', 10) == 100 ? 'selected' : '' }}>100</option>
+                                        <option value="10" {{ request('per_page', 20) == 10 ? 'selected' : '' }}>10</option>
+                                        <option value="20" {{ request('per_page', 20) == 20 ? 'selected' : '' }}>20</option>
+                                        <option value="25" {{ request('per_page', 20) == 25 ? 'selected' : '' }}>25</option>
+                                        <option value="50" {{ request('per_page', 20) == 50 ? 'selected' : '' }}>50</option>
+                                        <option value="100" {{ request('per_page', 20) == 100 ? 'selected' : '' }}>100</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end">
+                                <div class="col-md-12 d-flex align-items-end">
                                     <div class="d-flex gap-2">
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-search me-2"></i>Cari

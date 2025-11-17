@@ -916,16 +916,8 @@ class OnlinePaymentController extends Controller
             'filters' => $request->only(['status', 'payment_type', 'date_from', 'date_to', 'search', 'per_page'])
         ]);
 
-        // Sort: status menunggu (0) paling atas, kemudian yang lain diurutkan berdasarkan created_at desc
+        // Sort: berdasarkan tanggal transaksi terbaru (created_at desc)
         $allTransfers = $allTransfers->sort(function($a, $b) {
-            // Prioritas: status 0 (menunggu) di atas
-            if ($a->status == 0 && $b->status != 0) {
-                return -1; // a lebih dulu
-            }
-            if ($a->status != 0 && $b->status == 0) {
-                return 1; // b lebih dulu
-            }
-            // Jika status sama, urutkan berdasarkan created_at desc (terbaru dulu)
             return strtotime($b->created_at) - strtotime($a->created_at);
         });
         
