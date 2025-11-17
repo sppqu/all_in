@@ -85,8 +85,8 @@
         }
         
         .logo-sppqu {
-            width: 60px;
-            height: 60px;
+            width: 75px;
+            height: 75px;
             background: #f0f0f0;
             border-radius: 12px;
             display: inline-flex;
@@ -96,8 +96,8 @@
         }
         
         .logo-sppqu img {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
         }
         
@@ -199,36 +199,36 @@
             z-index: 1;
             cursor: pointer;
             text-align: center;
-            font-size: 24px;
-            letter-spacing: 20px;
+            font-size: 20px;
+            letter-spacing: 15px;
             border: none;
             background: transparent;
         }
         
         .otp-display {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             justify-content: center;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             width: 100%;
         }
         
         .otp-digit {
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             border: 2px solid #e9ecef;
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             background: white;
             transition: all 0.3s ease;
             position: relative;
             flex-shrink: 0;
-            min-width: 60px;
+            min-width: 45px;
         }
         
         .otp-digit.filled {
@@ -239,7 +239,7 @@
         .otp-digit.filled::after {
             content: attr(data-value);
             color: #01a9ac;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
         }
         
@@ -374,23 +374,23 @@
             }
             
             .otp-display {
-                gap: 10px;
+                gap: 8px;
             }
             
             .otp-digit {
-                width: 55px;
-                height: 55px;
-                font-size: 22px;
-                min-width: 55px;
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+                min-width: 45px;
             }
             
             .otp-digit.filled::after {
-                font-size: 22px;
+                font-size: 20px;
             }
             
             .otp-hidden-input {
-                font-size: 22px;
-                letter-spacing: 18px;
+                font-size: 20px;
+                letter-spacing: 15px;
             }
             
             .phone-display {
@@ -433,14 +433,14 @@
             }
             
             .logo-sppqu {
-                width: 50px;
-                height: 50px;
+                width: 65px;
+                height: 65px;
                 margin-bottom: 12px;
             }
             
             .logo-sppqu img {
-                width: 35px;
-                height: 35px;
+                width: 45px;
+                height: 45px;
             }
             
             .otp-header h3 {
@@ -452,25 +452,25 @@
             }
             
             .otp-display {
-                gap: 8px;
+                gap: 6px;
                 justify-content: center;
             }
             
             .otp-digit {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
                 border-radius: 8px;
-                min-width: 50px;
+                min-width: 40px;
             }
             
             .otp-digit.filled::after {
-                font-size: 20px;
+                font-size: 18px;
             }
             
             .otp-hidden-input {
-                font-size: 20px;
-                letter-spacing: 16px;
+                font-size: 18px;
+                letter-spacing: 12px;
             }
             
             .phone-display {
