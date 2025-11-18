@@ -113,7 +113,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalCetakKuitansiLabel">Cetak Kuitansi Tabungan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formCetakKuitansi">
@@ -124,7 +126,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="jenis_kuitansi" class="form-label">Jenis Kuitansi</label>
-                        <select class="form-select" id="jenis_kuitansi" name="jenis_kuitansi" required>
+                        <select class="form-control" id="jenis_kuitansi" name="jenis_kuitansi" required>
                             <option value="">Pilih Jenis Kuitansi</option>
                             <option value="setoran">Kuitansi Setoran</option>
                             <option value="penarikan">Kuitansi Penarikan</option>
@@ -144,7 +146,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="prosesCetakKuitansi()">
                     <i class="fas fa-print me-2"></i>Cetak
                 </button>
@@ -158,12 +160,30 @@
 @push('scripts')
 <script>
 function cetakKuitansi() {
-    const modal = new bootstrap.Modal(document.getElementById('modalCetakKuitansi'));
-    modal.show();
+    // Gunakan jQuery modal untuk Bootstrap 4
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        $('#modalCetakKuitansi').modal('show');
+    } else {
+        // Fallback jika jQuery tidak tersedia
+        const modal = document.getElementById('modalCetakKuitansi');
+        if (modal) {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            document.body.classList.add('modal-open');
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            document.body.appendChild(backdrop);
+        }
+    }
 }
 
 function prosesCetakKuitansi() {
     const form = document.getElementById('formCetakKuitansi');
+    if (!form) {
+        alert('Form tidak ditemukan!');
+        return;
+    }
+    
     const formData = new FormData(form);
     
     // Validasi form
@@ -196,17 +216,37 @@ function prosesCetakKuitansi() {
     window.open(url, '_blank');
     
     // Tutup modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('modalCetakKuitansi'));
-    modal.hide();
+    if (typeof $ !== 'undefined' && $.fn.modal) {
+        $('#modalCetakKuitansi').modal('hide');
+    } else {
+        // Fallback jika jQuery tidak tersedia
+        const modal = document.getElementById('modalCetakKuitansi');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        }
+    }
 }
 
 // Set default periode ke bulan ini
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     
-    document.getElementById('periode_awal').value = firstDay.toISOString().split('T')[0];
-    document.getElementById('periode_akhir').value = today.toISOString().split('T')[0];
+    const periodeAwal = document.getElementById('periode_awal');
+    const periodeAkhir = document.getElementById('periode_akhir');
+    
+    if (periodeAwal) {
+        periodeAwal.value = firstDay.toISOString().split('T')[0];
+    }
+    if (periodeAkhir) {
+        periodeAkhir.value = today.toISOString().split('T')[0];
+    }
 });
 </script>
 @endpush 
